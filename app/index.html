@@ -10,6 +10,20 @@
       href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Apply a stored theme override before first paint. With no override the
+      // stylesheet's prefers-color-scheme block decides, so nothing is stamped.
+      (function () {
+        try {
+          var stored = localStorage.getItem("mc-theme");
+          if (stored === "light" || stored === "dark") {
+            document.documentElement.setAttribute("data-theme", stored);
+          }
+        } catch (e) {
+          /* storage unavailable: fall back to the system preference */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
