@@ -492,6 +492,75 @@ route('DELETE', '/files/:id', async (ctx) => {
   return { status: 204 }
 })
 
+// --- strokes (whiteboard ink) -----------------------------------------------
+
+const INK_TOOLS = ['pen', 'highlighter']
+
+const strokesOf = (user) => db.strokes.filter((s) => s.boardId === user.boardId)
+
+/** Ink is a flat [x0,y0,x1,y1,...] array — at least two points, all finite. */
+function requirePoints(body) {
+  const points = body.points
+  const ok =
+    Array.isArray(points) &&
+    points.length >= 4 &&
+    points.length % 2 === 0 &&
+    points.every((n) => typeof n === 'number' && Number.isFinite(n))
+  if (!ok) {
+    throw bad(
+      'invalid_field',
+      'points must be a flat array of at least two x,y pairs, and every value must be a finite number.',
+      'points',
+    )
+  }
+  return points
+}
+
+route('GET', '/strokes', async (ctx) => ({
+  status: 200,
+  body: strokesOf(ctx.user).map((s) => shape(s)),
+}))
+
+route('POST', '/strokes', async (ctx) => {
+  if (!INK_TOOLS.includes(ctx.body.tool)) {
+    throw bad('invalid_tool', `tool must be one of: ${INK_TOOLS.join(', ')}.`, 'tool')
+  }
+  const stroke = {
+    id: id('stk'),
+    boardId: ctx.user.boardId,
+    tool: ctx.body.tool,
+    color: requireString(ctx.body, 'color', { label: 'Stroke colour', max: 32 }),
+    width: requireNumber(ctx.body, 'width'),
+    points: requirePoints(ctx.body),
+    createdAt: now(),
+  }
+  db.strokes.push(stroke)
+  saveDb()
+  return { status: 201, body: shape(stroke) }
+})
+
+// Registered before /strokes/:id — matchRoute compares segment counts, so the
+// two never collide, but keeping them adjacent makes the pair obvious.
+route('DELETE', '/strokes', async (ctx) => {
+  db.strokes = db.strokes.filter((s) => s.boardId !== ctx.user.boardId)
+  saveDb()
+  return { status: 204 }
+})
+
+route('DELETE', '/strokes/:id', async (ctx) => {
+  const stroke = db.strokes.find((s) => s.id === ctx.params.id && s.boardId === ctx.user.boardId)
+  if (!stroke) {
+    throw new ApiError(
+      404,
+      'stroke_not_found',
+      `No stroke with id ${ctx.params.id} on this board. It may already be erased — reload the board.`,
+    )
+  }
+  db.strokes = db.strokes.filter((s) => s.id !== stroke.id)
+  saveDb()
+  return { status: 204 }
+})
+
 // --- chat (server-sent events) ----------------------------------------------
 
 route('POST', '/chat', async (ctx) => {
