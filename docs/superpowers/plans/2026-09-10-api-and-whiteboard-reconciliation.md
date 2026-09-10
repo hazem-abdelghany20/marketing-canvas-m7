@@ -267,7 +267,7 @@ test('an unauthenticated request is rejected with a branchable code', async (t) 
 In `api/package.json`, add to `scripts`:
 
 ```json
-"test": "node --test test/"
+"test": "node --test test/*.test.mjs"
 ```
 
 - [ ] **Step 5: Run the tests and verify they pass**
@@ -1262,8 +1262,8 @@ function buildReasonerResponse(nodes, edges) {
   return {
     mode: 'reasoner',
     text:
-      `I audited all ${nodes.length} nodes. ${findings.length} thing${findings.length === 1 ? '' : 's'} ` +
-      `break the traceability spine:\n\n` +
+      `I audited all ${nodes.length} nodes. ${findings.length} ` +
+      `${findings.length === 1 ? 'thing breaks' : 'things break'} the traceability spine:\n\n` +
       findings.map((f, i) => `${i + 1}. ${f}`).join('\n\n') +
       `\n\nI have highlighted every node named above.`,
     citedNodeIds: [...cited],

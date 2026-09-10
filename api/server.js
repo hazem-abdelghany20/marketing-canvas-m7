@@ -31,6 +31,10 @@ const ACCEPTED_MIME = [
 ]
 const NODE_TYPES = ['goal', 'strategy', 'campaign', 'content', 'asset', 'note']
 const EDGE_KINDS = ['serves', 'relates-to']
+// `operator` is intentionally absent — it is reachable through `auto` only.
+// Selecting it before naming two nodes would strand the user in a mode that
+// cannot act. See docs/superpowers/specs/2026-09-10-whiteboard-layer-design.md.
+const CHAT_MODES = ['auto', 'generator', 'librarian', 'reasoner']
 
 // ---------------------------------------------------------------- persistence
 
@@ -148,8 +152,91 @@ function findMentionedNodes(message, nodes) {
   return scored.sort((a, b) => b.hits - a.hits).map((s) => s.node)
 }
 
-function buildChatResponse(message, nodes) {
-  const mode = detectMode(message)
+/**
+ * The Reasoner audits structure rather than answering questions: it looks for
+ * places the traceability spine is broken. Every finding cites the real nodes
+ * it names, so the canvas can highlight them.
+ */
+function buildReasonerResponse(nodes, edges) {
+  if (!nodes.length) {
+    return {
+      mode: 'reasoner',
+      text: 'This board is empty, so there is no structure to audit yet. Add a goal, then hang a strategy off it and work down to content.',
+      citedNodeIds: [],
+      proposal: null,
+    }
+  }
+
+  const serves = edges.filter((e) => e.kind === 'serves')
+  const touched = new Set(edges.flatMap((e) => [e.fromId, e.toId]))
+  const isServed = new Set(serves.map((e) => e.toId))
+  const servesSomething = new Set(serves.map((e) => e.fromId))
+
+  const findings = []
+  const cited = new Set()
+
+  const list = (ns) => ns.map((n) => `"${n.title}"`).join(', ')
+  const record = (ns, sentence) => {
+    if (!ns.length) return
+    findings.push(sentence)
+    for (const n of ns) cited.add(n.id)
+  }
+
+  const orphans = nodes.filter((n) => !touched.has(n.id))
+  record(
+    orphans,
+    `**${orphans.length} node${orphans.length === 1 ? '' : 's'} connected to nothing** — ${list(orphans)}. ` +
+      `An unconnected node cannot be traced back to an outcome, which is the only reason this board exists.`,
+  )
+
+  const barrenGoals = nodes.filter((n) => n.type === 'goal' && !isServed.has(n.id))
+  record(
+    barrenGoals,
+    `**${barrenGoals.length} goal${barrenGoals.length === 1 ? '' : 's'} that nothing serves** — ${list(barrenGoals)}. ` +
+      `A goal with no work pointing at it is a wish. Connect a strategy to it.`,
+  )
+
+  const looseCampaigns = nodes.filter((n) => n.type === 'campaign' && !servesSomething.has(n.id))
+  record(
+    looseCampaigns,
+    `**${looseCampaigns.length} campaign${looseCampaigns.length === 1 ? '' : 's'} serving no strategy** — ${list(looseCampaigns)}. ` +
+      `A campaign that serves nothing is activity without a thesis.`,
+  )
+
+  const looseContent = nodes.filter((n) => n.type === 'content' && !servesSomething.has(n.id))
+  record(
+    looseContent,
+    `**${looseContent.length} piece${looseContent.length === 1 ? '' : 's'} of content serving no campaign** — ${list(looseContent)}. ` +
+      `Content that traces to nothing is decoration.`,
+  )
+
+  if (!findings.length) {
+    return {
+      mode: 'reasoner',
+      text:
+        `I audited all ${nodes.length} nodes and the spine holds.\n\n` +
+        `Every node is connected, every goal has work pointing at it, and every campaign and piece of ` +
+        `content serves something above it. Nothing to fix structurally.`,
+      citedNodeIds: [],
+      proposal: null,
+    }
+  }
+
+  return {
+    mode: 'reasoner',
+    text:
+      `I audited all ${nodes.length} nodes. ${findings.length} ` +
+      `${findings.length === 1 ? 'thing breaks' : 'things break'} the traceability spine:\n\n` +
+      findings.map((f, i) => `${i + 1}. ${f}`).join('\n\n') +
+      `\n\nI have highlighted every node named above.`,
+    citedNodeIds: [...cited],
+    proposal: null,
+  }
+}
+
+function buildChatResponse(message, nodes, edges, requested = 'auto') {
+  const mode = requested === 'auto' ? detectMode(message) : requested
+  if (mode === 'reasoner') return buildReasonerResponse(nodes, edges)
   const mentioned = findMentionedNodes(message, nodes)
 
   if (mode === 'generator') {
@@ -310,6 +397,7 @@ route('PATCH', '/board', async (ctx) => {
 // --- nodes ------------------------------------------------------------------
 
 const nodesOf = (user) => db.nodes.filter((n) => n.boardId === user.boardId)
+const edgesOf = (user) => db.edges.filter((e) => e.boardId === user.boardId)
 
 function findNode(user, nodeId) {
   const node = db.nodes.find((n) => n.id === nodeId && n.boardId === user.boardId)
@@ -729,7 +817,11 @@ route('DELETE', '/comments/:id', async (ctx) => {
 
 route('POST', '/chat', async (ctx) => {
   const message = requireString(ctx.body, 'message', { label: 'Message' })
-  const response = buildChatResponse(message, nodesOf(ctx.user))
+  const requested = ctx.body.mode === undefined ? 'auto' : ctx.body.mode
+  if (!CHAT_MODES.includes(requested)) {
+    throw bad('invalid_mode', `mode must be one of: ${CHAT_MODES.join(', ')}.`, 'mode')
+  }
+  const response = buildChatResponse(message, nodesOf(ctx.user), edgesOf(ctx.user), requested)
   const shouldFail = /__fail\b/.test(message)
 
   const res = ctx.res
