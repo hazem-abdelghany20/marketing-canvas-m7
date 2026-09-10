@@ -561,6 +561,75 @@ route('DELETE', '/strokes/:id', async (ctx) => {
   return { status: 204 }
 })
 
+// --- marks (stickies and board text) ----------------------------------------
+
+const MARK_VARIANTS = ['sticky', 'text']
+
+const marksOf = (user) => db.marks.filter((m) => m.boardId === user.boardId)
+
+function findMark(user, markId) {
+  const mark = db.marks.find((m) => m.id === markId && m.boardId === user.boardId)
+  if (!mark) {
+    throw new ApiError(
+      404,
+      'mark_not_found',
+      `No sticky or text mark with id ${markId} on this board. It may have been deleted — reload the board.`,
+    )
+  }
+  return mark
+}
+
+route('GET', '/marks', async (ctx) => ({
+  status: 200,
+  body: marksOf(ctx.user).map((m) => shape(m)),
+}))
+
+route('POST', '/marks', async (ctx) => {
+  if (!MARK_VARIANTS.includes(ctx.body.variant)) {
+    throw bad('invalid_variant', `variant must be one of: ${MARK_VARIANTS.join(', ')}.`, 'variant')
+  }
+  const mark = {
+    id: id('mrk'),
+    boardId: ctx.user.boardId,
+    variant: ctx.body.variant,
+    x: requireNumber(ctx.body, 'x'),
+    y: requireNumber(ctx.body, 'y'),
+    body: typeof ctx.body.body === 'string' ? ctx.body.body.slice(0, 2000) : '',
+    color: typeof ctx.body.color === 'string' ? ctx.body.color.slice(0, 32) : null,
+    createdAt: now(),
+    updatedAt: now(),
+  }
+  db.marks.push(mark)
+  saveDb()
+  return { status: 201, body: shape(mark) }
+})
+
+route('PATCH', '/marks/:id', async (ctx) => {
+  const mark = findMark(ctx.user, ctx.params.id)
+  if (ctx.body.variant !== undefined) {
+    if (!MARK_VARIANTS.includes(ctx.body.variant)) {
+      throw bad('invalid_variant', `variant must be one of: ${MARK_VARIANTS.join(', ')}.`, 'variant')
+    }
+    mark.variant = ctx.body.variant
+  }
+  if (ctx.body.x !== undefined) mark.x = requireNumber(ctx.body, 'x')
+  if (ctx.body.y !== undefined) mark.y = requireNumber(ctx.body, 'y')
+  if (typeof ctx.body.body === 'string') mark.body = ctx.body.body.slice(0, 2000)
+  if (ctx.body.color !== undefined) {
+    mark.color = typeof ctx.body.color === 'string' ? ctx.body.color.slice(0, 32) : null
+  }
+  mark.updatedAt = now()
+  saveDb()
+  return { status: 200, body: shape(mark) }
+})
+
+route('DELETE', '/marks/:id', async (ctx) => {
+  const mark = findMark(ctx.user, ctx.params.id)
+  db.marks = db.marks.filter((m) => m.id !== mark.id)
+  saveDb()
+  return { status: 204 }
+})
+
 // --- chat (server-sent events) ----------------------------------------------
 
 route('POST', '/chat', async (ctx) => {

@@ -91,6 +91,7 @@ function buildSeed(now = '2026-08-01T09:00:00.000Z') {
     annotations: annotations.map((a) => ({ ...a, createdAt: now })),
     files: files.map((f) => ({ ...f, thumbUrl: null, boardId: DEMO_BOARD_ID, createdAt: now })),
     strokes: [],
+    marks: [],
     sessions: {},
   }
 }
