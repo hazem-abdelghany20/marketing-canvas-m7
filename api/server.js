@@ -15,7 +15,7 @@ const crypto = require('node:crypto')
 const { buildSeed } = require('./seed')
 
 const PORT = Number(process.env.PORT || 4000)
-const DATA_DIR = path.join(__dirname, '.data')
+const DATA_DIR = process.env.MC_DATA_DIR || path.join(__dirname, '.data')
 const DB_PATH = path.join(DATA_DIR, 'db.json')
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024
