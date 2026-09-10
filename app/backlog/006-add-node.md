@@ -3,6 +3,7 @@
 ## Context
 - `docs/spec.md` § S3 — Behavior/O1
 - `docs/state-matrix.md` § O1 — Add-node menu
+- `../../api/README.md` § Nodes
 
 ## Scope
 `src/components/Toolbar.tsx`, `src/components/AddNodeMenu.tsx`,
@@ -14,7 +15,7 @@
 - Given an existing node at viewport center, when a new node is created, then it is offset so the two do not exactly overlap.
 - Given the open menu, when Escape is pressed, then the menu closes and no node is created.
 - While a chat response is streaming, the "From chat" option shall be non-interactive with a tooltip explaining why.
-- When node creation fails on write, the menu shall close, a message shall state the board is out of storage, and no partial node shall remain on the canvas.
+- When `POST /nodes` returns a non-2xx, the menu shall close, a message shall ask the user to check their connection and offer Retry, and no partial node shall remain on the canvas.
 
 ## Guardrails
 `Toolbar.tsx`, `AddNodeMenu.tsx` and the create action only.

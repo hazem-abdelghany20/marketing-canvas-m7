@@ -4,6 +4,7 @@
 - `docs/spec.md` § S3 — Behavior/Chat rail, generator and operator rows
 - `docs/spec.md` § Data model — `Proposal`
 - `docs/state-matrix.md` § O6, Error and Disabled rows
+- `../../api/README.md` § Nodes, § Edges
 
 ## Scope
 `src/components/ChatMessage.tsx` (proposal action), `src/chat/applyProposal.ts`.
@@ -14,7 +15,7 @@
 - Given an applied proposal, when it settles, then its action becomes a non-interactive applied state and cannot create a second node.
 - Given an applied proposal, when undo is invoked, then the created node or edge is removed and the action returns to its actionable state.
 - Given a `create-edge` proposal referencing a node that no longer exists, when the add action is used, then no edge is created and a message states which node is missing.
-- When applying a proposal fails on write, a message shall state the board is out of storage and the action shall remain usable.
+- When applying a proposal fails against the API, a message shall ask the user to check their connection and the action shall return to its actionable state.
 
 ## Guardrails
 Reuse the store actions from tickets 006 and 008 — no parallel creation path.

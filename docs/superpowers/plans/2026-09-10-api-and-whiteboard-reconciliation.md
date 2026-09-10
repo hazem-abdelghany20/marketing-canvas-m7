@@ -2032,10 +2032,16 @@ verify them rather than describe them."
 
 ---
 
-## Task 10: Rewrite tickets 002 and 003
+## Task 10: Rewrite tickets 002 and 003 (and 006, 014)
 
-These two were written against `localStorage` and dummy auth. Tickets 001 and
-004–015 are untouched.
+These were written against `localStorage` and dummy auth.
+
+**Correction found during execution:** the plan originally claimed only 002 and 003
+needed changing. It was wrong. Tickets **006** and **014** each carry an acceptance
+criterion asserting the failure message states "the board is out of storage" — the
+localStorage assumption, now contradicted by the O1 and O6 error cells rewritten in
+Task 9. Both are corrected here. Tickets 001, 004, 005, 007–013 and 015 are genuinely
+untouched.
 
 **Files:**
 - Modify: `app/backlog/002-store-and-persistence.md`
