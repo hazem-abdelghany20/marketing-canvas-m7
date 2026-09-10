@@ -92,6 +92,8 @@ function buildSeed(now = '2026-08-01T09:00:00.000Z') {
     files: files.map((f) => ({ ...f, thumbUrl: null, boardId: DEMO_BOARD_ID, createdAt: now })),
     strokes: [],
     marks: [],
+    pins: [],
+    comments: [],
     sessions: {},
   }
 }

@@ -630,6 +630,101 @@ route('DELETE', '/marks/:id', async (ctx) => {
   return { status: 204 }
 })
 
+// --- pins and comments (attributed threads on the board) --------------------
+
+const pinsOf = (user) => db.pins.filter((p) => p.boardId === user.boardId)
+
+/** Comments live flat in db.comments and are inlined when a pin is read. */
+function shapePin(pin) {
+  const comments = db.comments
+    .filter((c) => c.pinId === pin.id)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((c) => shape(c, ['boardId', 'pinId']))
+  return { ...shape(pin), comments }
+}
+
+function findPin(user, pinId) {
+  const pin = db.pins.find((p) => p.id === pinId && p.boardId === user.boardId)
+  if (!pin) {
+    throw new ApiError(
+      404,
+      'pin_not_found',
+      `No comment pin with id ${pinId} on this board. It may have been deleted — reload the board.`,
+    )
+  }
+  return pin
+}
+
+route('GET', '/pins', async (ctx) => ({
+  status: 200,
+  body: pinsOf(ctx.user).map((p) => shapePin(p)),
+}))
+
+route('POST', '/pins', async (ctx) => {
+  const pin = {
+    id: id('pin'),
+    boardId: ctx.user.boardId,
+    x: requireNumber(ctx.body, 'x'),
+    y: requireNumber(ctx.body, 'y'),
+    resolved: false,
+    createdAt: now(),
+  }
+  db.pins.push(pin)
+  saveDb()
+  return { status: 201, body: shapePin(pin) }
+})
+
+route('PATCH', '/pins/:id', async (ctx) => {
+  const pin = findPin(ctx.user, ctx.params.id)
+  if (ctx.body.x !== undefined) pin.x = requireNumber(ctx.body, 'x')
+  if (ctx.body.y !== undefined) pin.y = requireNumber(ctx.body, 'y')
+  if (ctx.body.resolved !== undefined) {
+    if (typeof ctx.body.resolved !== 'boolean') {
+      throw bad('invalid_field', 'resolved must be true or false.', 'resolved')
+    }
+    pin.resolved = ctx.body.resolved
+  }
+  saveDb()
+  return { status: 200, body: shapePin(pin) }
+})
+
+route('DELETE', '/pins/:id', async (ctx) => {
+  const pin = findPin(ctx.user, ctx.params.id)
+  db.pins = db.pins.filter((p) => p.id !== pin.id)
+  db.comments = db.comments.filter((c) => c.pinId !== pin.id)
+  saveDb()
+  return { status: 204 }
+})
+
+route('POST', '/pins/:id/comments', async (ctx) => {
+  const pin = findPin(ctx.user, ctx.params.id)
+  const comment = {
+    id: id('cmt'),
+    boardId: ctx.user.boardId,
+    pinId: pin.id,
+    body: requireString(ctx.body, 'body', { label: 'Comment' }),
+    author: { id: ctx.user.id, name: ctx.user.name, avatarUrl: ctx.user.avatarUrl ?? null },
+    createdAt: now(),
+  }
+  db.comments.push(comment)
+  saveDb()
+  return { status: 201, body: shape(comment, ['boardId', 'pinId']) }
+})
+
+route('DELETE', '/comments/:id', async (ctx) => {
+  const comment = db.comments.find((c) => c.id === ctx.params.id && c.boardId === ctx.user.boardId)
+  if (!comment) {
+    throw new ApiError(
+      404,
+      'comment_not_found',
+      `No comment with id ${ctx.params.id}. It may already be deleted — reopen the thread to see what is there now.`,
+    )
+  }
+  db.comments = db.comments.filter((c) => c.id !== comment.id)
+  saveDb()
+  return { status: 204 }
+})
+
 // --- chat (server-sent events) ----------------------------------------------
 
 route('POST', '/chat', async (ctx) => {
