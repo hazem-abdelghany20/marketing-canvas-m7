@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens — the only file in the app allowed to contain raw hex.
+ * Values are ported verbatim from design/marketing-canvas.dc.html.
+ *
+ * Theme resolution:
+ *   :root                                    light (default)
+ *   @media (prefers-color-scheme: dark)      dark, unless a light override is stored
+ *   [data-theme="dark"]                      dark, stored override wins over the system
+ *
+ * The dark palette is written twice on purpose: once behind the media query so the
+ * system preference is honoured before any script runs, once behind the attribute so a
+ * stored override can beat the system preference.
+ */
+
+:root {
+  /* Surface */
+  --bg-canvas: #f2eee7;
+  --bg-panel: #fbf9f6;
+  --bg-rail: #f6f2ec;
+  --bg-elevated: #ffffff;
+
+  /* Text */
+  --fg-primary: #252118;
+  --fg-muted: #8a8177;
+  --fg-inverse: #fbf9f6;
+
+  /* Line */
+  --border-subtle: #e4ded4;
+  --border-strong: #cdc4b6;
+  --edge-serves: #9a9184;
+  --edge-relates: #c2b9ab;
+
+  /* Node type */
+  --node-goal: #a8674f;
+  --node-strategy: #6f7f5c;
+  --node-campaign: #a3853f;
+  --node-content: #5c7f8a;
+  --node-asset: #7d6b8f;
+  --node-note: #8a7f6d;
+
+  /* Intent */
+  --accent: #3d6b6f;
+  --danger: #a14a3a;
+  --warn: #a3853f;
+  --ok: #5b7a5b;
+
+  /* Focus */
+  --focus-ring: #3d6b6f;
+
+  /* Canvas grid */
+  --grid-dot: #ddd6ca;
+
+  /* Radius */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-canvas: #1b1916;
+    --bg-panel: #232019;
+    --bg-rail: #1f1c17;
+    --bg-elevated: #2a2621;
+
+    --fg-primary: #f0ebe2;
+    --fg-muted: #9b9184;
+    --fg-inverse: #1b1916;
+
+    --border-subtle: #37322b;
+    --border-strong: #4d463c;
+    --edge-serves: #736a5e;
+    --edge-relates: #4d463c;
+
+    --node-goal: #c4826a;
+    --node-strategy: #8d9d78;
+    --node-campaign: #c0a25c;
+    --node-content: #7ba0ac;
+    --node-asset: #9c89ae;
+    --node-note: #a89c88;
+
+    --accent: #6fa8a6;
+    --danger: #a14a3a;
+    --warn: #a3853f;
+    --ok: #5b7a5b;
+
+    --focus-ring: #6fa8a6;
+
+    --grid-dot: #2e2a24;
+  }
+}
+
+[data-theme="dark"] {
+  --bg-canvas: #1b1916;
+  --bg-panel: #232019;
+  --bg-rail: #1f1c17;
+  --bg-elevated: #2a2621;
+
+  --fg-primary: #f0ebe2;
+  --fg-muted: #9b9184;
+  --fg-inverse: #1b1916;
+
+  --border-subtle: #37322b;
+  --border-strong: #4d463c;
+  --edge-serves: #736a5e;
+  --edge-relates: #4d463c;
+
+  --node-goal: #c4826a;
+  --node-strategy: #8d9d78;
+  --node-campaign: #c0a25c;
+  --node-content: #7ba0ac;
+  --node-asset: #9c89ae;
+  --node-note: #a89c88;
+
+  --accent: #6fa8a6;
+  --danger: #a14a3a;
+  --warn: #a3853f;
+  --ok: #5b7a5b;
+
+  --focus-ring: #6fa8a6;
+
+  --grid-dot: #2e2a24;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  [data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) {
+      color-scheme: dark;
+    }
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg-canvas);
+    color: var(--fg-primary);
+    font-family: "Instrument Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  input,
+  textarea,
+  button {
+    font-family: inherit;
+    color: inherit;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--fg-primary);
+    text-decoration: underline;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  /* Focus is never removed, only restyled. */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
