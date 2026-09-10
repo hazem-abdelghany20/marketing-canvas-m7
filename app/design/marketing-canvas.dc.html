@@ -1,0 +1,2802 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-canvas:#f2eee7; --bg-panel:#fbf9f6; --bg-rail:#f6f2ec; --bg-elevated:#ffffff;
+  --fg-primary:#252118; --fg-muted:#8a8177; --fg-inverse:#fbf9f6;
+  --border-subtle:#e4ded4; --border-strong:#cdc4b6;
+  --edge-serves:#9a9184; --edge-relates:#c2b9ab;
+  --node-goal:#a8674f; --node-strategy:#6f7f5c; --node-campaign:#a3853f;
+  --node-content:#5c7f8a; --node-asset:#7d6b8f; --node-note:#8a7f6d;
+  --accent:#3d6b6f; --danger:#a14a3a; --warn:#a3853f; --ok:#5b7a5b;
+  --focus-ring:#3d6b6f; --grid-dot:#ddd6ca;
+  --r-sm:4px; --r-md:8px; --r-lg:14px;
+}
+[data-theme="dark"]{
+  --bg-canvas:#1b1916; --bg-panel:#232019; --bg-rail:#1f1c17; --bg-elevated:#2a2621;
+  --fg-primary:#f0ebe2; --fg-muted:#9b9184; --fg-inverse:#1b1916;
+  --border-subtle:#37322b; --border-strong:#4d463c;
+  --edge-serves:#736a5e; --edge-relates:#4d463c;
+  --grid-dot:#2e2a24;
+  --node-goal:#c4826a; --node-strategy:#8d9d78; --node-campaign:#c0a25c;
+  --node-content:#7ba0ac; --node-asset:#9c89ae; --node-note:#a89c88;
+  --accent:#6fa8a6; --focus-ring:#6fa8a6;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-canvas);color:var(--fg-primary);font-family:'Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+input,textarea,button{font-family:inherit;color:inherit}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--fg-primary);text-decoration:underline}
+::selection{background:rgba(61,107,111,.18)}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+@keyframes mc-pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+@keyframes mc-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mc-flash{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes mc-spin{to{transform:rotate(360deg)}}
+@keyframes mc-pulse{0%,100%{opacity:.35}50%{opacity:.9}}
+@keyframes mc-ping{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(2.1);opacity:0}}
+[data-ph]:empty:before{content:attr(data-ph);color:var(--fg-muted);pointer-events:none}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
+</style>
+</helmet>
+
+<div style="width:100%;height:100vh;overflow:hidden;background:var(--bg-canvas)">
+
+<sc-if value="{{ isAuth }}" hint-placeholder-val="{{ true }}">
+<div style="height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background-image:radial-gradient(var(--grid-dot) 1px, transparent 1px);background-size:26px 26px">
+  <div style="width:100%;max-width:400px;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:var(--r-lg);padding:36px 32px;box-shadow:0 1px 2px rgba(0,0,0,.03),0 12px 40px -20px rgba(0,0,0,.25);animation:mc-rise .3s ease both">
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:26px">
+      <div style="width:11px;height:11px;border-radius:50%;background:var(--node-goal)"></div>
+      <div style="width:11px;height:11px;border-radius:50%;background:var(--node-strategy);margin-left:-4px"></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-muted);margin-left:6px">Marketing Canvas</div>
+    </div>
+
+    <h1 style="margin:0 0 6px;font-size:27px;font-weight:600;letter-spacing:-.02em;line-height:1.15">{{ authHeading }}</h1>
+    <p style="margin:0 0 26px;font-size:14px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">{{ authSub }}</p>
+
+    <form onSubmit="{{ onAuthSubmit }}" style="display:flex;flex-direction:column;gap:16px">
+      <sc-if value="{{ formError }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="font-size:13px;line-height:1.45;color:var(--danger);background:rgba(161,74,58,.08);border:1px solid rgba(161,74,58,.25);border-radius:var(--r-md);padding:10px 12px">{{ formError }}</div>
+      </sc-if>
+
+      <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">Name</span>
+          <input value="{{ f.name }}" onChange="{{ onField.name }}" disabled="{{ pending }}" placeholder="Your name" style="background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:11px 12px;font-size:14.5px;outline:none" />
+          <sc-if value="{{ err.name }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:var(--danger)">{{ err.name }}</span></sc-if>
+        </label>
+      </sc-if>
+
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">Email</span>
+        <input type="email" value="{{ f.email }}" onChange="{{ onField.email }}" disabled="{{ pending }}" ref="{{ emailRef }}" placeholder="you@studio.com" style="background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:11px 12px;font-size:14.5px;outline:none" />
+        <sc-if value="{{ err.email }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:var(--danger)">{{ err.email }}</span></sc-if>
+      </label>
+
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">Password</span>
+        <input type="password" value="{{ f.password }}" onChange="{{ onField.password }}" disabled="{{ pending }}" placeholder="At least 8 characters" style="background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:11px 12px;font-size:14.5px;outline:none" />
+        <sc-if value="{{ err.password }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:var(--danger)">{{ err.password }}</span></sc-if>
+        <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+          <span style="{{ ruleStyle }}">{{ ruleText }}</span>
+        </sc-if>
+      </label>
+
+      <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">Confirm password</span>
+          <input type="password" value="{{ f.confirm }}" onChange="{{ onField.confirm }}" disabled="{{ pending }}" placeholder="Repeat it" style="background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:11px 12px;font-size:14.5px;outline:none" />
+          <sc-if value="{{ err.confirm }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:var(--danger)">{{ err.confirm }}</span></sc-if>
+        </label>
+      </sc-if>
+
+      <button type="submit" disabled="{{ pending }}" style="{{ submitStyle }}">{{ submitLabel }}</button>
+    </form>
+
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border-subtle);font-size:13.5px;color:var(--fg-muted)">
+      <span>{{ switchPrompt }}</span>
+      <button onClick="{{ onSwitchAuth }}" style="background:none;border:none;padding:0 0 0 5px;font-size:13.5px;font-weight:600;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px">{{ switchLabel }}</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+<div style="{{ shellStyle }}">
+
+  <!-- CHAT RAIL -->
+  <sc-if value="{{ railOpen }}" hint-placeholder-val="{{ true }}">
+  <aside style="{{ railStyle }}">
+    <header style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border-subtle);flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:9px;height:9px;border-radius:50%;background:var(--node-goal)"></div>
+        <div style="width:9px;height:9px;border-radius:50%;background:var(--node-strategy);margin-left:-3px"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-muted);margin-left:4px">Assistant</span>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:28px;height:28px;display:grid;place-items:center;background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);color:var(--fg-muted);cursor:pointer;font-size:13px">{{ themeIcon }}</button>
+        <button onClick="{{ toggleRail }}" title="Collapse rail" style="width:28px;height:28px;display:grid;place-items:center;background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);color:var(--fg-muted);cursor:pointer;font-size:13px">‹</button>
+      </div>
+    </header>
+
+    <div ref="{{ chatScrollRef }}" style="flex:1 1 auto;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px">
+      <sc-if value="{{ chatEmpty }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:12px;padding-top:6px">
+          <p style="margin:0;font-size:14px;line-height:1.55;color:var(--fg-muted);text-wrap:pretty">Ask about your canvas, or ask me to draft something.</p>
+          <sc-for list="{{ examplePrompts }}" as="p" hint-placeholder-count="3">
+            <button onClick="{{ p.onClick }}" style="text-align:left;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:10px 12px;font-size:13px;line-height:1.4;color:var(--fg-primary);cursor:pointer">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted);display:block;margin-bottom:4px">{{ p.mode }}</span>
+              <span>{{ p.text }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-for list="{{ chatViews }}" as="m" hint-placeholder-count="0">
+        <div style="{{ m.wrapStyle }}">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">
+            <span style="{{ m.avatarStyle }}">{{ m.avatarChar }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">{{ m.roleLabel }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted);opacity:.7">{{ m.time }}</span>
+          </div>
+          <sc-if value="{{ m.hasImage }}" hint-placeholder-val="{{ false }}">
+            <div role="img" aria-label="Board snapshot" style="{{ m.imageStyle }}"></div>
+          </sc-if>
+          <sc-if value="{{ m.hasSteps }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-bottom:9px;border-left:2px solid var(--border-strong);padding-left:10px">
+              <button onClick="{{ m.onToggleSteps }}" style="display:flex;align-items:center;gap:6px;background:none;border:none;padding:0 0 4px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">
+                <span>{{ m.stepsLabel }}</span><span>{{ m.stepsCaret }}</span>
+              </button>
+              <sc-if value="{{ m.stepsOpen }}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{ m.steps }}" as="s" hint-placeholder-count="2">
+                  <div style="{{ s.style }}">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted);flex:0 0 auto;padding-top:2px">{{ s.n }}</span>
+                    <span>{{ s.text }}</span>
+                  </div>
+                </sc-for>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <div style="{{ m.bubbleStyle }}">
+            <sc-if value="{{ m.showDots }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex;gap:4px;padding:2px 0">
+                <span style="width:5px;height:5px;border-radius:50%;background:var(--fg-muted);animation:mc-pulse 1s infinite"></span>
+                <span style="width:5px;height:5px;border-radius:50%;background:var(--fg-muted);animation:mc-pulse 1s .15s infinite"></span>
+                <span style="width:5px;height:5px;border-radius:50%;background:var(--fg-muted);animation:mc-pulse 1s .3s infinite"></span>
+              </span>
+            </sc-if>
+            <span style="white-space:pre-wrap">{{ m.content }}</span><sc-if value="{{ m.streaming }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;width:7px;height:14px;background:var(--accent);vertical-align:-2px;margin-left:2px;animation:mc-pulse .9s infinite"></span></sc-if>
+          </div>
+
+          <sc-if value="{{ m.hasCitations }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px">
+              <sc-for list="{{ m.citations }}" as="c" hint-placeholder-count="2">
+                <button onClick="{{ c.onClick }}" style="{{ c.style }}">
+                  <span style="{{ c.dotStyle }}"></span><span>{{ c.title }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ m.hasProposal }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px;border:1px dashed var(--border-strong);border-radius:var(--r-md);padding:11px 12px;background:var(--bg-rail)">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:5px">{{ m.proposalKind }}</div>
+              <div style="font-size:13.5px;line-height:1.4;font-weight:600">{{ m.proposalLabel }}</div>
+              <sc-if value="{{ m.hasProposalPreview }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12.5px;line-height:1.5;color:var(--fg-muted);white-space:pre-wrap;margin-top:5px;max-height:110px;overflow:hidden">{{ m.proposalPreview }}</div>
+              </sc-if>
+              <button onClick="{{ m.onApply }}" disabled="{{ m.applied }}" style="{{ m.applyStyle }}">{{ m.applyLabel }}</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ m.errored }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:8px;display:flex;align-items:center;gap:10px">
+              <span style="font-size:12.5px;color:var(--danger)">That reply didn't finish. Try again.</span>
+              <button onClick="{{ m.onRetry }}" style="background:none;border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:4px 9px;font-size:12px;cursor:pointer">Retry</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex:0 0 auto;border-top:1px solid var(--border-subtle);padding:12px">
+      <div style="display:flex;gap:4px;margin-bottom:8px">
+        <sc-for list="{{ modeOptions }}" as="mo" hint-placeholder-count="4">
+          <button onClick="{{ mo.onClick }}" title="{{ mo.tip }}" style="{{ mo.style }}">{{ mo.label }}</button>
+        </sc-for>
+      </div>
+      <div style="{{ composerStyle }}">
+        <textarea value="{{ composerValue }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" disabled="{{ inputDisabled }}" rows="2" placeholder="Ask, say “draft a…”, or hold the mic" style="width:100%;resize:none;border:none;background:none;outline:none;font-size:14px;line-height:1.5;padding:0"></textarea>
+
+        <sc-if value="{{ voiceIdle }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ composerHint }}</span>
+          <div style="display:flex;align-items:center;gap:7px;flex:0 0 auto">
+            <button onClick="{{ onMic }}" disabled="{{ streaming }}" title="Dictate (⌘⇧V)" aria-label="Start voice input" style="{{ micStyle }}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path></svg>
+            </button>
+            <button onClick="{{ onSend }}" disabled="{{ sendDisabled }}" style="{{ sendStyle }}">Send</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ voiceArming }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:9px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border-subtle)">
+          <span style="width:13px;height:13px;border-radius:50%;border:2px solid var(--border-subtle);border-top-color:var(--accent);animation:mc-spin .7s linear infinite;flex:0 0 auto"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-muted)">Waking the mic…</span>
+          <button onClick="{{ onCancelVoice }}" style="margin-left:auto;background:none;border:none;font-size:12.5px;color:var(--fg-muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Cancel</button>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ voiceListening }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--border-subtle);animation:mc-rise .18s ease both">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="position:relative;flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:var(--danger)">
+              <span style="position:absolute;inset:0;border-radius:50%;background:var(--danger);animation:mc-ping 1.5s ease-out infinite"></span>
+            </span>
+            <div style="flex:1 1 auto;display:flex;align-items:center;gap:2px;height:26px;overflow:hidden">
+              <sc-for list="{{ bars }}" as="b" hint-placeholder-count="28">
+                <span style="{{ b.style }}"></span>
+              </sc-for>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--fg-primary);font-variant-numeric:tabular-nums;flex:0 0 auto">{{ voiceTimer }}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted)">{{ voiceHint }}</span>
+            <div style="display:flex;align-items:center;gap:7px">
+              <button onClick="{{ onCancelVoice }}" style="background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:5px 10px;font-size:12px;color:var(--fg-muted);cursor:pointer">Discard</button>
+              <button onClick="{{ onStopVoice }}" style="background:var(--accent);border:none;border-radius:var(--r-sm);padding:5px 12px;font-size:12px;font-weight:600;color:var(--fg-inverse);cursor:pointer">Stop</button>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ voiceTranscribing }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:9px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border-subtle)">
+          <span style="width:13px;height:13px;border-radius:50%;border:2px solid var(--border-subtle);border-top-color:var(--accent);animation:mc-spin .7s linear infinite;flex:0 0 auto"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-muted);animation:mc-pulse 1.2s ease-in-out infinite">Transcribing {{ voiceTimer }}</span>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ voiceError }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:9px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border-subtle)">
+          <span style="font-size:12.5px;line-height:1.4;color:var(--danger)">{{ voiceErrorMsg }}</span>
+          <button onClick="{{ onMic }}" style="margin-left:auto;background:none;border:none;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Try again</button>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+  </aside>
+  </sc-if>
+
+  <sc-if value="{{ railClosed }}" hint-placeholder-val="{{ false }}">
+  <aside style="{{ railStripStyle }}">
+    <button onClick="{{ toggleRail }}" title="Open assistant" style="width:32px;height:32px;display:grid;place-items:center;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-md);cursor:pointer;font-size:14px">›</button>
+    <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:32px;height:32px;display:grid;place-items:center;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-md);color:var(--fg-muted);cursor:pointer;font-size:13px">{{ themeIcon }}</button>
+  </aside>
+  </sc-if>
+
+  <!-- CANVAS -->
+  <main ref="{{ canvasRef }}" onPointerDown="{{ onCanvasDown }}" onPointerMove="{{ onCanvasMove }}" onPointerUp="{{ onCanvasUp }}" onPointerCancel="{{ onCanvasLeave }}" onWheel="{{ onWheel }}" onDragOver="{{ onDragOver }}" onDragLeave="{{ onDragLeave }}" onDrop="{{ onDrop }}" style="{{ canvasStyle }}">
+
+    <div style="{{ worldStyle }}">
+      <svg style="position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none">
+        <sc-for list="{{ edgeViews }}" as="e" hint-placeholder-count="0">
+          <g style="{{ e.groupStyle }}">
+            <path d="{{ e.d }}" fill="none" stroke="{{ e.color }}" stroke-width="{{ e.width }}" stroke-dasharray="{{ e.dash }}" stroke-linecap="round"></path>
+            <sc-if value="{{ e.hasArrow }}" hint-placeholder-val="{{ false }}">
+              <path d="{{ e.arrow }}" fill="{{ e.color }}"></path>
+            </sc-if>
+            <sc-if value="{{ e.hasLabel }}" hint-placeholder-val="{{ false }}">
+              <text x="{{ e.lx }}" y="{{ e.ly }}" text-anchor="middle" fill="var(--fg-muted)" style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase">{{ e.label }}</text>
+            </sc-if>
+          </g>
+        </sc-for>
+        <sc-if value="{{ hasPendingLine }}" hint-placeholder-val="{{ false }}">
+          <path d="{{ pendingLine }}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="6 5"></path>
+        </sc-if>
+      </svg>
+
+      <sc-for list="{{ nodeViews }}" as="n" hint-placeholder-count="0">
+        <div style="{{ n.posStyle }}" onPointerDown="{{ n.onDown }}" onClick="{{ n.onClick }}" onDoubleClick="{{ n.onOpen }}" onKeyDown="{{ n.onKey }}" role="button" tabindex="0" aria-label="{{ n.aria }}">
+          <sc-if value="{{ n.ring }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ n.ringStyle }}"></div>
+          </sc-if>
+          <article style="{{ n.cardStyle }}">
+            <sc-if value="{{ n.showBar }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ n.barStyle }}"></div>
+            </sc-if>
+            <div style="padding:11px 13px 11px 15px;display:flex;flex-direction:column;height:100%;gap:5px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="{{ n.dotStyle }}"></span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">{{ n.type }}</span>
+              </div>
+              <h3 style="margin:0;font-size:14.5px;line-height:18.5px;max-height:37px;font-weight:600;letter-spacing:-.01em;overflow:hidden;flex:0 0 auto">{{ n.title }}</h3>
+              <p style="margin:0;font-size:12.5px;line-height:17.5px;height:35px;color:var(--fg-muted);overflow:hidden;flex:0 0 auto">{{ n.excerpt }}</p>
+              <div style="flex:1 1 auto"></div>
+              <div style="display:flex;gap:9px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted);letter-spacing:.06em">
+                <sc-if value="{{ n.hasFiles }}" hint-placeholder-val="{{ false }}"><span>{{ n.fileBadge }}</span></sc-if>
+                <sc-if value="{{ n.hasNotes }}" hint-placeholder-val="{{ false }}"><span>{{ n.noteBadge }}</span></sc-if>
+                <span>{{ n.edgeBadge }}</span>
+              </div>
+            </div>
+          </article>
+          <sc-if value="{{ n.hasUnread }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ n.onOpenComments }}" title="{{ n.unreadTip }}" style="{{ n.unreadStyle }}">
+              <span style="position:absolute;inset:0;border-radius:999px;background:var(--danger);animation:mc-ping 1.8s ease-out infinite"></span>
+              <span style="position:relative">{{ n.unreadLabel }}</span>
+            </button>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <!-- board text & sticky notes -->
+      <sc-for list="{{ stickyViews }}" as="s" hint-placeholder-count="0">
+        <div style="{{ s.wrapStyle }}" onPointerDown="{{ s.onDown }}">
+          <div style="{{ s.cardStyle }}">
+            <textarea id="{{ s.id }}" value="{{ s.value }}" onChange="{{ s.onChange }}" onFocus="{{ s.onFocus }}" placeholder="{{ s.placeholder }}" style="{{ s.areaStyle }}"></textarea>
+            <sc-if value="{{ s.showDelete }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ s.onDelete }}" title="Delete" style="{{ s.delStyle }}">✕</button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+
+      <!-- ink -->
+      <svg style="position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none">
+        <sc-for list="{{ inkViews }}" as="k" hint-placeholder-count="0">
+          <path d="{{ k.d }}" fill="none" stroke="{{ k.color }}" stroke-width="{{ k.width }}" stroke-opacity="{{ k.opacity }}" stroke-linecap="round" stroke-linejoin="round"></path>
+        </sc-for>
+        <sc-if value="{{ hasLiveStroke }}" hint-placeholder-val="{{ false }}">
+          <path d="{{ liveStroke }}" fill="none" stroke="{{ liveColor }}" stroke-width="{{ liveWidth }}" stroke-opacity="{{ liveOpacity }}" stroke-linecap="round" stroke-linejoin="round"></path>
+        </sc-if>
+      </svg>
+
+      <!-- pinned comments -->
+      <sc-for list="{{ pinViews }}" as="p" hint-placeholder-count="0">
+        <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
+      </sc-for>
+    </div>
+
+    <!-- comment thread -->
+    <sc-if value="{{ activePinOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ activePinView.style }}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">{{ activePinView.anchorLabel }}</span>
+          <span style="flex:1 1 auto"></span>
+          <button onClick="{{ activePinView.onClose }}" title="Close" style="background:none;border:none;color:var(--fg-muted);cursor:pointer;font-size:13px;padding:0 2px">✕</button>
+        </div>
+        <sc-if value="{{ activePinView.isDraft }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:13px;line-height:1.5;color:var(--fg-muted);margin-bottom:10px;text-wrap:pretty">New comment, pinned right here.</div>
+        </sc-if>
+        <sc-if value="{{ activePinView.body }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-size:12.5px;font-weight:600">{{ activePinView.author }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted)">{{ activePinView.when }}</span>
+            </div>
+            <div style="font-size:13px;line-height:1.55;margin-top:3px;white-space:pre-wrap">{{ activePinView.body }}</div>
+          </div>
+        </sc-if>
+        <sc-for list="{{ activePinView.replies }}" as="r" hint-placeholder-count="0">
+          <div style="margin:0 0 10px 12px;padding-left:10px;border-left:2px solid var(--border-subtle)">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-size:12.5px;font-weight:600">{{ r.author }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted)">{{ r.when }}</span>
+            </div>
+            <div style="font-size:13px;line-height:1.55;margin-top:3px;white-space:pre-wrap">{{ r.body }}</div>
+          </div>
+        </sc-for>
+        <textarea id="pin-input" value="{{ pinDraft }}" onChange="{{ onPinDraft }}" onKeyDown="{{ onPinKey }}" rows="2" placeholder="{{ activePinView.placeholder }}" style="width:100%;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:9px 10px;font-size:13px;line-height:1.5;outline:none;resize:none"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:9px">
+          <button onClick="{{ submitPin }}" disabled="{{ pinSubmitDisabled }}" style="{{ pinSubmitStyle }}">Post</button>
+          <span style="flex:1 1 auto"></span>
+          <button onClick="{{ activePinView.onResolve }}" style="background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:var(--fg-muted)">{{ activePinView.resolveLabel }}</button>
+          <button onClick="{{ activePinView.onDelete }}" title="Delete" style="background:none;border:none;color:var(--fg-muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- whiteboard dock -->
+    <div style="position:absolute;left:14px;top:64px;display:flex;flex-direction:column;gap:2px;align-items:center;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:12px;padding:5px;box-shadow:0 8px 26px -18px rgba(0,0,0,.5);z-index:40">
+      <sc-for list="{{ tools }}" as="t" hint-placeholder-count="7">
+        <button onClick="{{ t.onClick }}" title="{{ t.tip }}" aria-label="{{ t.label }}" style="{{ t.style }}">{{ t.icon }}</button>
+      </sc-for>
+      <span style="width:20px;height:1px;background:var(--border-subtle);margin:4px 0"></span>
+      <button onClick="{{ snapToChat }}" disabled="{{ snapDisabled }}" title="Send the board to the assistant — it reads your marks" aria-label="Send board to chat" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;background:transparent;border:1px solid transparent;color:var(--fg-muted);cursor:pointer;font-size:14px">◎</button>
+      <button onClick="{{ downloadPng }}" title="Save the marked-up board as PNG" aria-label="Save PNG" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;background:transparent;border:1px solid transparent;color:var(--fg-muted);cursor:pointer;font-size:14px">⤓</button>
+      <sc-if value="{{ hasInk }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ clearInk }}" title="Clear all ink" aria-label="Clear ink" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;background:transparent;border:1px solid transparent;color:var(--fg-muted);cursor:pointer;font-size:13px">⌫</button>
+      </sc-if>
+    </div>
+
+    <!-- ink options -->
+    <sc-if value="{{ inkOptions }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:66px;top:64px;display:flex;flex-direction:column;gap:8px;align-items:center;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:12px;padding:10px 9px;box-shadow:0 8px 26px -18px rgba(0,0,0,.5);z-index:40;animation:mc-rise .16s ease both">
+        <div style="display:grid;grid-template-columns:repeat(2,18px);gap:8px">
+          <sc-for list="{{ inkColors }}" as="c" hint-placeholder-count="6">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}"></button>
+          </sc-for>
+        </div>
+        <span style="width:100%;height:1px;background:var(--border-subtle)"></span>
+        <div style="display:flex;gap:2px">
+          <sc-for list="{{ inkSizes }}" as="z" hint-placeholder-count="3">
+            <button onClick="{{ z.onClick }}" style="{{ z.style }}"><span style="{{ z.dotStyle }}"></span></button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- tool hint -->
+    <sc-if value="{{ toolHintOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;right:14px;bottom:14px;max-width:calc(100% - 280px);background:var(--fg-primary);color:var(--fg-inverse);border-radius:999px;padding:7px 16px;font-size:12.5px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px -14px rgba(0,0,0,.6);z-index:45">
+        <span>{{ toolHint }}</span>
+        <button onClick="{{ exitTool }}" style="background:none;border:none;color:inherit;opacity:.65;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;padding:0">ESC</button>
+      </div>
+    </sc-if>
+
+    <!-- first-run -->
+    <sc-if value="{{ boardEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;display:grid;place-items:center;pointer-events:none">
+        <div style="max-width:420px;text-align:center;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:var(--r-lg);padding:32px 30px;pointer-events:auto;box-shadow:0 16px 50px -30px rgba(0,0,0,.35)">
+          <h2 style="margin:0 0 8px;font-size:20px;font-weight:600;letter-spacing:-.015em">Nothing on the canvas yet.</h2>
+          <p style="margin:0 0 20px;font-size:13.5px;line-height:1.55;color:var(--fg-muted);text-wrap:pretty">Six kinds of thing live here — goal, strategy, campaign, content, asset, note. Everything else is the lines between them.</p>
+          <div style="display:flex;gap:9px;justify-content:center;flex-wrap:wrap">
+            <button onClick="{{ openAddMenu }}" style="background:var(--accent);border:1px solid var(--accent);color:var(--fg-inverse);border-radius:var(--r-md);padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer">Add your first node</button>
+            <button onClick="{{ loadExample }}" style="background:var(--bg-elevated);border:1px solid var(--border-strong);color:var(--fg-primary);border-radius:var(--r-md);padding:9px 16px;font-size:13.5px;cursor:pointer">Load example board</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- toolbar -->
+    <div style="position:absolute;top:14px;right:14px;display:flex;flex-wrap:nowrap;gap:6px;align-items:center;max-width:calc(100% - 28px);background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:5px;box-shadow:0 6px 20px -14px rgba(0,0,0,.4)">
+      <button onClick="{{ openAddMenu }}" title="Add node — N" aria-label="Add node" style="{{ btnPrimary }}">{{ addLabel }}</button>
+      <button onClick="{{ toggleConnect }}" disabled="{{ connectDisabled }}" title="{{ connectTip }}" aria-label="Connect" style="{{ connectBtnStyle }}">{{ connectLabel }}</button>
+      <button onClick="{{ openSearch }}" disabled="{{ searchDisabled }}" title="{{ searchTip }}" aria-label="Search" style="{{ btnStyle }}">{{ searchLabel }}</button>
+      <button onClick="{{ autoArrange }}" disabled="{{ arrangeDisabled }}" title="{{ arrangeTip }}" aria-label="Auto-arrange" style="{{ btnStyle }}">{{ arrangeLabel }}</button>
+      <span style="width:1px;height:20px;background:var(--border-subtle);margin:0 2px;flex:0 0 auto"></span>
+      <button onClick="{{ fit }}" disabled="{{ arrangeDisabled }}" title="{{ fitTip }}" aria-label="Fit to screen" style="{{ btnStyle }}">{{ fitLabel }}</button>
+      <button onClick="{{ zoomOut }}" disabled="{{ zoomOutDisabled }}" title="Zoom out" style="{{ iconBtnStyle }}">−</button>
+      <sc-if value="{{ showZoomLabel }}" hint-placeholder-val="{{ true }}">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--fg-muted);min-width:34px;text-align:center;flex:0 0 auto">{{ zoomLabel }}</span>
+      </sc-if>
+      <button onClick="{{ zoomIn }}" disabled="{{ zoomInDisabled }}" title="Zoom in" style="{{ iconBtnStyle }}">+</button>
+      <span style="width:1px;height:20px;background:var(--border-subtle);margin:0 2px;flex:0 0 auto"></span>
+      <button onClick="{{ undo }}" disabled="{{ undoDisabled }}" title="{{ undoTip }}" aria-label="Undo" style="{{ btnStyle }}">{{ undoLabel }}</button>
+    </div>
+
+    <!-- connect banner -->
+    <sc-if value="{{ connectMode }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--fg-primary);color:var(--fg-inverse);border-radius:999px;padding:7px 16px;font-size:12.5px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px -14px rgba(0,0,0,.6)">
+        <span>{{ connectHint }}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;opacity:.65;letter-spacing:.1em">ESC TO EXIT</span>
+      </div>
+    </sc-if>
+
+    <!-- legend -->
+    <sc-if value="{{ showLegend }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:70px;bottom:14px;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:9px 11px;box-shadow:0 6px 20px -16px rgba(0,0,0,.4);z-index:30">
+        <button onClick="{{ toggleLegend }}" style="display:flex;align-items:center;gap:7px;background:none;border:none;padding:0;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-muted)">
+          <span>Legend</span><span>{{ legendCaret }}</span>
+        </button>
+        <sc-if value="{{ legendOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:auto auto;gap:5px 14px;margin-top:9px">
+            <sc-for list="{{ legendItems }}" as="l" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="{{ l.dotStyle }}"></span>
+                <span style="font-size:11.5px;color:var(--fg-muted)">{{ l.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:14px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border-subtle)">
+            <span style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--fg-muted)"><svg width="22" height="6"><path d="M0 3 L22 3" stroke="var(--edge-serves)" stroke-width="2"></path></svg>serves</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--fg-muted)"><svg width="22" height="6"><path d="M0 3 L22 3" stroke="var(--edge-relates)" stroke-width="2" stroke-dasharray="4 4"></path></svg>relates</span>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- quick peek -->
+    <sc-if value="{{ hasPeek }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ peekStyle }}">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="{{ peek.dotStyle }}"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">{{ peek.type }}</span>
+        </div>
+        <div style="font-size:14px;font-weight:600;line-height:1.3;margin-bottom:5px">{{ peek.title }}</div>
+        <div style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);margin-bottom:11px">{{ peek.excerpt }}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button onClick="{{ peek.onOpen }}" style="background:var(--accent);border:1px solid var(--accent);color:var(--fg-inverse);border-radius:var(--r-sm);padding:5px 11px;font-size:12.5px;font-weight:500;cursor:pointer">Open</button>
+          <button onClick="{{ peek.onConnect }}" disabled="{{ peek.connectDisabled }}" title="{{ peek.connectTip }}" style="{{ peek.connectStyle }}">Connect from here</button>
+          <button onClick="{{ peek.onDelete }}" style="background:none;border:1px solid var(--border-subtle);color:var(--danger);border-radius:var(--r-sm);padding:5px 11px;font-size:12.5px;cursor:pointer">Delete</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- kind picker -->
+    <sc-if value="{{ kindPicker }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ kindPickerStyle }}">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:8px">Connection kind</div>
+        <button onClick="{{ pickServes }}" disabled="{{ servesDisabled }}" title="{{ servesTip }}" style="{{ servesStyle }}">
+          <span style="font-weight:600">serves</span><span style="color:var(--fg-muted);font-size:12px">{{ servesReads }}</span>
+        </button>
+        <button onClick="{{ pickRelates }}" style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;width:100%;text-align:left;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:8px 10px;font-size:13px;cursor:pointer;margin-top:6px">
+          <span style="font-weight:600">relates to</span><span style="color:var(--fg-muted);font-size:12px">undirected association</span>
+        </button>
+      </div>
+    </sc-if>
+
+    <!-- drop outline -->
+    <sc-if value="{{ dropping }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:10px;border:2px dashed var(--accent);border-radius:var(--r-lg);background:rgba(61,107,111,.05);pointer-events:none;display:grid;place-items:center">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)">Drop to add asset nodes</span>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- ADD MENU -->
+  <sc-if value="{{ addMenu }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAddMenu }}" style="position:fixed;inset:0;z-index:40"></div>
+    <div style="position:fixed;top:60px;right:14px;z-index:41;width:220px;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:6px;box-shadow:0 18px 44px -22px rgba(0,0,0,.5);animation:mc-pop .12s ease both">
+      <button onClick="{{ addNote }}" style="display:block;width:100%;text-align:left;background:none;border:none;border-radius:var(--r-sm);padding:9px 10px;font-size:13.5px;cursor:pointer">Note<span style="display:block;font-size:11.5px;color:var(--fg-muted)">Blank node, set its type after</span></button>
+      <button onClick="{{ pickFile }}" style="display:block;width:100%;text-align:left;background:none;border:none;border-radius:var(--r-sm);padding:9px 10px;font-size:13.5px;cursor:pointer">File<span style="display:block;font-size:11.5px;color:var(--fg-muted)">Images, PDF, text, Office · 25MB</span></button>
+      <button onClick="{{ fromChat }}" disabled="{{ streaming }}" title="{{ fromChatTip }}" style="{{ fromChatStyle }}">From chat<span style="display:block;font-size:11.5px;color:var(--fg-muted)">Ask the assistant to draft one</span></button>
+    </div>
+  </sc-if>
+
+  <!-- SEARCH -->
+  <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSearch }}" style="position:fixed;inset:0;z-index:50;background:rgba(20,18,14,.28);display:flex;justify-content:center;padding-top:14vh">
+      <div onClick="{{ stop }}" style="width:min(520px,92vw);height:fit-content;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:var(--r-lg);box-shadow:0 30px 70px -30px rgba(0,0,0,.6);overflow:hidden;animation:mc-pop .14s ease both">
+        <input value="{{ query }}" onChange="{{ onQuery }}" onKeyDown="{{ onQueryKey }}" ref="{{ searchRef }}" placeholder="Search nodes by title or body" style="width:100%;border:none;border-bottom:1px solid var(--border-subtle);background:none;padding:15px 17px;font-size:15.5px;outline:none" />
+        <div style="max-height:340px;overflow-y:auto;padding:6px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-muted);padding:8px 11px 6px">{{ searchHeading }}</div>
+          <sc-for list="{{ results }}" as="r" hint-placeholder-count="0">
+            <button onClick="{{ r.onClick }}" onMouseEnter="{{ r.onHover }}" style="{{ r.style }}">
+              <span style="{{ r.dotStyle }}"></span>
+              <span style="flex:1 1 auto;min-width:0">
+                <span style="display:block;font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.title }}</span>
+                <span style="display:block;font-size:11.5px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.sub }}</span>
+              </span>
+            </button>
+          </sc-for>
+          <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:14px 11px 16px">
+              <div style="font-size:13.5px;margin-bottom:10px">{{ noResultsText }}</div>
+              <button onClick="{{ createFromQuery }}" style="background:var(--bg-elevated);border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:7px 11px;font-size:12.5px;cursor:pointer">Create a note with this title</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- NODE DETAIL -->
+  <sc-if value="{{ panelOpen }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ panelIsModal }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closePanel }}" style="position:fixed;inset:0;z-index:55;background:rgba(20,18,14,.36);backdrop-filter:blur(1.5px);animation:mc-pop .14s ease both"></div>
+    </sc-if>
+    <aside style="{{ panelStyle }}">
+      <sc-if value="{{ panelMissing }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:26px">
+          <h2 style="margin:0 0 8px;font-size:17px;font-weight:600">That node doesn't exist.</h2>
+          <p style="margin:0 0 16px;font-size:13.5px;color:var(--fg-muted);line-height:1.5">It may have been deleted.</p>
+          <button onClick="{{ closePanel }}" style="background:var(--accent);border:1px solid var(--accent);color:var(--fg-inverse);border-radius:var(--r-md);padding:8px 14px;font-size:13px;cursor:pointer">Back to canvas</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ panelReady }}" hint-placeholder-val="{{ true }}">
+      <div style="height:100%;display:flex;flex-direction:column">
+        <header style="flex:0 0 auto;padding:14px 16px;border-bottom:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="position:relative">
+              <button onClick="{{ toggleTypeMenu }}" title="Change node type" style="{{ typeBtnStyle }}">
+                <span style="{{ p.typeDot }}"></span>
+                <span style="text-transform:capitalize;font-weight:500">{{ p.typeLabel }}</span>
+                <span style="color:var(--fg-muted);font-size:9px">▾</span>
+              </button>
+              <sc-if value="{{ typeMenu }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:calc(100% + 6px);left:0;z-index:6;width:236px;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:5px;box-shadow:0 18px 44px -22px rgba(0,0,0,.5);animation:mc-pop .12s ease both">
+                  <sc-for list="{{ typeOptions }}" as="t" hint-placeholder-count="6">
+                    <button onClick="{{ t.onClick }}" style="{{ t.style }}">
+                      <span style="{{ t.dotStyle }}"></span>
+                      <span style="flex:1 1 auto;text-align:left;min-width:0">
+                        <span style="display:block;font-size:13px;text-transform:capitalize">{{ t.label }}</span>
+                        <span style="display:block;font-size:11px;color:var(--fg-muted)">{{ t.means }}</span>
+                      </span>
+                      <sc-if value="{{ t.current }}" hint-placeholder-val="{{ false }}"><span style="color:var(--accent);font-size:12px;flex:0 0 auto">✓</span></sc-if>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;gap:5px;flex:0 0 auto">
+              <button onClick="{{ togglePanelMode }}" title="{{ panelModeTip }}" style="height:28px;display:flex;align-items:center;gap:6px;padding:0 9px;background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);color:var(--fg-muted);cursor:pointer;font-size:11.5px">
+                <span style="font-size:12px">{{ panelModeIcon }}</span><span>{{ panelModeLabel }}</span>
+              </button>
+              <button onClick="{{ closePanel }}" title="Close — Esc" style="flex:0 0 auto;width:28px;height:28px;display:grid;place-items:center;background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);color:var(--fg-muted);cursor:pointer;font-size:14px">✕</button>
+            </div>
+          </div>
+          <input value="{{ p.title }}" onChange="{{ onTitle }}" onBlur="{{ onTitleBlur }}" placeholder="Untitled node" ref="{{ titleRef }}" style="width:100%;border:none;background:none;outline:none;font-size:21px;font-weight:600;letter-spacing:-.018em;padding:0" />
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;color:var(--fg-muted);display:flex;gap:12px">
+            <span>{{ p.idLabel }}</span><span>{{ p.updatedLabel }}</span><span style="{{ p.savingStyle }}">{{ p.savingLabel }}</span>
+          </div>
+        </header>
+
+        <div ref="{{ panelScrollRef }}" style="flex:1 1 auto;overflow-y:auto">
+          <section style="padding:16px;border-bottom:1px solid var(--border-subtle)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-muted)">Files</span>
+              <button onClick="{{ attachFile }}" style="background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:4px 9px;font-size:12px;cursor:pointer">+ Attach</button>
+            </div>
+            <sc-if value="{{ p.noFiles }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size:13px;color:var(--fg-muted)">No files attached</div>
+            </sc-if>
+            <sc-for list="{{ p.files }}" as="f" hint-placeholder-count="0">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle)">
+                <div style="{{ f.thumbStyle }}">{{ f.thumbChar }}</div>
+                <div style="flex:1 1 auto;min-width:0">
+                  <div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:{{ f.metaColor }}">{{ f.meta }}</div>
+                </div>
+                <button onClick="{{ f.onAction }}" style="background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:4px 9px;font-size:11.5px;cursor:pointer">{{ f.actionLabel }}</button>
+                <button onClick="{{ f.onRemove }}" title="Remove file" style="background:none;border:none;color:var(--fg-muted);cursor:pointer;font-size:13px;padding:2px 4px">✕</button>
+              </div>
+            </sc-for>
+          </section>
+
+          <section style="padding:16px;border-bottom:1px solid var(--border-subtle)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-muted)">Connections</span>
+              <button onClick="{{ connectFromPanel }}" style="background:none;border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:4px 9px;font-size:12px;cursor:pointer">+ Connect</button>
+            </div>
+            <sc-if value="{{ p.noConnections }}" hint-placeholder-val="{{ true }}">
+              <div style="border:1px dashed var(--border-strong);border-radius:var(--r-md);padding:14px;text-align:center">
+                <div style="font-size:13px;margin-bottom:8px">Not connected to anything yet</div>
+                <button onClick="{{ connectFromPanel }}" style="background:var(--accent);border:1px solid var(--accent);color:var(--fg-inverse);border-radius:var(--r-sm);padding:6px 12px;font-size:12.5px;cursor:pointer">Connect</button>
+              </div>
+            </sc-if>
+            <sc-for list="{{ p.groups }}" as="g" hint-placeholder-count="0">
+              <div style="margin-bottom:12px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:5px">{{ g.label }}</div>
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="1">
+                  <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--border-subtle);border-radius:var(--r-sm);margin-bottom:5px;background:var(--bg-elevated)">
+                    <span style="{{ r.dotStyle }}"></span>
+                    <button onClick="{{ r.onClick }}" style="flex:1 1 auto;min-width:0;text-align:left;background:none;border:none;padding:0;font-size:13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.title }}</button>
+                    <button onClick="{{ r.onRemove }}" disabled="{{ r.removeDisabled }}" title="{{ r.removeTip }}" style="{{ r.removeStyle }}">{{ r.removeLabel }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </section>
+
+          <section style="padding:16px;border-bottom:1px solid var(--border-subtle)">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:26px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-muted)">Description</span>
+              <sc-if value="{{ editorActive }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:3px;flex-wrap:wrap">
+                  <sc-for list="{{ blockTools }}" as="bt" hint-placeholder-count="0">
+                    <button onMouseDown="{{ preventBlur }}" onClick="{{ bt.onClick }}" title="{{ bt.title }}" style="{{ bt.style }}">{{ bt.label }}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px;min-height:120px">
+              <sc-for list="{{ p.blocks }}" as="b" hint-placeholder-count="1">
+                <div style="{{ b.rowStyle }}">
+                  <sc-if value="{{ b.hasMarker }}" hint-placeholder-val="{{ false }}">
+                    <span onClick="{{ b.onMarker }}" style="{{ b.markerStyle }}">{{ b.marker }}</span>
+                  </sc-if>
+                  <div contentEditable="{{ true }}" suppressContentEditableWarning="{{ true }}" ref="{{ b.ref }}" onInput="{{ b.onInput }}" onKeyDown="{{ b.onKey }}" onFocus="{{ b.onFocus }}" onBlur="{{ b.onBlur }}" data-ph="{{ b.placeholder }}" style="{{ b.style }}"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted);margin-top:10px;opacity:.75">{{ editorHint }}</div>
+            <sc-if value="{{ slashOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ slashStyle }}">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-muted);padding:5px 8px 6px">Blocks</div>
+                <sc-if value="{{ slashEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:6px 8px 10px;font-size:12.5px;color:var(--fg-muted)">No block matches “{{ slashQuery }}”.</div>
+                </sc-if>
+                <sc-for list="{{ slashItems }}" as="si" hint-placeholder-count="0">
+                  <button onMouseDown="{{ preventBlur }}" onMouseEnter="{{ si.onEnter }}" onClick="{{ si.onClick }}" style="{{ si.style }}">
+                    <span style="{{ si.iconStyle }}">{{ si.icon }}</span>
+                    <span style="flex:1 1 auto;min-width:0">
+                      <span style="display:block;font-size:13px">{{ si.label }}</span>
+                      <span style="display:block;font-size:11px;color:var(--fg-muted)">{{ si.hint }}</span>
+                    </span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </section>
+
+          <section style="padding:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-muted)">{{ p.commentsLabel }}</span>
+              <sc-if value="{{ p.hasUnreadComments }}" hint-placeholder-val="{{ false }}">
+                <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--danger)"><span style="width:6px;height:6px;border-radius:50%;background:var(--danger)"></span>{{ p.unreadCommentsLabel }}</span>
+              </sc-if>
+            </div>
+            <sc-if value="{{ p.noComments }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size:13px;color:var(--fg-muted);margin-bottom:12px">No comments yet. Leave one for whoever picks this up.</div>
+            </sc-if>
+            <sc-for list="{{ p.comments }}" as="c" hint-placeholder-count="0">
+              <div style="{{ c.wrapStyle }}">
+                <span style="{{ c.avatarStyle }}">{{ c.initials }}</span>
+                <div style="flex:1 1 auto;min-width:0">
+                  <div style="display:flex;align-items:baseline;gap:7px">
+                    <span style="font-size:12.5px;font-weight:600">{{ c.author }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--fg-muted)">{{ c.time }}</span>
+                    <sc-if value="{{ c.unread }}" hint-placeholder-val="{{ false }}"><span style="width:6px;height:6px;border-radius:50%;background:var(--danger);display:inline-block"></span></sc-if>
+                    <span style="flex:1 1 auto"></span>
+                    <button onClick="{{ c.onDelete }}" title="Delete comment" style="background:none;border:none;color:var(--fg-muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>
+                  </div>
+                  <div style="font-size:13px;line-height:1.55;margin-top:3px;white-space:pre-wrap">{{ c.body }}</div>
+                  <button onClick="{{ c.onReply }}" style="background:none;border:none;padding:4px 0 0;font-size:11.5px;color:var(--fg-muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Reply</button>
+                </div>
+              </div>
+            </sc-for>
+            <div style="display:flex;gap:8px;margin-top:14px;align-items:flex-end">
+              <textarea value="{{ commentDraft }}" onChange="{{ onCommentDraft }}" onKeyDown="{{ onCommentKey }}" ref="{{ commentRef }}" rows="2" placeholder="Write a comment…" style="flex:1 1 auto;resize:none;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:9px 10px;font-size:13px;line-height:1.5;outline:none"></textarea>
+              <button onClick="{{ addComment }}" disabled="{{ commentDisabled }}" style="{{ commentBtnStyle }}">Comment</button>
+            </div>
+          </section>
+        </div>
+      </div>
+      </sc-if>
+    </aside>
+  </sc-if>
+
+  <!-- TOASTS -->
+  <div style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:80;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none">
+    <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="0">
+      <div role="{{ t.role }}" style="{{ t.style }}">
+        <span style="{{ t.dotStyle }}"></span>
+        <span style="font-size:13px;line-height:1.4">{{ t.message }}</span>
+        <sc-if value="{{ t.hasAction }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ t.onAction }}" style="background:none;border:1px solid rgba(255,255,255,.35);color:inherit;border-radius:var(--r-sm);padding:3px 10px;font-size:12px;cursor:pointer;flex:0 0 auto">{{ t.actionLabel }}</button>
+        </sc-if>
+        <button onClick="{{ t.onDismiss }}" style="background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:13px;flex:0 0 auto">✕</button>
+      </div>
+    </sc-for>
+  </div>
+
+  <input type="file" multiple="{{ true }}" ref="{{ fileInputRef }}" onChange="{{ onFilePicked }}" style="display:none" />
+</div>
+</sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;nodeCardStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;accent-bar&quot;,&quot;tinted&quot;,&quot;minimal&quot;],&quot;default&quot;:&quot;accent-bar&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Variations&quot;},&quot;edgeStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;curved&quot;,&quot;orthogonal&quot;,&quot;straight&quot;],&quot;default&quot;:&quot;curved&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Variations&quot;},&quot;railSide&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;left&quot;,&quot;right&quot;],&quot;default&quot;:&quot;left&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Variations&quot;},&quot;defaultPanelView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;side&quot;,&quot;modal&quot;],&quot;default&quot;:&quot;side&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Variations&quot;}}">
+const NODE_W = 236, NODE_H = 132;
+const TYPES = ['goal','strategy','campaign','content','asset','note'];
+const TYPE_MEANS = {goal:'outcome + horizon', strategy:'durable thinking', campaign:'time-boxed push', content:'one produced piece', asset:'uploaded file', note:'freeform'};
+const ROW = {goal:0, strategy:1, campaign:2, content:3, asset:3, note:4};
+const KEY = 'mc.canvas.v1';
+const MAX_BYTES = 25 * 1024 * 1024;
+const OK_MIME = /^(image\/|application\/pdf|text\/|application\/vnd\.openxmlformats|application\/msword|application\/vnd\.ms-)/;
+
+const uid = (p) => p + Math.random().toString(36).slice(2, 9);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const color = (t) => 'var(--node-' + t + ')';
+const fmtBytes = (b) => b > 1048576 ? (b/1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(b/1024)) + 'KB';
+const fmtDur = (ms) => { const s = Math.floor((ms || 0)/1000); return Math.floor(s/60) + ':' + String(s % 60).padStart(2, '0'); };
+const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+const fmtAgo = (ts) => {
+  const s = Math.max(1, Math.round((Date.now() - ts)/1000));
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.round(s/60) + 'm ago';
+  if (s < 86400) return Math.round(s/3600) + 'h ago';
+  return Math.round(s/86400) + 'd ago';
+};
+const initials = (name) => String(name || '?').trim().split(/\s+/).slice(0,2).map(w => w[0]).join('').toUpperCase();
+
+const VOICE_PHRASE = 'draft a reel script about linen care for the Ramadan push, keep it under thirty seconds'.split(' ');
+const MODES = [
+  {id:'auto', label:'Auto', tip:'Pick the right mode from what you type'},
+  {id:'generator', label:'Generator', tip:'Draft new work — scripts, captions, briefs'},
+  {id:'librarian', label:'Librarian', tip:'Find and trace what is already on the board'},
+  {id:'reasoner', label:'Reasoner', tip:'Audit the board and think it through, step by step'},
+];
+
+const blk = (type, text, done) => ({id:uid('b'), type:type || 'p', text:text || '', done:!!done});
+const blocksFromText = (text) => {
+  const out = String(text == null ? '' : text).split('\n').map(l => {
+    const t = l.trim();
+    if (/^#{1,3}\s+/.test(t)) return blk('h', t.replace(/^#{1,3}\s+/, ''));
+    if (/^\[[ x]\]\s*/i.test(t)) return blk('todo', t.replace(/^\[[ x]\]\s*/i, ''), /^\[x\]/i.test(t));
+    if (/^[-*]\s+/.test(t)) return blk('bullet', t.replace(/^[-*]\s+/, ''));
+    if (/^---+$/.test(t)) return blk('divider', '');
+    if (/^>\s+/.test(t)) return blk('quote', t.replace(/^>\s+/, ''));
+    return blk('p', l);
+  });
+  return out.length ? out : [blk('p', '')];
+};
+const blocksToText = (bs) => (bs || []).map(b =>
+  b.type === 'h' ? '# ' + b.text :
+  b.type === 'bullet' ? '- ' + b.text :
+  b.type === 'todo' ? (b.done ? '[x] ' : '[ ] ') + b.text :
+  b.type === 'divider' ? '---' :
+  b.type === 'quote' ? '> ' + b.text : b.text).join('\n');
+
+const TEAM = ['Rana Haddad', 'Omar Fayez', 'Lina Sarhan'];
+
+const SLASH = [
+  {id:'p', label:'Text', hint:'Plain paragraph', icon:'Aa', kw:'text paragraph plain body'},
+  {id:'h', label:'Heading', hint:'Section title', icon:'H', kw:'heading title h1 section'},
+  {id:'bullet', label:'Bulleted list', hint:'Simple list', icon:'\u2022', kw:'bullet list unordered ul point'},
+  {id:'todo', label:'To-do', hint:'Checkbox you can tick', icon:'\u2610', kw:'todo task checkbox check action'},
+  {id:'quote', label:'Quote', hint:'Set apart, italic', icon:'\u201d', kw:'quote callout note aside'},
+  {id:'divider', label:'Divider', hint:'Horizontal rule', icon:'\u2014', kw:'divider rule separator line hr break'},
+];
+
+const MIN_Z = 0.15, MAX_Z = 3.5;
+const BLANK_PNG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const INK_COLORS = ['#a14a3a', '#3d6b6f', '#a3853f', '#5b7a5b', '#7d6b8f', '#252118'];
+const STICKY_COLORS = ['#f0d78d', '#f0b7a2', '#bfd5c6', '#c4cfe0', '#e0d2e8'];
+const TOOLS = [
+  {id:'select', label:'Select', icon:'\u2196', key:'V', tip:'Select, drag, pan \u2014 V'},
+  {id:'pen', label:'Pen', icon:'\u270e', key:'P', tip:'Draw on the board \u2014 P'},
+  {id:'marker', label:'Highlighter', icon:'\u25ac', key:'H', tip:'Highlight \u2014 H'},
+  {id:'eraser', label:'Eraser', icon:'\u25cc', key:'E', tip:'Erase ink \u2014 E'},
+  {id:'sticky', label:'Sticky', icon:'\u25a0', key:'S', tip:'Drop a sticky note \u2014 S'},
+  {id:'text', label:'Text', icon:'T', key:'T', tip:'Type text on the board \u2014 T'},
+  {id:'pin', label:'Comment', icon:'\u25cf', key:'C', tip:'Pin a comment \u2014 C'},
+];
+const smoothPath = (pts) => {
+  if (!pts || !pts.length) return '';
+  const r = (v) => Math.round(v * 10) / 10;
+  if (pts.length < 3) return 'M' + pts.map(p => r(p.x) + ' ' + r(p.y)).join(' L');
+  let d = 'M' + r(pts[0].x) + ' ' + r(pts[0].y);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    d += ' Q' + r(a.x) + ' ' + r(a.y) + ' ' + r((a.x + b.x) / 2) + ' ' + r((a.y + b.y) / 2);
+  }
+  const l = pts[pts.length - 1];
+  return d + ' L' + r(l.x) + ' ' + r(l.y);
+};
+const bboxOf = (pts) => {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  pts.forEach(p => { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); });
+  return {x0, y0, x1, y1, w:x1 - x0, h:y1 - y0};
+};
+
+class Component extends DCLogic {
+  blockRefs = {};
+  panelScrollRef = React.createRef();
+  commentRef = React.createRef();
+  state = {
+    hydrated: false, route: 'signin',
+    f: {name:'', email:'', password:'', confirm:''}, err: {}, formError: '', pending: false,
+    session: null,
+    board: {name:'Untitled board', viewport:{x:0, y:0, zoom:1}},
+    nodes: [], edges: [], annotations: [], files: {},
+    chat: [], draft: '', streaming: false, chatMode: 'auto', stepsClosed: {},
+    voice: {status:'idle', levels:[], elapsed:0, interim:'', err:'', sim:false},
+    comments: [], commentDraft: '', replyTo: null,
+    ui: {rail:true, legend:true, theme:'light', panelMode:null},
+    selected: [], panelId: null, addMenu: false, searchOpen: false, query: '', highlight: 0,
+    typeMenu: false, focusedBlock: null, slash: null, slashIdx: 0,
+    connect: {on:false, sourceId:null, targetId:null, x:0, y:0},
+    citedIds: [], dropping: false, annotationDraft: '', saving: false,
+    toasts: [], undoStack: [], narrow: false,
+    strokes: [], stickies: [], pins: [],
+    tool: 'select', penColor: INK_COLORS[0], penSize: 3,
+    drawPts: null, activePin: null, pinDraft: '', editSticky: null,
+    snapUrl: null, snapOpen: false, spacePan: false,
+  };
+
+  // ---------- lifecycle ----------
+  componentDidMount() {
+    this.canvasRef = React.createRef();
+    this.chatScrollRef = React.createRef();
+    this.searchRef = React.createRef();
+    this.titleRef = React.createRef();
+    this.fileInputRef = React.createRef();
+    this.emailRef = React.createRef();
+    this.timers = [];
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        const files = {};
+        Object.keys(d.files || {}).forEach(k => { files[k] = Object.assign({}, d.files[k], {alive:false, objectUrl:null}); });
+        const nodes = d.nodes || [];
+        let comments = d.comments || (d.annotations || []).map(a => ({id:a.id, nodeId:a.nodeId, author:(d.session && d.session.name) || 'You', body:a.body, createdAt:a.createdAt, read:true, mine:true}));
+        if (nodes.length && !comments.length) comments = this.demoComments(nodes);
+        this.setState({
+          hydrated:true, session:d.session || null, route: d.session ? 'app' : 'signin',
+          board:d.board || this.state.board, nodes, edges:d.edges || [],
+          annotations:[], comments, files, chat:d.chat || [], chatMode:d.chatMode || 'auto',
+          strokes:d.strokes || [], stickies:d.stickies || [], pins:d.pins || [],
+          ui:Object.assign({}, this.state.ui, d.ui || {}),
+        }, this.applyTheme);
+      } else {
+        this.setState({hydrated:true}, this.applyTheme);
+      }
+    } catch (e) {
+      this.setState({hydrated:true}, this.applyTheme);
+      this.toast('We couldn\u2019t read your saved board. Reload to try again, or start a new board.', {tone:'danger'});
+    }
+    this.onKey = (e) => this.handleKey(e);
+    window.addEventListener('keydown', this.onKey);
+    this.onKeyUp = (e) => { if (e.code === 'Space' && this.state.spacePan) this.setState({spacePan:false}); };
+    window.addEventListener('keyup', this.onKeyUp);
+    this.onResize = () => {
+      const narrow = window.innerWidth < 900;
+      if (narrow !== this.state.narrow) this.setState(p => ({narrow, ui: narrow ? Object.assign({}, p.ui, {rail:false}) : p.ui}));
+    };
+    this.onResize();
+    window.addEventListener('resize', this.onResize);
+    setTimeout(() => { if (this.emailRef.current) this.emailRef.current.focus(); }, 60);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); window.removeEventListener('keyup', this.onKeyUp); this.stopGlide(); window.removeEventListener('resize', this.onResize); this.timers.forEach(clearInterval); this.cleanupVoice(); clearTimeout(this._voiceDone); }
+
+  applyTheme() { try { document.documentElement.dataset.theme = this.state.ui.theme; } catch (e) {} }
+
+  save(extra) {
+    const s = Object.assign({}, this.state, extra || {});
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        session:s.session, board:s.board, nodes:s.nodes, edges:s.edges, comments:s.comments, chatMode:s.chatMode,
+        strokes:s.strokes, stickies:s.stickies, pins:s.pins,
+        annotations:s.annotations, files:s.files, chat:s.chat.map(m => Object.assign({}, m, {status:m.status === 'streaming' ? 'error' : m.status})), ui:s.ui,
+      }));
+    } catch (e) {
+      this.toast('Couldn\u2019t save \u2014 this device is out of storage. Free up space; your last change is not saved.', {tone:'warn'});
+    }
+  }
+  commit(patch, opts) {
+    const o = opts || {};
+    this.setState(prev => {
+      const next = Object.assign({}, patch);
+      if (o.undoable) next.undoStack = prev.undoStack.concat([{nodes:prev.nodes, edges:prev.edges, annotations:prev.annotations, strokes:prev.strokes, stickies:prev.stickies, pins:prev.pins}]).slice(-40);
+      return next;
+    }, () => this.save());
+  }
+  snapshot() { return {nodes:this.state.nodes, edges:this.state.edges, annotations:this.state.annotations, strokes:this.state.strokes, stickies:this.state.stickies, pins:this.state.pins}; }
+
+  toast(message, opts) {
+    const o = opts || {};
+    const id = uid('t');
+    this.setState(p => ({toasts: p.toasts.concat([{id, message, tone:o.tone || 'info', actionLabel:o.actionLabel, onAction:o.onAction}])}));
+    setTimeout(() => this.dismiss(id), o.durationMs || 6500);
+  }
+  dismiss(id) { this.setState(p => ({toasts: p.toasts.filter(t => t.id !== id)})); }
+
+  // ---------- comments ----------
+  demoComments(nodes) {
+    const pick = (t) => nodes.find(n => n.type === t) || nodes[0];
+    const H = 3600000;
+    const seed = [
+      [pick('goal'), TEAM[0], 'Finance signed off on the 500 number, but they want the split between new and repeat spelled out here.', 26*H, true],
+      [pick('goal'), TEAM[1], 'Repeat was 31% last quarter. If that holds we only need ~345 new orders — worth writing into the node.', 3*H, false],
+      [pick('campaign'), TEAM[2], 'Creative deadline is the 12th, not the 15th. The print partner needs three days.', 7*H, false],
+      [pick('content'), TEAM[0], 'Can we cut the intro? The hook doesn\u2019t land until 0:04 and that\u2019s where we lose people.', 2*H, false],
+      [pick('strategy'), TEAM[1], 'Agreed on the ICP, but "price-aware, not price-led" needs a number behind it before we brief media.', 50*H, true],
+    ];
+    return seed.filter(s => s[0]).map(s => ({
+      id:uid('c'), nodeId:s[0].id, author:s[1], body:s[2], createdAt:Date.now() - s[3], read:s[4], mine:false,
+    })).sort((a, b) => a.createdAt - b.createdAt);
+  }
+  unreadFor(nodeId) { return this.state.comments.filter(c => c.nodeId === nodeId && !c.read).length; }
+  markRead(nodeId) {
+    if (!this.unreadFor(nodeId)) return;
+    setTimeout(() => this.commit({comments:this.state.comments.map(c => c.nodeId === nodeId ? Object.assign({}, c, {read:true}) : c)}), 900);
+  }
+  addComment() {
+    const body = this.state.commentDraft.trim();
+    const id = this.state.panelId;
+    if (!body || !id) return;
+    const me = (this.state.session && this.state.session.name) || 'You';
+    this.commit({
+      comments:this.state.comments.concat([{id:uid('c'), nodeId:id, author:me, body, createdAt:Date.now(), read:true, mine:true}]),
+      commentDraft:'', replyTo:null,
+    });
+    setTimeout(() => { const el = this.panelScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 30);
+  }
+
+  // ---------- panel ----------
+  openPanel(id) {
+    const n = this.state.nodes.find(x => x.id === id);
+    if (n && !n.blocks) this.patchNode(id, {blocks:blocksFromText(n.body)});
+    this.setState({panelId:id, selected:[id], typeMenu:false, commentDraft:'', replyTo:null});
+    this.markRead(id);
+  }
+
+  // ---------- block editor ----------
+  blocksOf(n) { return (n && n.blocks && n.blocks.length) ? n.blocks : blocksFromText(n ? n.body : ''); }
+  setBlocks(nodeId, blocks) { this.patchNode(nodeId, {blocks, body:blocksToText(blocks)}); }
+  caretOffset(el) {
+    const s = window.getSelection();
+    if (!s || !s.rangeCount) return 0;
+    const r = s.getRangeAt(0).cloneRange();
+    const pre = document.createRange();
+    pre.selectNodeContents(el);
+    try { pre.setEnd(r.endContainer, r.endOffset); } catch (e) { return 0; }
+    return pre.toString().length;
+  }
+  focusBlock(id, pos) {
+    setTimeout(() => {
+      const el = this.blockRefs[id];
+      if (!el) return;
+      el.focus();
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      if (typeof pos === 'number' && el.firstChild) {
+        try { r.setStart(el.firstChild, Math.min(pos, el.textContent.length)); r.collapse(true); } catch (e) { r.collapse(false); }
+      } else r.collapse(pos !== 'end');
+      const s = window.getSelection();
+      s.removeAllRanges(); s.addRange(r);
+    }, 0);
+  }
+  slashMatches(q) {
+    const s = String(q || '').toLowerCase().trim();
+    if (!s) return SLASH;
+    return SLASH.filter(x => (x.label + ' ' + x.kw).toLowerCase().indexOf(s) >= 0);
+  }
+  runSlash(item) {
+    const S = this.state, sl = S.slash;
+    if (!sl || !item) return;
+    const n = S.nodes.find(x => x.id === S.panelId);
+    if (!n) return;
+    const blocks = this.blocksOf(n);
+    const i = blocks.findIndex(b => b.id === sl.blockId);
+    if (i < 0) return;
+    const b = blocks[i];
+    const stripped = b.text.slice(0, sl.start) + b.text.slice(sl.start + 1 + sl.query.length);
+    const next = blocks.slice();
+    if (item.id === 'divider') {
+      next[i] = Object.assign({}, b, {text:stripped, type:'divider'});
+      const after = blk('p', '');
+      next.splice(i + 1, 0, after);
+      this.setBlocks(n.id, next);
+      this.setState({slash:null, slashIdx:0});
+      this.focusBlock(after.id, 'start');
+      return;
+    }
+    next[i] = Object.assign({}, b, {text:stripped, type:item.id});
+    this.setBlocks(n.id, next);
+    this.setState({slash:null, slashIdx:0});
+    const el = this.blockRefs[b.id];
+    if (el) el.textContent = stripped;
+    this.focusBlock(b.id, sl.start);
+  }
+  syncSlash(el, b, text) {
+    const off = this.caretOffset(el);
+    const before = text.slice(0, off);
+    const at = before.lastIndexOf('/');
+    if (at < 0 || (at > 0 && !/\s/.test(before[at - 1]))) { if (this.state.slash) this.setState({slash:null, slashIdx:0}); return; }
+    const query = before.slice(at + 1);
+    if (/\s{2,}/.test(query) || query.length > 18) { if (this.state.slash) this.setState({slash:null, slashIdx:0}); return; }
+    const r = el.getBoundingClientRect();
+    this.setState(p => ({slash:{blockId:b.id, start:at, query, top:r.bottom + 4, left:r.left}, slashIdx:this.slashMatches(query).length ? Math.min(p.slashIdx, this.slashMatches(query).length - 1) : 0}));
+  }
+  blockInput(nodeId, blocks, i, e) {
+    const el = e.currentTarget;
+    let text = el.textContent, type = blocks[i].type, done = blocks[i].done, reset = false;
+    if (type === 'p') {
+      const rules = [[/^#\s/, 'h'], [/^[-*]\s/, 'bullet'], [/^\[\]\s?/, 'todo'], [/^>\s/, 'quote']];
+      for (let k = 0; k < rules.length; k++) {
+        if (rules[k][0].test(text)) { text = text.replace(rules[k][0], ''); type = rules[k][1]; el.textContent = text; reset = true; break; }
+      }
+    }
+    const next = blocks.slice();
+    next[i] = Object.assign({}, blocks[i], {text, type, done});
+    this.setBlocks(nodeId, next);
+    if (reset) { this.setState({slash:null}); this.focusBlock(blocks[i].id, 'start'); return; }
+    this.syncSlash(el, blocks[i], text);
+  }
+  blockKey(nodeId, blocks, i, e) {
+    const el = e.currentTarget, b = blocks[i];
+    const sl = this.state.slash;
+    if (sl && sl.blockId === b.id) {
+      const items = this.slashMatches(sl.query);
+      if (e.key === 'ArrowDown') { e.preventDefault(); this.setState(p => ({slashIdx:(p.slashIdx + 1) % Math.max(1, items.length)})); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); this.setState(p => ({slashIdx:(p.slashIdx - 1 + Math.max(1, items.length)) % Math.max(1, items.length)})); return; }
+      if ((e.key === 'Enter' || e.key === 'Tab') && items.length) { e.preventDefault(); this.runSlash(items[this.state.slashIdx] || items[0]); return; }
+      if (e.key === 'Escape') { e.preventDefault(); this.setState({slash:null, slashIdx:0}); return; }
+    }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const off = this.caretOffset(el), text = el.textContent;
+      const carry = (b.type === 'bullet' || b.type === 'todo') && text.trim() ? b.type : 'p';
+      if (b.type === 'divider') { const nb2 = blk('p', ''); const nx = blocks.slice(); nx.splice(i + 1, 0, nb2); this.setBlocks(nodeId, nx); this.focusBlock(nb2.id, 'start'); return; }
+      const nb = blk(carry, text.slice(off));
+      const next = blocks.slice();
+      next[i] = Object.assign({}, b, {text:text.slice(0, off)});
+      next.splice(i + 1, 0, nb);
+      this.setBlocks(nodeId, next);
+      this.focusBlock(nb.id, 'start');
+      return;
+    }
+    e.stopPropagation();
+    if (e.key === 'Backspace' && this.caretOffset(el) === 0) {
+      if (b.type !== 'p') {
+        e.preventDefault();
+        const next = blocks.slice();
+        next[i] = Object.assign({}, b, {type:'p'});
+        this.setBlocks(nodeId, next);
+        return;
+      }
+      if (i > 0) {
+        e.preventDefault();
+        const prev = blocks[i - 1], at = prev.text.length;
+        const next = blocks.slice();
+        next[i - 1] = Object.assign({}, prev, {text:prev.text + el.textContent});
+        next.splice(i, 1);
+        this.setBlocks(nodeId, next);
+        this.focusBlock(prev.id, at);
+      }
+      return;
+    }
+    if (e.key === 'ArrowUp' && this.caretOffset(el) === 0 && i > 0) { e.preventDefault(); this.focusBlock(blocks[i - 1].id, 'end'); }
+    if (e.key === 'ArrowDown' && this.caretOffset(el) === el.textContent.length && i < blocks.length - 1) { e.preventDefault(); this.focusBlock(blocks[i + 1].id, 'start'); }
+  }
+  setBlockType(type) {
+    const id = this.state.panelId, fid = this.state.focusedBlock;
+    const n = this.state.nodes.find(x => x.id === id);
+    if (!n || !fid) return;
+    const blocks = this.blocksOf(n);
+    const next = blocks.map(b => b.id === fid ? Object.assign({}, b, {type:b.type === type ? 'p' : type}) : b);
+    this.setBlocks(id, next);
+    this.focusBlock(fid, 'end');
+  }
+
+  // ---------- auth ----------
+  setField(k, v) {
+    this.setState(p => ({f: Object.assign({}, p.f, {[k]:v}), err: Object.assign({}, p.err, {[k]:''}), formError:''}));
+  }
+  validate() {
+    const {f, route} = this.state, err = {};
+    if (route === 'signup' && !f.name.trim()) err.name = 'Enter your name.';
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(f.email)) err.email = 'Enter a valid email address.';
+    if (f.password.length < 8) err.password = 'Password must be at least 8 characters.';
+    if (route === 'signup' && f.confirm !== f.password) err.confirm = 'Passwords don\u2019t match.';
+    return err;
+  }
+  submitAuth(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const err = this.validate();
+    if (Object.keys(err).length) { this.setState({err}); return; }
+    this.setState({pending:true, err:{}, formError:''});
+    setTimeout(() => {
+      const {f, route} = this.state;
+      if (route === 'signup' && f.email.trim().toLowerCase() === 'taken@example.com') {
+        this.setState({pending:false, formError:'That email is already registered. Sign in instead, or use a different address.', f:Object.assign({}, f, {password:'', confirm:''})});
+        return;
+      }
+      const session = {id:uid('u'), name:f.name.trim() || f.email.split('@')[0], email:f.email.trim()};
+      this.setState({pending:false, session, route:'app', f:{name:'', email:'', password:'', confirm:''}}, () => this.save());
+    }, 600);
+  }
+
+  // ---------- geometry ----------
+  toWorld(cx, cy) {
+    const r = this.canvasRef.current.getBoundingClientRect();
+    const v = this.state.board.viewport;
+    return {x:(cx - r.left - v.x) / v.zoom, y:(cy - r.top - v.y) / v.zoom};
+  }
+  center() {
+    const el = this.canvasRef.current;
+    const v = this.state.board.viewport;
+    const w = el ? el.clientWidth : 900, h = el ? el.clientHeight : 600;
+    return {x:(w/2 - v.x)/v.zoom - NODE_W/2, y:(h/2 - v.y)/v.zoom - NODE_H/2};
+  }
+  freeSpot() {
+    let c = this.center();
+    let guard = 0;
+    while (this.state.nodes.some(n => Math.abs(n.x - c.x) < 40 && Math.abs(n.y - c.y) < 40) && guard++ < 30) {
+      c = {x:c.x + 34, y:c.y + 30};
+    }
+    return c;
+  }
+  setViewport(v) {
+    this.setState(p => ({board: Object.assign({}, p.board, {viewport:v})}));
+    clearTimeout(this._vpT);
+    this._vpT = setTimeout(() => this.save(), 300);
+  }
+  panTo(id, opts) {
+    const n = this.state.nodes.find(x => x.id === id);
+    if (!n) return;
+    const el = this.canvasRef.current;
+    if (!el) return;
+    const z = (opts && opts.zoom) || this.state.board.viewport.zoom;
+    this.glideTo({x:el.clientWidth/2 - (n.x + NODE_W/2)*z, y:el.clientHeight/2 - (n.y + NODE_H/2)*z, zoom:z});
+  }
+
+  // ---------- mutations ----------
+  createNode(patch, opts) {
+    const o = opts || {};
+    const pos = o.at || this.freeSpot();
+    const node = Object.assign({
+      id:uid('n'), type:'note', title:'', body:'', fileIds:[],
+      x:pos.x, y:pos.y, createdAt:Date.now(), updatedAt:Date.now(),
+    }, patch || {});
+    node.blocks = node.blocks || blocksFromText(node.body);
+    this.commit({nodes:this.state.nodes.concat([node]), selected:[node.id], addMenu:false, panelId:o.open ? node.id : this.state.panelId}, {undoable:true});
+    if (o.open) setTimeout(() => { if (this.titleRef.current) this.titleRef.current.focus(); }, 80);
+    return node;
+  }
+  deleteNodes(ids) {
+    const before = this.snapshot();
+    const nodes = this.state.nodes.filter(n => ids.indexOf(n.id) < 0);
+    const edges = this.state.edges.filter(e => ids.indexOf(e.fromId) < 0 && ids.indexOf(e.toId) < 0);
+    const lostEdges = this.state.edges.length - edges.length;
+    const gone = (x) => x.nodeId && ids.indexOf(x.nodeId) >= 0;
+    this.commit({
+      nodes, edges, selected:[], panelId: ids.indexOf(this.state.panelId) >= 0 ? null : this.state.panelId,
+      strokes:this.state.strokes.filter(s => !gone(s)),
+      stickies:this.state.stickies.filter(s => !gone(s)),
+      pins:this.state.pins.filter(p => !gone(p)),
+    }, {undoable:true});
+    this.toast(ids.length + (ids.length > 1 ? ' nodes' : ' node') + ' deleted' + (lostEdges ? ' with ' + lostEdges + ' connection' + (lostEdges > 1 ? 's' : '') : '') + '.', {
+      tone:'info', actionLabel:'Undo', onAction:() => this.commit(before),
+    });
+  }
+  addEdge(fromId, toId, kind) {
+    if (fromId === toId) { this.toast('A node can\u2019t connect to itself.', {tone:'warn'}); return false; }
+    const dupe = this.state.edges.some(e => (e.fromId === fromId && e.toId === toId) || (e.fromId === toId && e.toId === fromId));
+    if (dupe) { this.toast('These nodes are already connected.', {tone:'warn'}); return false; }
+    this.commit({edges:this.state.edges.concat([{id:uid('e'), fromId, toId, kind}])}, {undoable:true});
+    return true;
+  }
+  patchNode(id, patch) {
+    this.setState(p => ({nodes:p.nodes.map(n => n.id === id ? Object.assign({}, n, patch, {updatedAt:Date.now()}) : n), saving:true}));
+    clearTimeout(this._saveT);
+    this._saveT = setTimeout(() => { this.save(); this.setState({saving:false}); }, 500);
+  }
+  undo() {
+    const st = this.state.undoStack;
+    if (!st.length) return;
+    const prev = st[st.length - 1];
+    this.setState({
+      nodes:prev.nodes, edges:prev.edges, annotations:prev.annotations,
+      strokes:prev.strokes || this.state.strokes, stickies:prev.stickies || this.state.stickies, pins:prev.pins || this.state.pins,
+      undoStack:st.slice(0, -1),
+    }, () => this.save());
+  }
+
+  // ---------- files ----------
+  ingestFiles(list, at) {
+    const arr = Array.from(list || []);
+    if (!arr.length) return;
+    const rejected = [], files = Object.assign({}, this.state.files), created = [];
+    let i = 0;
+    arr.forEach(file => {
+      if (file.size > MAX_BYTES) { rejected.push('`' + file.name + '` is ' + fmtBytes(file.size) + ' \u2014 the limit is 25MB.'); return; }
+      if (!OK_MIME.test(file.type || '') && !/\.(md|txt|csv)$/i.test(file.name)) { rejected.push('`' + file.name + '` isn\u2019t a supported file type. Supported: images, PDF, text, Office.'); return; }
+      const id = uid('f');
+      let url = null;
+      try { url = URL.createObjectURL(file); } catch (e) {}
+      files[id] = {id, name:file.name, mime:file.type || 'application/octet-stream', sizeBytes:file.size, objectUrl:url, alive:!!url};
+      const base = at || this.freeSpot();
+      created.push({
+        id:uid('n'), type:'asset', title:file.name, body:'', fileIds:[id],
+        x:base.x + i * (NODE_W + 24), y:base.y, createdAt:Date.now(), updatedAt:Date.now(),
+      });
+      i++;
+    });
+    if (created.length) this.commit({nodes:this.state.nodes.concat(created), files, selected:created.map(n => n.id)}, {undoable:true});
+    if (!created.length && rejected.length) this.toast(rejected[0], {tone:'danger'});
+    else if (rejected.length) this.toast(rejected.join(' '), {tone:'warn'});
+    else if (!created.length) this.toast('No supported files in that drop. Images, PDFs, text and Office files are supported.', {tone:'warn'});
+  }
+
+  // ---------- voice input ----------
+  startVoice() {
+    if (this.state.streaming || (this.state.voice && this.state.voice.status !== 'idle' && this.state.voice.status !== 'error')) return;
+    this.setState({voice:{status:'arming', levels:[], elapsed:0, interim:'', err:'', sim:false}});
+    const go = (stream, sim) => {
+      if (!this._armed) return;
+      this._armed = false;
+      this.beginListening(stream, sim);
+    };
+    this._armed = true;
+    const t = setTimeout(() => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { go(null, true); return; }
+      navigator.mediaDevices.getUserMedia({audio:true}).then(s => go(s, false)).catch(() => go(null, true));
+    }, 420);
+    this._armTimer = t;
+  }
+  beginListening(stream, sim) {
+    this._stream = stream;
+    let analyser = null, data = null;
+    if (stream) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        this._actx = new AC();
+        analyser = this._actx.createAnalyser();
+        analyser.fftSize = 512;
+        this._actx.createMediaStreamSource(stream).connect(analyser);
+        data = new Uint8Array(analyser.frequencyBinCount);
+      } catch (e) { analyser = null; }
+    }
+    const t0 = Date.now();
+    const phrase = VOICE_PHRASE;
+    let wi = 0, phase = 0;
+    this.setState({voice:{status:'listening', levels:new Array(28).fill(0.06), elapsed:0, interim:'', err:'', sim:sim || !analyser}});
+    this._voiceTick = setInterval(() => {
+      let lvl;
+      if (analyser) {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
+        lvl = Math.min(1, Math.sqrt(sum / data.length) * 4.5);
+      } else {
+        phase += 0.32;
+        const env = 0.45 + 0.35 * Math.sin(phase * 0.55) + 0.18 * Math.sin(phase * 1.9);
+        lvl = Math.max(0.05, Math.min(1, env * (0.6 + Math.random() * 0.7)));
+      }
+      const V = this.state.voice;
+      if (!V || V.status !== 'listening') return;
+      const levels = V.levels.concat([lvl]).slice(-28);
+      const elapsed = Date.now() - t0;
+      let interim = V.interim;
+      if (elapsed > 500 && wi < phrase.length && elapsed / 300 > wi + 1) { wi = Math.min(phrase.length, Math.floor(elapsed / 300)); interim = phrase.slice(0, wi).join(' '); }
+      this.setState({voice:Object.assign({}, V, {levels, elapsed, interim})});
+      if (elapsed > 60000) this.stopVoice();
+    }, 70);
+  }
+  cleanupVoice() {
+    clearTimeout(this._armTimer); this._armed = false;
+    clearInterval(this._voiceTick); this._voiceTick = null;
+    if (this._stream) { this._stream.getTracks().forEach(t => t.stop()); this._stream = null; }
+    if (this._actx) { try { this._actx.close(); } catch (e) {} this._actx = null; }
+  }
+  stopVoice() {
+    const V = this.state.voice;
+    if (!V || V.status !== 'listening') return;
+    this.cleanupVoice();
+    const text = V.interim || VOICE_PHRASE.join(' ');
+    this.setState({voice:Object.assign({}, V, {status:'transcribing'})});
+    this._voiceDone = setTimeout(() => {
+      const base = this.state.draft.trim();
+      const full = (base ? base + ' ' : '') + text.charAt(0).toUpperCase() + text.slice(1) + '.';
+      this.setState({draft:full, voice:{status:'idle', levels:[], elapsed:0, interim:'', err:'', sim:false}});
+      this.toast('Transcribed \u2014 edit before sending if you like.', {tone:'ok'});
+    }, 1100);
+  }
+  cancelVoice() {
+    this.cleanupVoice();
+    clearTimeout(this._voiceDone);
+    this.setState({voice:{status:'idle', levels:[], elapsed:0, interim:'', err:'', sim:false}});
+  }
+
+  // ---------- chat ----------
+  send(text) {
+    const content = (text || this.state.draft).trim();
+    if (!content || this.state.streaming) return;
+    const userMsg = {id:uid('m'), role:'user', content, status:'complete', citedNodeIds:[], at:Date.now()};
+    const mode = this.resolveMode(content);
+    const reply = this.mockReply(content, mode);
+    const asstMsg = {id:uid('m'), role:'assistant', content:'', status:'streaming', citedNodeIds:[], at:Date.now(), mode, steps:[], _steps:reply.steps || [], _full:reply.text, proposal:reply.proposal, _cites:reply.cites, _fail:reply.fail};
+    this.setState({chat:this.state.chat.concat([userMsg, asstMsg]), draft:'', streaming:true, citedIds:[]}, () => this.stream(asstMsg.id));
+  }
+  stream(id) {
+    const msg = this.state.chat.find(m => m.id === id);
+    if (!msg) return;
+    const steps = msg._steps || [];
+    if (steps.length) {
+      let si = 0;
+      const t0 = setInterval(() => {
+        si++;
+        this.setState(p => ({chat:p.chat.map(m => m.id === id ? Object.assign({}, m, {steps:steps.slice(0, si)}) : m)}), () => {
+          const el = this.chatScrollRef.current; if (el) el.scrollTop = el.scrollHeight;
+        });
+        if (si >= steps.length) { clearInterval(t0); this.streamText(id); }
+      }, 430);
+      this.timers.push(t0);
+      return;
+    }
+    this.streamText(id);
+  }
+  streamText(id) {
+    const msg = this.state.chat.find(m => m.id === id);
+    if (!msg) return;
+    const tokens = msg._full.match(/\S+\s*/g) || [];
+    let i = 0;
+    const t = setInterval(() => {
+      if (msg._fail && i > tokens.length * 0.4) {
+        clearInterval(t);
+        this.setState(p => ({chat:p.chat.map(m => m.id === id ? Object.assign({}, m, {status:'error'}) : m), streaming:false}), () => this.save());
+        return;
+      }
+      if (i >= tokens.length) {
+        clearInterval(t);
+        this.setState(p => ({
+          chat:p.chat.map(m => m.id === id ? Object.assign({}, m, {status:'complete', citedNodeIds:m._cites || []}) : m),
+          streaming:false, citedIds:msg._cites || [],
+        }), () => this.save());
+        return;
+      }
+      const chunk = tokens.slice(0, i + 1).join('');
+      this.setState(p => ({chat:p.chat.map(m => m.id === id ? Object.assign({}, m, {content:chunk}) : m)}), () => {
+        const el = this.chatScrollRef.current; if (el) el.scrollTop = el.scrollHeight;
+      });
+      i++;
+    }, 20);
+    this.timers.push(t);
+  }
+  resolveMode(prompt) {
+    const m = this.state.chatMode;
+    if (m !== 'auto') return m;
+    const low = prompt.toLowerCase();
+    if (/^(write|draft|create|make|generate|give me|rewrite|outline|script)/.test(low) || /\b(caption|hook|headline|script|copy|brief)\b/.test(low)) return 'generator';
+    if (/(why|should|risk|gap|audit|analy|priorit|weak|wrong|missing|what if|worth it|first)/.test(low)) return 'reasoner';
+    return 'librarian';
+  }
+  match(prompt) {
+    const nodes = this.state.nodes, low = prompt.toLowerCase();
+    const words = low.split(/\W+/).filter(w => w.length > 3 && !/^(the|that|this|with|from|what|which|does|have|about|node|board|canvas)$/.test(w));
+    return nodes.map(n => {
+      const title = (n.title || '').toLowerCase(), body = (n.body || '').toLowerCase();
+      let score = 0;
+      if (title && low.indexOf(title.slice(0, 16)) >= 0) score += 10;
+      words.forEach(w => { if (title.indexOf(w) >= 0) score += 3; if (body.indexOf(w) >= 0) score += 1; });
+      return {n, score};
+    }).filter(x => x.score > 0).sort((a, b) => b.score - a.score).map(x => x.n);
+  }
+  lineage(node) {
+    const seen = {}, chain = [];
+    let cur = node, guard = 0;
+    while (cur && guard++ < 8) {
+      const up = this.state.edges.find(e => e.fromId === cur.id && e.kind === 'serves');
+      if (!up || seen[up.toId]) break;
+      seen[up.toId] = 1;
+      cur = this.state.nodes.find(n => n.id === up.toId);
+      if (cur) chain.push(cur);
+    }
+    return chain;
+  }
+  mockReply(prompt, mode) {
+    if (!this.state.nodes.length) {
+      return {text:'The board is empty, so there\u2019s nothing to work from yet. Load the example board or add a goal \u2014 everything else earns its place by connecting up to one.', cites:[], proposal:null, steps:[]};
+    }
+    if (mode === 'generator') return this.replyGenerator(prompt);
+    if (mode === 'reasoner') return this.replyReasoner(prompt);
+    return this.replyLibrarian(prompt);
+  }
+
+  replyGenerator(prompt) {
+    const low = prompt.toLowerCase();
+    const nodes = this.state.nodes;
+    const hits = this.match(prompt);
+    const parent = hits.find(n => n.type === 'campaign' || n.type === 'strategy' || n.type === 'goal')
+      || nodes.find(n => n.type === 'campaign') || nodes.find(n => n.type === 'strategy') || nodes[0];
+    const subject = prompt.replace(/^(write|draft|create|make|generate|give me)\s+(me\s+)?(a|an|the)?\s*/i, '').replace(/[.?!]+$/, '').trim() || 'a new piece';
+    const topic = subject.replace(/^(reel|carousel|caption|email|post|script|brief)\s*(script|about|on|for)?\s*/i, '').trim() || 'the product';
+
+    let kind = 'post', type = 'content', body, title;
+    if (/reel|video|tiktok|script/.test(low)) kind = 'reel';
+    else if (/carousel|slides/.test(low)) kind = 'carousel';
+    else if (/email|newsletter/.test(low)) kind = 'email';
+    else if (/caption|hook/.test(low)) kind = 'caption';
+    else if (/brief|campaign/.test(low)) { kind = 'brief'; type = 'campaign'; }
+    else if (/strategy|position/.test(low)) { kind = 'strategy'; type = 'strategy'; }
+
+    if (kind === 'reel') {
+      title = 'Reel: ' + topic;
+      body = '# Reel \u2014 ' + topic + '\n0:00 Hook \u2014 open mid-motion, no logo, no intro.\n0:03 Problem \u2014 name the thing the viewer already suspects.\n0:08 Demonstration \u2014 show it, don\u2019t claim it.\n0:16 Proof \u2014 one number or one visible before/after.\n0:20 Close \u2014 one action, spoken and on-screen.\n[ ] Shot list approved\n[ ] Captions burned in (85% watch muted)\n> Cut it at 22s. If it needs 40, it\u2019s two reels.';
+    } else if (kind === 'carousel') {
+      title = 'Carousel: ' + topic;
+      body = '# Carousel \u2014 ' + topic + '\n- Slide 1 \u2014 the claim, six words maximum\n- Slide 2 \u2014 why the obvious answer is wrong\n- Slide 3 \u2014 the mechanism, drawn not described\n- Slide 4 \u2014 what it looks like when it works\n- Slide 5 \u2014 the one objection, answered flat\n- Slide 6 \u2014 the ask\n> Slide 1 does 90% of the work. Write it last.';
+    } else if (kind === 'email') {
+      title = 'Email: ' + topic;
+      body = '# Email \u2014 ' + topic + '\nSubject line A \u2014 plain and specific.\nSubject line B \u2014 the number, up front.\n- Open with the reader\u2019s situation, not ours\n- One idea per email; the second idea is next week\n- One link, repeated twice\n[ ] Preview text written separately from the subject\n[ ] Send time tested against the last three sends';
+    } else if (kind === 'caption') {
+      title = 'Captions: ' + topic;
+      body = '# Hooks \u2014 ' + topic + '\n- The version everyone writes, and why it dies in the feed.\n- Start at the objection, not the benefit.\n- One concrete number in the first line.\n- Name the reader\u2019s situation in five words.\n> Pick two, test them against each other, kill the loser in 48 hours.';
+    } else if (kind === 'brief') {
+      title = 'Campaign: ' + topic;
+      body = '# Campaign brief \u2014 ' + topic + '\nWindow \u2014 six weeks, one clear end date.\nOne job \u2014 what this campaign is allowed to be judged on.\n- Three content pillars, no more\n- One landing surface\n- One measurement that decides renew or kill\n[ ] Success number agreed before launch\n[ ] Kill criteria written down';
+    } else if (kind === 'strategy') {
+      title = 'Strategy: ' + topic;
+      body = '# Strategy \u2014 ' + topic + '\nThe bet \u2014 what we believe that competitors don\u2019t.\nThe evidence \u2014 what makes it more than a hunch.\nThe cost of being wrong \u2014 named, in advance.\n> A strategy that can\u2019t be wrong isn\u2019t a strategy.';
+    } else {
+      title = topic.slice(0, 60);
+      body = '# ' + topic + '\nHook \u2014 the first three seconds carry it.\nBody \u2014 one idea, demonstrated.\nClose \u2014 one action, named.';
+    }
+
+    const text = 'Drafted ' + (kind === 'caption' ? 'four hooks' : 'a ' + kind) + ' for ' + topic + '. It\u2019s short enough to test this week and specific enough to be wrong in a useful way. ' +
+      (parent ? 'It reads as serving \u201c' + parent.title + '\u201d, so I\u2019ve pre-wired that connection \u2014 add it and the lineage holds.' : 'Nothing on the board covers this, so it lands unconnected.');
+    return {
+      text, cites:parent ? [parent.id] : [],
+      proposal:{kind:'create-node', payload:{type, title:title.slice(0, 60), body, _parent:parent ? parent.id : null}},
+      steps:[],
+    };
+  }
+
+  replyLibrarian(prompt) {
+    const low = prompt.toLowerCase(), S = this.state;
+    const hits = this.match(prompt);
+    const nodeById = {}; S.nodes.forEach(n => nodeById[n.id] = n);
+
+    if (/(serve|feed|support|under|part of|belongs)/.test(low) && hits.length) {
+      const target = hits[0];
+      const children = S.edges.filter(e => e.toId === target.id && e.kind === 'serves').map(e => nodeById[e.fromId]).filter(Boolean);
+      const chain = this.lineage(target);
+      const text = children.length
+        ? children.length + ' node' + (children.length > 1 ? 's' : '') + ' serve \u201c' + target.title + '\u201d: ' + children.map(c => c.title + ' (' + c.type + ')').join('; ') + '. ' +
+          (chain.length ? 'It sits under ' + chain.map(c => c.title).join(' \u2192 ') + '.' : 'It doesn\u2019t trace up to anything \u2014 the chain stops here.')
+        : 'Nothing serves \u201c' + target.title + '\u201d yet. ' + (chain.length ? 'It traces up to ' + chain[chain.length - 1].title + ', but nothing below it does the work.' : 'And it doesn\u2019t trace up either \u2014 it\u2019s an island.');
+      return {text, cites:[target.id].concat(children.map(c => c.id)).slice(0, 6), proposal:null, steps:[]};
+    }
+
+    if (!hits.length) {
+      const recent = S.nodes.slice().sort((a, b) => b.updatedAt - a.updatedAt)[0];
+      return {text:'Nothing on the board matches that. Closest by recency is your ' + recent.type + ' \u201c' + recent.title + '\u201d, but it\u2019s a stretch \u2014 either the work doesn\u2019t exist yet, or it exists and isn\u2019t on the canvas.', cites:[recent.id], proposal:null, steps:[]};
+    }
+
+    const byType = {};
+    hits.slice(0, 8).forEach(n => { (byType[n.type] = byType[n.type] || []).push(n); });
+    const parts = Object.keys(byType).map(t => byType[t].length + ' ' + t + (byType[t].length > 1 ? 's' : '') + ' (' + byType[t].map(n => n.title).join(', ') + ')');
+    const orphans = hits.filter(n => !S.edges.some(e => e.fromId === n.id || e.toId === n.id));
+    const filed = hits.filter(n => this.lineage(n).some(c => c.type === 'goal'));
+    const text = hits.length + ' node' + (hits.length > 1 ? 's' : '') + ' touch that \u2014 ' + parts.join('; ') + '. ' +
+      filed.length + ' of them trace all the way up to a goal. ' +
+      (orphans.length ? orphans.length + ' \u2014 ' + orphans.map(n => n.title).join(', ') + ' \u2014 ' + (orphans.length > 1 ? 'have' : 'has') + ' no connection at all; that\u2019s where the trail goes cold.' : 'None of them are floating.');
+    return {text, cites:hits.slice(0, 5).map(n => n.id), proposal:null, steps:[]};
+  }
+
+  replyReasoner(prompt) {
+    const S = this.state, nodeById = {};
+    S.nodes.forEach(n => nodeById[n.id] = n);
+    const has = (t) => S.nodes.filter(n => n.type === t);
+    const linked = (n) => S.edges.some(e => e.fromId === n.id || e.toId === n.id);
+    const servedBy = (n) => S.edges.filter(e => e.toId === n.id && e.kind === 'serves').map(e => nodeById[e.fromId]).filter(Boolean);
+    const orphans = S.nodes.filter(n => !linked(n));
+    const goals = has('goal');
+    const rootless = S.nodes.filter(n => n.type !== 'goal' && linked(n) && !this.lineage(n).some(c => c.type === 'goal'));
+    const emptyCampaigns = has('campaign').filter(c => servedBy(c).filter(x => x.type === 'content' || x.type === 'asset').length === 0);
+    const thinStrategies = has('strategy').filter(s => servedBy(s).length === 0);
+
+    const steps = [
+      'Reading the board \u2014 ' + S.nodes.length + ' nodes, ' + S.edges.length + ' connections, ' + goals.length + ' goal' + (goals.length === 1 ? '' : 's') + '.',
+      'Tracing lineage upward: ' + (S.nodes.length - orphans.length - rootless.length) + ' of ' + S.nodes.length + ' reach a goal, ' + rootless.length + (rootless.length === 1 ? ' stops' : ' stop') + ' short, ' + orphans.length + (orphans.length === 1 ? ' isn\u2019t' : ' aren\u2019t') + ' connected at all.',
+      'Checking each layer for load: ' + thinStrategies.length + ' strateg' + (thinStrategies.length === 1 ? 'y has' : 'ies have') + ' nothing executing them, ' + emptyCampaigns.length + ' campaign' + (emptyCampaigns.length === 1 ? ' has' : 's have') + ' no content attached.',
+      'Ranking by what breaks the plan soonest, not by what\u2019s easiest to fix.',
+    ];
+
+    const findings = [];
+    if (!goals.length) findings.push('There\u2019s no goal on the board, so nothing can be judged. Everything below is activity, not progress.');
+    if (emptyCampaigns.length) findings.push('\u201c' + emptyCampaigns[0].title + '\u201d is a campaign with no content or assets under it \u2014 a promise with no delivery.');
+    if (thinStrategies.length) findings.push('\u201c' + thinStrategies[0].title + '\u201d is a strategy nothing executes. Either it\u2019s a belief, not a strategy, or the work is missing.');
+    if (orphans.length) findings.push(orphans.length + ' node' + (orphans.length > 1 ? 's are' : ' is') + ' floating (' + orphans.slice(0, 3).map(n => n.title).join(', ') + ') \u2014 they cost attention and return nothing traceable.');
+    if (rootless.length) findings.push(rootless.length === 1
+      ? '\u201c' + rootless[0].title + '\u201d is connected but never reaches a goal \u2014 its lineage is decorative.'
+      : rootless.length + ' connected nodes never reach a goal, so their lineage is decorative.');
+    if (!findings.length) findings.push('Structurally the board holds: every node traces to a goal and every layer carries load. The risk now is concentration, not gaps \u2014 ' + (has('campaign')[0] ? '\u201c' + has('campaign')[0].title + '\u201d carries most of the weight.' : 'one branch carries most of the weight.'));
+
+    let proposal = null, cites = [];
+    if (emptyCampaigns.length) {
+      const c = emptyCampaigns[0];
+      cites = [c.id];
+      proposal = {kind:'create-node', payload:{type:'content', title:'Anchor piece for ' + c.title.slice(0, 34), body:'# Anchor piece\nThe one thing that has to exist for \u201c' + c.title + '\u201d to be real.\n- Says the campaign\u2019s single idea out loud\n- Ships first, so everything else can reference it\n[ ] Owner named\n[ ] Date fixed', _parent:c.id}};
+    } else if (orphans.length && goals.length) {
+      const o = orphans[0], g = goals[0];
+      cites = [o.id, g.id];
+      proposal = {kind:'create-edge', payload:{fromId:o.id, toId:g.id, kind:'serves'}};
+    } else if (thinStrategies.length) {
+      const s = thinStrategies[0];
+      cites = [s.id];
+      proposal = {kind:'create-node', payload:{type:'campaign', title:'Test for ' + s.title.slice(0, 32), body:'# Campaign\nThe smallest push that would prove or kill \u201c' + s.title + '\u201d.\nWindow \u2014 four weeks.\n> If it can\u2019t be wrong in four weeks, shrink it.', _parent:s.id}};
+    } else if (goals.length) cites = [goals[0].id];
+
+    const text = 'Here\u2019s what I\u2019d fix, in order.\n\n' + findings.slice(0, 3).map((f, i) => (i + 1) + '. ' + f).join('\n\n') +
+      '\n\nThe first one is the only one worth doing this week \u2014 the rest are cheaper once it\u2019s true.' +
+      (proposal ? ' I\u2019ve staged the smallest version of that fix below.' : '');
+    return {text, cites, proposal, steps};
+  }
+  applyProposal(msg) {
+    const pl = msg.proposal.payload;
+    if (msg.proposal.kind === 'create-node') {
+      const node = this.createNode({type:pl.type, title:pl.title, body:pl.body});
+      if (pl._parent) this.setState(p => ({edges:p.edges.concat([{id:uid('e'), fromId:node.id, toId:pl._parent, kind:'serves'}])}), () => this.save());
+      setTimeout(() => this.panTo(node.id), 30);
+    } else {
+      this.addEdge(pl.fromId, pl.toId, pl.kind || 'serves');
+    }
+    this.setState(p => ({chat:p.chat.map(m => m.id === msg.id ? Object.assign({}, m, {applied:true}) : m)}), () => this.save());
+  }
+
+  // ---------- example board ----------
+  loadExample() {
+    const mk = (type, title, body, x, y) => ({id:uid('n'), type, title, body, fileIds:[], x, y, createdAt:Date.now(), updatedAt:Date.now()});
+    const goal = mk('goal', 'Vayn: 500 orders/month by Q4', 'From 180/mo today. Paid stays flat; the lift has to come from organic and repeat.', 300, 0);
+    const s1 = mk('strategy', 'ICP: 25\u201334 urban women', 'Buys linen for climate, not fashion. Price-aware, not price-led. Discovers on Reels, converts on WhatsApp.', 90, 200);
+    const s2 = mk('strategy', 'Positioning: everyday linen', 'Not occasion-wear. The competitor set is cotton basics, not designer linen.', 470, 200);
+    const c1 = mk('campaign', 'Ramadan push', 'Six weeks, three content pillars, one landing page. Ends with the Eid drop.', 60, 400);
+    const c2 = mk('campaign', 'Always-on styling series', 'Weekly, evergreen, no dated references. The compounding half of the plan.', 440, 400);
+    const p1 = mk('content', 'Reel: 3 ways to style linen', 'Hook on the fold. 22s. Ends on the WhatsApp CTA.', -50, 600);
+    const p2 = mk('content', 'Carousel: fabric care', 'Answers the top pre-purchase objection \u2014 does it wrinkle.', 190, 600);
+    const p3 = mk('content', 'Eid drop announcement', 'Single post, 48h notice, waitlist link.', 430, 600);
+    const a1 = mk('asset', 'vayn-lookbook.pdf', '', 670, 600);
+    const n1 = mk('note', 'Competitor dropped price 20%', 'Reacting on price would break the positioning. Watch for two more weeks.', 700, 380);
+    const nodes = [goal, s1, s2, c1, c2, p1, p2, p3, a1, n1];
+    const E = (a, b, k) => ({id:uid('e'), fromId:a.id, toId:b.id, kind:k || 'serves'});
+    const edges = [E(s1, goal), E(s2, goal), E(c1, s1), E(c2, s2), E(p1, c2), E(p2, c2), E(p3, c1), E(a1, c1), E(n1, s2, 'relates-to')];
+    nodes.forEach(n => { n.blocks = blocksFromText(n.body); });
+    this.commit({nodes, edges, selected:[], comments:this.demoComments(nodes), board:Object.assign({}, this.state.board, {name:'Vayn'})}, {undoable:true});
+    setTimeout(() => this.fit(), 40);
+  }
+
+  // ---------- canvas actions ----------
+  fit() {
+    const el = this.canvasRef.current, ns = this.state.nodes;
+    if (!el || !ns.length) return;
+    const minX = Math.min.apply(null, ns.map(n => n.x)), maxX = Math.max.apply(null, ns.map(n => n.x + NODE_W));
+    const minY = Math.min.apply(null, ns.map(n => n.y)), maxY = Math.max.apply(null, ns.map(n => n.y + NODE_H));
+    const pad = 90;
+    const z = clamp(Math.min((el.clientWidth - pad*2)/(maxX - minX || 1), (el.clientHeight - pad*2)/(maxY - minY || 1)), MIN_Z, 1.4);
+    this.glideTo({zoom:z, x:el.clientWidth/2 - (minX + maxX)/2*z, y:el.clientHeight/2 - (minY + maxY)/2*z});
+  }
+  autoArrange() {
+    if (!this.state.nodes.length) return;
+    const rows = {};
+    this.state.nodes.forEach(n => { const r = ROW[n.type]; (rows[r] = rows[r] || []).push(n); });
+    const map = {};
+    Object.keys(rows).forEach(r => {
+      const list = rows[r].slice().sort((a, b) => a.title.localeCompare(b.title));
+      const totalW = list.length * (NODE_W + 44) - 44;
+      list.forEach((n, i) => { map[n.id] = {x:-totalW/2 + i * (NODE_W + 44), y:Number(r) * (NODE_H + 96)}; });
+    });
+    this.commit({nodes:this.state.nodes.map(n => Object.assign({}, n, map[n.id]))}, {undoable:true});
+    setTimeout(() => this.fit(), 60);
+  }
+  zoomBy(f) {
+    const el = this.canvasRef.current;
+    this.zoomAt(f, el ? el.clientWidth / 2 : 0, el ? el.clientHeight / 2 : 0);
+  }
+
+  handleKey(e) {
+    if (this.state.route !== 'app') return;
+    const tag = (e.target && e.target.tagName) || '';
+    const typing = tag === 'INPUT' || tag === 'TEXTAREA' || !!(e.target && e.target.isContentEditable);
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'v' || e.key === 'V')) {
+      e.preventDefault();
+      const st = (this.state.voice || {}).status;
+      if (st === 'listening') this.stopVoice(); else if (st === 'arming') this.cancelVoice(); else this.startVoice();
+      return;
+    }
+    if (e.key === 'Escape') {
+      if ((this.state.voice || {}).status === 'listening' || (this.state.voice || {}).status === 'arming') { this.cancelVoice(); return; }
+      if (this.state.slash) { this.setState({slash:null}); return; }
+      if (this.state.activePin) { this.closePin(); return; }
+      if (this.state.tool !== 'select') { this.setTool('select'); return; }
+      if (this.state.typeMenu) this.setState({typeMenu:false});
+      else if (this.state.searchOpen) this.setState({searchOpen:false, query:''});
+      else if (this.state.connect.on) this.setState({connect:{on:false, sourceId:null, targetId:null, x:0, y:0}});
+      else if (this.state.addMenu) this.setState({addMenu:false});
+      else if (this.state.panelId) this.setState({panelId:null});
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); this.openSearch(); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); this.undo(); return; }
+    if (typing) return;
+    const k = e.key.toLowerCase();
+    if (e.code === 'Space' && !this.state.spacePan) { e.preventDefault(); this.setState({spacePan:true}); return; }
+    if (k === 'n') { e.preventDefault(); this.setState({addMenu:true}); }
+    if (k === 'l') { e.preventDefault(); this.toggleConnect(); }
+    if (k === '0') { e.preventDefault(); this.fit(); }
+    if (k === '=' || k === '+') { e.preventDefault(); this.zoomBy(1.25); }
+    if (k === '-' || k === '_') { e.preventDefault(); this.zoomBy(1/1.25); }
+    const tool = TOOLS.find(t => t.key.toLowerCase() === k);
+    if (tool) { e.preventDefault(); this.setTool(tool.id); }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && this.state.selected.length) { e.preventDefault(); this.deleteNodes(this.state.selected); }
+  }
+
+  toggleConnect() {
+    if (this.state.connect.on) { this.setState({connect:{on:false, sourceId:null, targetId:null, x:0, y:0}}); return; }
+    if (this.state.nodes.length < 2) { this.toast('Add another node first \u2014 connections need two.', {tone:'warn'}); return; }
+    this.setState({connect:{on:true, sourceId:null, targetId:null, x:0, y:0}, addMenu:false});
+  }
+  openSearch() {
+    if (!this.state.nodes.length) return;
+    this.setState({searchOpen:true, query:'', highlight:0});
+    setTimeout(() => { if (this.searchRef.current) this.searchRef.current.focus(); }, 40);
+  }
+
+  // ---------- edge geometry ----------
+  edgePath(a, b, style) {
+    const ac = {x:a.x + NODE_W/2, y:a.y + NODE_H/2}, bc = {x:b.x + NODE_W/2, y:b.y + NODE_H/2};
+    const p1 = this.borderPoint(ac, bc), p2 = this.borderPoint(bc, ac);
+    let d;
+    if (style === 'straight') d = 'M' + p1.x + ' ' + p1.y + ' L' + p2.x + ' ' + p2.y;
+    else if (style === 'orthogonal') { const my = (p1.y + p2.y)/2; d = 'M' + p1.x + ' ' + p1.y + ' L' + p1.x + ' ' + my + ' L' + p2.x + ' ' + my + ' L' + p2.x + ' ' + p2.y; }
+    else { const dy = (p2.y - p1.y) * 0.5; d = 'M' + p1.x + ' ' + p1.y + ' C' + p1.x + ' ' + (p1.y + dy) + ' ' + p2.x + ' ' + (p2.y - dy) + ' ' + p2.x + ' ' + p2.y; }
+    const ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+    const L = 9;
+    const arrow = 'M' + p2.x + ' ' + p2.y +
+      ' L' + (p2.x - L*Math.cos(ang - 0.42)) + ' ' + (p2.y - L*Math.sin(ang - 0.42)) +
+      ' L' + (p2.x - L*Math.cos(ang + 0.42)) + ' ' + (p2.y - L*Math.sin(ang + 0.42)) + ' Z';
+    return {d, arrow, mid:{x:(p1.x + p2.x)/2, y:(p1.y + p2.y)/2}};
+  }
+  borderPoint(from, to) {
+    const dx = to.x - from.x, dy = to.y - from.y;
+    if (!dx && !dy) return from;
+    const hw = NODE_W/2 + 2, hh = NODE_H/2 + 2;
+    const s = Math.min(Math.abs(dx) > 0.001 ? hw/Math.abs(dx) : Infinity, Math.abs(dy) > 0.001 ? hh/Math.abs(dy) : Infinity);
+    return {x:from.x + dx*s, y:from.y + dy*s};
+  }
+
+  // ---------- pointer ----------
+  onCanvasDown(e) {
+    this.stopGlide();
+    const T = this.state.tool;
+    const middle = e.button === 1;
+    if (!middle && !this.state.spacePan && T !== 'select') {
+      const w = this.toWorld(e.clientX, e.clientY);
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      if (T === 'pen' || T === 'marker') { this.beginStroke(w); return; }
+      if (T === 'eraser') { this._erasing = true; this.eraseAt(w); return; }
+      if (T === 'sticky' || T === 'text') { this.addSticky(w, T === 'text'); return; }
+      if (T === 'pin') { this.addPin(w); return; }
+    }
+    const isBg = e.target === this.canvasRef.current || (e.target.tagName === 'DIV' && e.target.dataset.mcWorld);
+    if (!isBg && !middle && !this.state.spacePan) return;
+    if (this.state.connect.on) { this.setState({connect:Object.assign({}, this.state.connect, {sourceId:null, targetId:null})}); return; }
+    this._pan = {sx:e.clientX, sy:e.clientY, vx:this.state.board.viewport.x, vy:this.state.board.viewport.y, vel:{x:0, y:0}, lx:e.clientX, ly:e.clientY, t:performance.now()};
+    if (isBg && !middle) this.setState({selected:[], addMenu:false, activePin:null, editSticky:null});
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  onCanvasMove(e) {
+    if (this._stroke) { this.strokeMove(this.toWorld(e.clientX, e.clientY)); return; }
+    if (this._erasing) { this.eraseAt(this.toWorld(e.clientX, e.clientY)); return; }
+    if (this._sdrag) { this.stickyMove(e); return; }
+    if (this._pan) {
+      const v = this.state.board.viewport;
+      const now = performance.now(), dt = Math.max(8, now - this._pan.t);
+      this._pan.vel = {x:(e.clientX - this._pan.lx) / dt, y:(e.clientY - this._pan.ly) / dt};
+      this._pan.lx = e.clientX; this._pan.ly = e.clientY; this._pan.t = now;
+      this.setViewport({x:this._pan.vx + (e.clientX - this._pan.sx), y:this._pan.vy + (e.clientY - this._pan.sy), zoom:v.zoom});
+      return;
+    }
+    if (this._drag) {
+      const w = this.toWorld(e.clientX, e.clientY);
+      const dx = w.x - this._drag.wx, dy = w.y - this._drag.wy;
+      this.setState(p => ({nodes:p.nodes.map(n => this._drag.start[n.id] ? Object.assign({}, n, {x:this._drag.start[n.id].x + dx, y:this._drag.start[n.id].y + dy}) : n)}));
+      this._drag.moved = this._drag.moved || Math.abs(dx) + Math.abs(dy) > 3;
+      return;
+    }
+    if (this.state.connect.on && this.state.connect.sourceId) {
+      const w = this.toWorld(e.clientX, e.clientY);
+      this.setState(p => ({connect:Object.assign({}, p.connect, {x:w.x, y:w.y})}));
+    }
+  }
+  onCanvasUp(e) {
+    if (this._stroke) { this.endStroke(); return; }
+    if (this._erasing) { this._erasing = false; this._eraseUndo = false; this.save(); return; }
+    if (this._sdrag) { const m = this._sdrag.moved; this._sdrag = null; if (m) this.save(); return; }
+    if (this._pan) {
+      const p = this._pan; this._pan = null;
+      const v = this.state.board.viewport;
+      const sp = Math.hypot(p.vel.x, p.vel.y);
+      if (sp > 0.35) this.glideTo({zoom:v.zoom, x:v.x + p.vel.x * 90, y:v.y + p.vel.y * 90});
+      else this.save();
+    }
+    if (this._drag) { const moved = this._drag.moved; this._drag = null; if (moved) this.save(); }
+  }
+  // ---------- navigation ----------
+  targetView() { return this._vt || this.state.board.viewport; }
+  stopGlide() { if (this._raf) cancelAnimationFrame(this._raf); this._raf = null; this._vt = null; }
+  glideTo(t) {
+    this._vt = {x:t.x, y:t.y, zoom:clamp(t.zoom, MIN_Z, MAX_Z)};
+    if (this._raf) return;
+    const step = () => {
+      const cur = this.state.board.viewport, g = this._vt;
+      if (!g) { this._raf = null; return; }
+      const dx = g.x - cur.x, dy = g.y - cur.y, dz = g.zoom - cur.zoom;
+      if (Math.abs(dx) < 0.35 && Math.abs(dy) < 0.35 && Math.abs(dz) < 0.0008) {
+        this._raf = null; this._vt = null; this.setViewport(g); return;
+      }
+      const k = 0.26;
+      this.setViewport({x:cur.x + dx * k, y:cur.y + dy * k, zoom:cur.zoom + dz * k});
+      this._raf = requestAnimationFrame(step);
+    };
+    this._raf = requestAnimationFrame(step);
+  }
+  zoomAt(factor, px, py) {
+    const v = this.targetView();
+    const z = clamp(v.zoom * factor, MIN_Z, MAX_Z);
+    this.glideTo({zoom:z, x:px - (px - v.x) * (z / v.zoom), y:py - (py - v.y) * (z / v.zoom)});
+  }
+  onWheel(e) {
+    e.preventDefault();
+    const el = this.canvasRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const v = this.targetView();
+    if (e.ctrlKey || e.metaKey) {
+      const f = Math.exp(-e.deltaY * 0.0125);
+      this.zoomAt(f, e.clientX - r.left, e.clientY - r.top);
+      return;
+    }
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+    let dx = e.deltaX * unit, dy = e.deltaY * unit;
+    if (e.shiftKey && !e.deltaX) { dx = dy; dy = 0; }
+    this.glideTo({zoom:v.zoom, x:v.x - dx, y:v.y - dy});
+  }
+  nodeDown(n, e) {
+    if (this.state.tool !== 'select' || this.state.spacePan) return;
+    e.stopPropagation();
+    if (this.state.connect.on) return;
+    const w = this.toWorld(e.clientX, e.clientY);
+    const sel = this.state.selected.indexOf(n.id) >= 0 ? this.state.selected : [n.id];
+    const start = {};
+    this.state.nodes.forEach(x => { if (sel.indexOf(x.id) >= 0) start[x.id] = {x:x.x, y:x.y}; });
+    this._pendingUndo = this.snapshot();
+    this._drag = {wx:w.x, wy:w.y, start, moved:false};
+    this.setState({selected:sel});
+    try { this.canvasRef.current.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  nodeClick(n, e) {
+    if (this.state.tool !== 'select') return;
+    e.stopPropagation();
+    const c = this.state.connect;
+    if (c.on) {
+      if (!c.sourceId) { this.setState({connect:Object.assign({}, c, {sourceId:n.id})}); return; }
+      if (c.sourceId === n.id) { this.setState({connect:Object.assign({}, c, {sourceId:null})}); return; }
+      this.setState({connect:Object.assign({}, c, {targetId:n.id})});
+      return;
+    }
+    this.setState({selected:[n.id]});
+  }
+
+  // ---------- whiteboard ----------
+  setTool(id) {
+    this.setState({tool:id, addMenu:false, typeMenu:false, connect:{on:false, sourceId:null, targetId:null, x:0, y:0}});
+  }
+  nodeAt(x, y, pad) {
+    const p = pad || 0;
+    const list = this.state.nodes.filter(n => x >= n.x - p && x <= n.x + NODE_W + p && y >= n.y - p && y <= n.y + NODE_H + p);
+    return list.length ? list[list.length - 1] : null;
+  }
+  anchorForPts(pts) {
+    const bb = bboxOf(pts);
+    const cx = (bb.x0 + bb.x1) / 2, cy = (bb.y0 + bb.y1) / 2;
+    const scored = this.state.nodes.map(n => {
+      const near = pts.filter(p => p.x >= n.x - 48 && p.x <= n.x + NODE_W + 48 && p.y >= n.y - 48 && p.y <= n.y + NODE_H + 48).length / pts.length;
+      const d = Math.hypot(cx - (n.x + NODE_W / 2), cy - (n.y + NODE_H / 2));
+      return {n, near, d};
+    }).filter(o => o.near > 0.55 && o.d < NODE_W * 1.1).sort((a, b) => b.near - a.near || a.d - b.d);
+    return scored.length ? scored[0].n : null;
+  }
+  originOf(item) {
+    if (!item.nodeId) return {x:0, y:0};
+    const n = this.state.nodes.find(x => x.id === item.nodeId);
+    return n ? {x:n.x, y:n.y} : {x:0, y:0};
+  }
+  beginStroke(w) {
+    const T = this.state.tool;
+    this._stroke = {pts:[w], tool:T, color:this.state.penColor, size:T === 'marker' ? this.state.penSize * 5 : this.state.penSize};
+    this.setState({drawPts:[w], activePin:null, editSticky:null});
+  }
+  strokeMove(w) {
+    const st = this._stroke;
+    if (!st) return;
+    const last = st.pts[st.pts.length - 1];
+    const min = 1.8 / this.state.board.viewport.zoom;
+    if (Math.hypot(w.x - last.x, w.y - last.y) < min) return;
+    st.pts.push(w);
+    if (!this._inkRaf) this._inkRaf = requestAnimationFrame(() => {
+      this._inkRaf = null;
+      if (this._stroke) this.setState({drawPts:this._stroke.pts.slice()});
+    });
+  }
+  endStroke() {
+    const st = this._stroke;
+    this._stroke = null;
+    if (this._inkRaf) { cancelAnimationFrame(this._inkRaf); this._inkRaf = null; }
+    if (!st || st.pts.length < 2) { this.setState({drawPts:null}); return; }
+    const anchor = this.anchorForPts(st.pts);
+    const pts = anchor ? st.pts.map(p => ({x:p.x - anchor.x, y:p.y - anchor.y})) : st.pts;
+    this.setState({drawPts:null});
+    this.commit({strokes:this.state.strokes.concat([{id:uid('k'), nodeId:anchor ? anchor.id : null, tool:st.tool, color:st.color, size:st.size, pts, at:Date.now()}])}, {undoable:true});
+    if (anchor && !this._inkToast) {
+      this._inkToast = true;
+      this.toast('Pinned to \u201c' + anchor.title + '\u201d \u2014 this mark now travels with the node.', {tone:'info'});
+    }
+  }
+  eraseAt(w) {
+    const r = 15 / this.state.board.viewport.zoom;
+    const keep = this.state.strokes.filter(s => {
+      const o = this.originOf(s);
+      return !s.pts.some(p => Math.hypot(p.x + o.x - w.x, p.y + o.y - w.y) < r + (s.size || 3) / 2);
+    });
+    if (keep.length !== this.state.strokes.length) {
+      if (!this._eraseUndo) { this._eraseUndo = true; this.commit({strokes:keep}, {undoable:true}); }
+      else this.setState({strokes:keep});
+    }
+  }
+  clearInk() {
+    if (!this.state.strokes.length) return;
+    const n = this.state.strokes.length;
+    this.commit({strokes:[]}, {undoable:true});
+    this.toast(n + ' mark' + (n > 1 ? 's' : '') + ' cleared.', {tone:'info', actionLabel:'Undo', onAction:() => this.undo()});
+  }
+
+  // ---------- stickies & board text ----------
+  addSticky(w, plain) {
+    const host = this.nodeAt(w.x, w.y, 6);
+    const id = uid('s');
+    const item = {
+      id, nodeId:host ? host.id : null, plain:!!plain,
+      x:(host ? w.x - host.x : w.x) - 84, y:(host ? w.y - host.y : w.y) - 20,
+      w:plain ? 200 : 172, h:plain ? 48 : 116,
+      color:STICKY_COLORS[this.state.stickies.length % STICKY_COLORS.length], text:'',
+    };
+    this.commit({stickies:this.state.stickies.concat([item]), tool:'select', editSticky:id}, {undoable:true});
+    setTimeout(() => { const el = document.getElementById('sticky-' + id); if (el) el.focus(); }, 40);
+  }
+  patchSticky(id, patch) {
+    this.setState(p => ({stickies:p.stickies.map(s => s.id === id ? Object.assign({}, s, patch) : s), saving:true}));
+    clearTimeout(this._stickyT);
+    this._stickyT = setTimeout(() => { this.save(); this.setState({saving:false}); }, 400);
+  }
+  deleteSticky(id) {
+    this.commit({stickies:this.state.stickies.filter(s => s.id !== id), editSticky:null}, {undoable:true});
+  }
+  stickyDown(s, e) {
+    if (this.state.tool !== 'select' || this.state.spacePan) return;
+    e.stopPropagation();
+    const w = this.toWorld(e.clientX, e.clientY);
+    this._sdrag = {id:s.id, wx:w.x, wy:w.y, x:s.x, y:s.y, moved:false};
+    try { this.canvasRef.current.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  stickyMove(e) {
+    const d = this._sdrag;
+    const w = this.toWorld(e.clientX, e.clientY);
+    const nx = d.x + (w.x - d.wx), ny = d.y + (w.y - d.wy);
+    d.moved = d.moved || Math.abs(nx - d.x) + Math.abs(ny - d.y) > 2;
+    this.setState(p => ({stickies:p.stickies.map(s => s.id === d.id ? Object.assign({}, s, {x:nx, y:ny}) : s)}));
+  }
+
+  // ---------- pinned comments ----------
+  addPin(w) {
+    const host = this.nodeAt(w.x, w.y, 6);
+    const id = uid('pn');
+    const pin = {
+      id, nodeId:host ? host.id : null,
+      x:host ? w.x - host.x : w.x, y:host ? w.y - host.y : w.y,
+      author:(this.state.session && this.state.session.name) || 'You',
+      body:'', createdAt:Date.now(), resolved:false, replies:[], draft:true,
+    };
+    this.setState({pins:this.state.pins.concat([pin]), activePin:id, pinDraft:'', tool:'select'});
+    setTimeout(() => { const el = document.getElementById('pin-input'); if (el) el.focus(); }, 50);
+  }
+  closePin() {
+    const p = this.state.pins.find(x => x.id === this.state.activePin);
+    if (p && p.draft) this.setState({pins:this.state.pins.filter(x => x.id !== p.id), activePin:null, pinDraft:''});
+    else this.setState({activePin:null, pinDraft:''});
+  }
+  submitPin() {
+    const body = this.state.pinDraft.trim();
+    if (!body) return;
+    const id = this.state.activePin;
+    const me = (this.state.session && this.state.session.name) || 'You';
+    const pins = this.state.pins.map(p => {
+      if (p.id !== id) return p;
+      if (p.draft) return Object.assign({}, p, {body, draft:false, createdAt:Date.now()});
+      return Object.assign({}, p, {replies:p.replies.concat([{id:uid('r'), author:me, body, at:Date.now()}])});
+    });
+    this.commit({pins, pinDraft:''}, {undoable:true});
+  }
+  deletePin(id) { this.commit({pins:this.state.pins.filter(p => p.id !== id), activePin:null}, {undoable:true}); }
+  togglePinResolved(id) {
+    this.commit({pins:this.state.pins.map(p => p.id === id ? Object.assign({}, p, {resolved:!p.resolved}) : p)});
+  }
+
+  // ---------- snapshot ----------
+  cssVar(name, fallback) {
+    try { return (getComputedStyle(document.body).getPropertyValue(name) || '').trim() || fallback; } catch (e) { return fallback; }
+  }
+  captureBoard() {
+    const el = this.canvasRef.current;
+    if (!el) return null;
+    const W = el.clientWidth, H = el.clientHeight, DPR = 2;
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    const ctx = cv.getContext('2d');
+    ctx.scale(DPR, DPR);
+    ctx.fillStyle = this.cssVar('--bg-canvas', '#f2eee7');
+    ctx.fillRect(0, 0, W, H);
+    const S = this.state, v = S.board.viewport;
+    ctx.save();
+    ctx.translate(v.x, v.y);
+    ctx.scale(v.zoom, v.zoom);
+    const nodeById = {}; S.nodes.forEach(n => nodeById[n.id] = n);
+    const edgeStyle = (S.board && S.board.edgeStyle) || 'curved';
+    ctx.lineWidth = 1.6;
+    S.edges.forEach(e => {
+      const a = nodeById[e.fromId], b = nodeById[e.toId];
+      if (!a || !b) return;
+      const g = this.edgePath(a, b, edgeStyle);
+      ctx.strokeStyle = this.cssVar(e.kind === 'relates-to' ? '--edge-relates' : '--edge-serves', '#9a9184');
+      ctx.setLineDash(e.kind === 'relates-to' ? [5, 5] : []);
+      try { ctx.stroke(new Path2D(g.d)); ctx.fillStyle = ctx.strokeStyle; ctx.fill(new Path2D(g.arrow)); } catch (err) {}
+    });
+    ctx.setLineDash([]);
+    const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
+    const clipText = (t, max) => { let s = String(t || ''); while (s.length && ctx.measureText(s).width > max) s = s.slice(0, -1); return s; };
+    S.nodes.forEach(n => {
+      rr(n.x, n.y, NODE_W, NODE_H, 10);
+      ctx.fillStyle = this.cssVar('--bg-elevated', '#fff'); ctx.fill();
+      ctx.strokeStyle = this.cssVar('--border-subtle', '#e4ded4'); ctx.lineWidth = 1; ctx.stroke();
+      ctx.save(); rr(n.x, n.y, NODE_W, NODE_H, 10); ctx.clip();
+      ctx.fillStyle = this.cssVar('--node-' + n.type, '#8a7f6d');
+      ctx.fillRect(n.x, n.y, 4, NODE_H);
+      ctx.restore();
+      ctx.fillStyle = this.cssVar('--fg-muted', '#8a8177');
+      ctx.font = '500 9.5px "IBM Plex Mono", monospace';
+      ctx.fillText(String(n.type).toUpperCase(), n.x + 15, n.y + 22);
+      ctx.fillStyle = this.cssVar('--fg-primary', '#252118');
+      ctx.font = '600 14.5px "Instrument Sans", sans-serif';
+      ctx.fillText(clipText(n.title, NODE_W - 30), n.x + 15, n.y + 48);
+      ctx.fillStyle = this.cssVar('--fg-muted', '#8a8177');
+      ctx.font = '12.5px "Instrument Sans", sans-serif';
+      const words = String(n.body || '').split(/\s+/);
+      let line = '', ly = n.y + 70, lines = 0;
+      for (let i = 0; i < words.length && lines < 2; i++) {
+        const test = line ? line + ' ' + words[i] : words[i];
+        if (ctx.measureText(test).width > NODE_W - 30) { ctx.fillText(line, n.x + 15, ly); ly += 17; lines++; line = words[i]; }
+        else line = test;
+      }
+      if (line && lines < 2) ctx.fillText(clipText(line, NODE_W - 30), n.x + 15, ly);
+    });
+    S.stickies.forEach(s => {
+      const o = this.originOf(s), x = s.x + o.x, y = s.y + o.y;
+      if (!s.plain) {
+        ctx.fillStyle = s.color; ctx.globalAlpha = 0.95;
+        ctx.fillRect(x, y, s.w, s.h); ctx.globalAlpha = 1;
+      }
+      ctx.fillStyle = '#252118';
+      ctx.font = (s.plain ? '600 16px' : '13px') + ' "Instrument Sans", sans-serif';
+      const ws = String(s.text || '').split(/\s+/);
+      let ln = '', yy = y + 20;
+      ws.forEach(word => {
+        const t = ln ? ln + ' ' + word : word;
+        if (ctx.measureText(t).width > s.w - 20) { ctx.fillText(ln, x + 10, yy); yy += 18; ln = word; } else ln = t;
+      });
+      if (ln) ctx.fillText(ln, x + 10, yy);
+    });
+    S.strokes.forEach(s => {
+      const o = this.originOf(s);
+      ctx.strokeStyle = s.color;
+      ctx.globalAlpha = s.tool === 'marker' ? 0.32 : 1;
+      ctx.lineWidth = s.size || 3;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      try { ctx.stroke(new Path2D(smoothPath(s.pts.map(p => ({x:p.x + o.x, y:p.y + o.y}))))); } catch (err) {}
+      ctx.globalAlpha = 1;
+    });
+    S.pins.filter(p => !p.draft).forEach((p, i) => {
+      const o = this.originOf(p), x = p.x + o.x, y = p.y + o.y;
+      ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2);
+      ctx.fillStyle = p.resolved ? this.cssVar('--ok', '#5b7a5b') : this.cssVar('--danger', '#a14a3a'); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '600 11px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText(String(i + 1), x, y + 4); ctx.textAlign = 'left';
+    });
+    ctx.restore();
+    return cv.toDataURL('image/png');
+  }
+  downloadPng() {
+    const url = this.captureBoard();
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (this.state.board.name || 'board').replace(/\s+/g, '-').toLowerCase() + '-markup.png';
+    a.click();
+    this.toast('Saved the marked-up board as a PNG.', {tone:'info'});
+  }
+  readDrawing() {
+    const S = this.state;
+    const nodeById = {}; S.nodes.forEach(n => nodeById[n.id] = n);
+    const marked = {};
+    S.strokes.forEach(s => { if (s.nodeId && nodeById[s.nodeId]) marked[s.nodeId] = (marked[s.nodeId] || 0) + 1; });
+    const markedNodes = Object.keys(marked).map(id => nodeById[id]);
+    const notes = S.stickies.filter(s => (s.text || '').trim());
+    const pins = S.pins.filter(p => !p.draft && !p.resolved);
+    const free = S.strokes.filter(s => !s.nodeId).length;
+    if (!S.strokes.length && !notes.length && !pins.length) {
+      return {text:'I can see the board, but there\u2019s no markup on it yet \u2014 nothing circled, no notes, no pins. Draw on it and send it again; I read the marks, not the pixels.', cites:[], proposal:null, steps:[]};
+    }
+    const steps = [
+      'Reading the snapshot \u2014 ' + S.strokes.length + ' ink mark' + (S.strokes.length === 1 ? '' : 's') + ', ' + notes.length + ' note' + (notes.length === 1 ? '' : 's') + ', ' + pins.length + ' open pin' + (pins.length === 1 ? '' : 's') + '.',
+      markedNodes.length ? 'Ink lands on ' + markedNodes.length + ' node' + (markedNodes.length === 1 ? '' : 's') + ': ' + markedNodes.map(n => n.title).join(', ') + '.' : 'No ink sits on a node \u2014 ' + free + ' mark' + (free === 1 ? '' : 's') + ' float free.',
+      'Treating circled nodes as \u201clook here\u201d and note text as instruction.',
+    ];
+    const parts = [];
+    if (markedNodes.length) {
+      parts.push('You marked up ' + markedNodes.map(n => '\u201c' + n.title + '\u201d (' + n.type + ')').join(' and ') + '. ' +
+        (markedNodes.length > 1 ? 'They sit in different layers, so the fastest read is: decide the top one first and let it settle the rest.' : 'It\u2019s the only thing you flagged, so I\u2019m treating it as the whole ask.'));
+    }
+    if (notes.length) parts.push('Your notes read: ' + notes.map(n => '\u201c' + (n.text || '').trim().replace(/\s+/g, ' ').slice(0, 90) + '\u201d').join('; ') + '. I\u2019ve taken those as the instruction, not commentary.');
+    if (pins.length) parts.push(pins.length + ' pinned comment' + (pins.length === 1 ? '' : 's') + ' still open \u2014 ' + pins.map(p => '\u201c' + (p.body || '').slice(0, 60) + '\u201d').join('; ') + '.');
+    if (free) parts.push(free + ' mark' + (free === 1 ? '' : 's') + ' sit on empty canvas \u2014 if that\u2019s a node that doesn\u2019t exist yet, say the word and I\u2019ll add it.');
+    const first = markedNodes[0];
+    const title = notes.length ? (notes[0].text || '').trim().replace(/\s+/g, ' ').slice(0, 56) : (first ? 'Follow-up: ' + first.title : 'From the whiteboard');
+    return {
+      text:parts.join(' '),
+      cites:markedNodes.map(n => n.id).slice(0, 5),
+      steps,
+      proposal:{kind:'create-node', payload:{
+        type:'note', title,
+        body:'# From the whiteboard\n' + (markedNodes.length ? markedNodes.map(n => '- Marked: ' + n.title + ' (' + n.type + ')').join('\n') + '\n' : '') +
+          (notes.length ? notes.map(n => '> ' + (n.text || '').trim().replace(/\s+/g, ' ')).join('\n') + '\n' : '') +
+          (pins.length ? pins.map(p => '[ ] ' + p.body).join('\n') : ''),
+        _parent:first ? first.id : null,
+      }},
+    };
+  }
+  sendSnapshot() {
+    if (this.state.streaming) return;
+    const url = this.captureBoard();
+    if (!url) return;
+    const reply = this.readDrawing();
+    const el = this.canvasRef.current;
+    const userMsg = {id:uid('m'), role:'user', content:'Read my markup on the board.', status:'complete', citedNodeIds:[], at:Date.now(), image:url, imageAR:el ? el.clientWidth / el.clientHeight : 1.5};
+    const asstMsg = {id:uid('m'), role:'assistant', content:'', status:'streaming', citedNodeIds:[], at:Date.now(), mode:'reasoner', steps:[], _steps:reply.steps || [], _full:reply.text, proposal:reply.proposal, _cites:reply.cites};
+    this.setState({
+      chat:this.state.chat.concat([userMsg, asstMsg]), streaming:true, citedIds:[],
+      ui:Object.assign({}, this.state.ui, {rail:true}),
+    }, () => this.stream(asstMsg.id));
+  }
+
+  // ---------- render ----------
+  renderVals() {
+    const S = this.state;
+    const V = S.voice || {status:'idle', levels:[], elapsed:0, interim:'', err:'', sim:false};
+    const isAuth = S.route === 'signin' || S.route === 'signup';
+    const isSignup = S.route === 'signup';
+    const nodeById = {};
+    S.nodes.forEach(n => nodeById[n.id] = n);
+    const edgeCount = {};
+    S.edges.forEach(e => { edgeCount[e.fromId] = (edgeCount[e.fromId] || 0) + 1; edgeCount[e.toId] = (edgeCount[e.toId] || 0) + 1; });
+    const annCount = {}, unreadCount = {};
+    S.comments.forEach(c => {
+      annCount[c.nodeId] = (annCount[c.nodeId] || 0) + 1;
+      if (!c.read) unreadCount[c.nodeId] = (unreadCount[c.nodeId] || 0) + 1;
+    });
+
+    const cardVariant = this.props.nodeCardStyle || 'accent-bar';
+    const edgeStyle = this.props.edgeStyle || 'curved';
+    const railSide = this.props.railSide || 'left';
+
+    const btnBase = 'background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:6px 11px;font-size:12.5px;cursor:pointer;white-space:nowrap;flex:0 0 auto;';
+    const btnStyle = btnBase;
+    const btnDisabled = 'background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:6px 11px;font-size:12.5px;white-space:nowrap;flex:0 0 auto;opacity:.4;cursor:not-allowed;';
+
+    // ---- auth ----
+    const auth = {
+      isAuth, isSignup, isApp: S.route === 'app',
+      authHeading: isSignup ? 'Create your workspace' : 'Sign in',
+      authSub: isSignup ? 'One board, six kinds of node, and the lines that say why anything exists.' : 'Your board is on this device.',
+      f: S.f, err: S.err, formError: S.formError, pending: S.pending,
+      emailRef: this.emailRef,
+      onField: {
+        name: e => this.setField('name', e.target.value),
+        email: e => this.setField('email', e.target.value),
+        password: e => this.setField('password', e.target.value),
+        confirm: e => this.setField('confirm', e.target.value),
+      },
+      onAuthSubmit: e => this.submitAuth(e),
+      onSwitchAuth: () => this.setState({route:isSignup ? 'signin' : 'signup', err:{}, formError:''}),
+      switchPrompt: isSignup ? 'Already have a workspace?' : 'No account?',
+      switchLabel: isSignup ? 'Sign in' : 'Create one',
+      submitLabel: S.pending ? (isSignup ? 'Creating\u2026' : 'Signing in\u2026') : (isSignup ? 'Create workspace' : 'Sign in'),
+      submitStyle: 'margin-top:4px;background:' + (S.pending ? 'var(--border-strong)' : 'var(--accent)') + ';border:1px solid ' + (S.pending ? 'var(--border-strong)' : 'var(--accent)') + ';color:var(--fg-inverse);border-radius:var(--r-md);padding:12px;font-size:14.5px;font-weight:600;cursor:' + (S.pending ? 'default' : 'pointer') + ';',
+      ruleText: S.f.password.length >= 8 ? '\u2713 At least 8 characters' : 'At least 8 characters',
+      ruleStyle: 'font-size:12px;color:' + (S.f.password.length >= 8 ? 'var(--ok)' : 'var(--fg-muted)') + ';',
+    };
+
+    if (!auth.isApp) return auth;
+
+    // ---- node views ----
+    const nodeViews = S.nodes.map(n => {
+      const sel = S.selected.indexOf(n.id) >= 0;
+      const cited = S.citedIds.indexOf(n.id) >= 0;
+      const isSource = S.connect.sourceId === n.id;
+      const candidate = S.connect.on && S.connect.sourceId && !isSource;
+      const fc = (n.fileIds || []).length, ac = annCount[n.id] || 0, ec = edgeCount[n.id] || 0;
+      const tinted = cardVariant === 'tinted';
+      const minimal = cardVariant === 'minimal';
+      return {
+        id:n.id, type:n.type, title:n.title || 'Untitled node',
+        excerpt:n.body ? n.body.slice(0, 120) : 'No description yet',
+        aria:(n.title || 'Untitled node') + ', ' + n.type,
+        hasFiles:fc > 0, fileBadge:fc + (fc === 1 ? ' file' : ' files'),
+        hasNotes:ac > 0, noteBadge:ac + (ac === 1 ? ' comment' : ' comments'),
+        hasUnread:(unreadCount[n.id] || 0) > 0,
+        unreadLabel:String(unreadCount[n.id] || 0),
+        unreadTip:(unreadCount[n.id] || 0) + ' unread comment' + ((unreadCount[n.id] || 0) > 1 ? 's' : ''),
+        unreadStyle:{position:'absolute', top:-9, right:-9, minWidth:22, height:22, padding:'0 7px', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--danger)', color:'#fff', border:'2px solid var(--bg-canvas)', borderRadius:999, fontFamily:"'IBM Plex Mono',monospace", fontSize:10.5, fontWeight:600, cursor:'pointer', zIndex:4, animation:'mc-pop .2s ease both'},
+        onOpenComments:e => { e.stopPropagation(); this.openPanel(n.id); setTimeout(() => { const el = this.panelScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 90); },
+        edgeBadge:ec + (ec === 1 ? ' link' : ' links'),
+        posStyle:{position:'absolute', left:n.x, top:n.y, width:NODE_W, height:NODE_H, cursor:S.connect.on ? 'crosshair' : 'grab', outline:'none', animation:'mc-pop .15s ease both', opacity:S.connect.on && !isSource && !candidate ? 0.55 : 1},
+        ring:sel || cited || isSource,
+        ringStyle:{position:'absolute', inset:-4, borderRadius:12, border:'2px solid ' + (isSource ? 'var(--accent)' : cited ? 'var(--warn)' : 'var(--accent)'), pointerEvents:'none', animation:isSource ? 'mc-flash 1.2s infinite' : 'none'},
+        cardStyle:{position:'relative', width:'100%', height:'100%', background:tinted ? 'color-mix(in srgb, ' + color(n.type) + ' 12%, var(--bg-elevated))' : 'var(--bg-elevated)', border:minimal ? '1px solid var(--border-subtle)' : '1px solid ' + (tinted ? 'color-mix(in srgb, ' + color(n.type) + ' 32%, var(--border-subtle))' : 'var(--border-subtle)'), borderRadius:9, overflow:'hidden', boxShadow:sel ? '0 10px 26px -16px rgba(0,0,0,.5)' : '0 2px 6px -4px rgba(0,0,0,.3)'},
+        showBar:cardVariant === 'accent-bar',
+        barStyle:{position:'absolute', left:0, top:0, bottom:0, width:4, background:color(n.type)},
+        dotStyle:{width:7, height:7, borderRadius:'50%', background:color(n.type), display:'inline-block', flex:'0 0 auto'},
+        onDown:e => this.nodeDown(n, e),
+        onClick:e => this.nodeClick(n, e),
+        onOpen:e => { e.stopPropagation(); this.openPanel(n.id); },
+        onKey:e => {
+          if (e.key === 'Enter') { e.preventDefault(); this.openPanel(n.id); }
+          if (e.key.indexOf('Arrow') === 0) {
+            e.preventDefault();
+            const d = {ArrowUp:[0,-8], ArrowDown:[0,8], ArrowLeft:[-8,0], ArrowRight:[8,0]}[e.key];
+            this.patchNode(n.id, {x:n.x + d[0], y:n.y + d[1]});
+          }
+        },
+      };
+    });
+
+    const edgeViews = S.edges.map(e => {
+      const a = nodeById[e.fromId], b = nodeById[e.toId];
+      if (!a || !b) return null;
+      const g = this.edgePath(a, b, edgeStyle);
+      const touched = S.selected.indexOf(a.id) >= 0 || S.selected.indexOf(b.id) >= 0;
+      return {
+        id:e.id, d:g.d, arrow:g.arrow, hasArrow:e.kind === 'serves',
+        color:e.kind === 'serves' ? 'var(--edge-serves)' : 'var(--edge-relates)',
+        width:touched ? 2.4 : 1.6, dash:e.kind === 'serves' ? '' : '5 5',
+        groupStyle:{opacity:touched ? 1 : 0.85, transition:'opacity .15s'},
+        hasLabel:touched && e.kind === 'serves', label:'serves', lx:g.mid.x, ly:g.mid.y - 7,
+      };
+    }).filter(Boolean);
+
+    const src = S.connect.sourceId ? nodeById[S.connect.sourceId] : null;
+    const pendingLine = src ? 'M' + (src.x + NODE_W/2) + ' ' + (src.y + NODE_H/2) + ' L' + S.connect.x + ' ' + S.connect.y : '';
+
+    // ---- peek ----
+    const peekNode = (!S.connect.on && S.selected.length === 1 && !S.panelId) ? nodeById[S.selected[0]] : null;
+    const v = S.board.viewport;
+    const peek = peekNode ? {
+      type:peekNode.type, title:peekNode.title || 'Untitled node',
+      excerpt:peekNode.body ? peekNode.body.slice(0, 110) : 'No description yet',
+      dotStyle:{width:7, height:7, borderRadius:'50%', background:color(peekNode.type), display:'inline-block'},
+      onOpen:() => this.openPanel(peekNode.id),
+      onDelete:() => this.deleteNodes([peekNode.id]),
+      onConnect:() => this.setState({connect:{on:true, sourceId:peekNode.id, targetId:null, x:peekNode.x + NODE_W/2, y:peekNode.y + NODE_H/2}}),
+      connectDisabled:S.nodes.length < 2,
+      connectTip:S.nodes.length < 2 ? 'Add another node to connect to.' : 'Start a connection here',
+      connectStyle:S.nodes.length < 2 ? btnDisabled : btnBase,
+    } : {};
+
+    // ---- panel ----
+    const pNode = S.panelId ? nodeById[S.panelId] : null;
+    let p = {};
+    if (pNode) {
+      const outs = S.edges.filter(e => e.fromId === pNode.id && e.kind === 'serves');
+      const ins = S.edges.filter(e => e.toId === pNode.id && e.kind === 'serves');
+      const rel = S.edges.filter(e => e.kind === 'relates-to' && (e.fromId === pNode.id || e.toId === pNode.id));
+      const row = (e, otherId) => {
+        const o = nodeById[otherId];
+        return {
+          title:o ? (o.title || 'Untitled node') : 'Missing node',
+          dotStyle:{width:7, height:7, borderRadius:'50%', background:o ? color(o.type) : 'var(--border-strong)', display:'inline-block', flex:'0 0 auto'},
+          onClick:() => this.panTo(otherId),
+          onRemove:() => { this.commit({edges:S.edges.filter(x => x.id !== e.id)}, {undoable:true}); this.toast('Connection removed.', {actionLabel:'Undo', onAction:() => this.undo()}); },
+          removeDisabled:S.connect.on, removeTip:S.connect.on ? 'Finish the connection first' : 'Remove connection',
+          removeLabel:'✕', removeStyle:'background:none;border:none;color:var(--fg-muted);cursor:' + (S.connect.on ? 'not-allowed' : 'pointer') + ';font-size:12px;opacity:' + (S.connect.on ? '.4' : '1') + ';',
+        };
+      };
+      const groups = [];
+      if (outs.length) groups.push({label:'Serves \u2192', rows:outs.map(e => row(e, e.toId))});
+      if (ins.length) groups.push({label:'\u2190 Served by', rows:ins.map(e => row(e, e.fromId))});
+      if (rel.length) groups.push({label:'Related', rows:rel.map(e => row(e, e.fromId === pNode.id ? e.toId : e.fromId))});
+      const cmts = S.comments.filter(c => c.nodeId === pNode.id).sort((a, b) => a.createdAt - b.createdAt);
+      const unread = cmts.filter(c => !c.read).length;
+      const pBlocks = this.blocksOf(pNode);
+      p = {
+        title:pNode.title, body:pNode.body,
+        typeLabel:pNode.type,
+        typeDot:{width:8, height:8, borderRadius:'50%', background:color(pNode.type), display:'inline-block', flex:'0 0 auto'},
+        blocks:pBlocks.map((b, i) => {
+          const isTodo = b.type === 'todo', isDiv = b.type === 'divider';
+          const base = {fontSize:14, lineHeight:1.65, outline:'none', flex:'1 1 auto', minWidth:0, whiteSpace:'pre-wrap', wordBreak:'break-word', padding:'2px 0'};
+          const style = b.type === 'h' ? Object.assign({}, base, {fontSize:16.5, fontWeight:600, letterSpacing:'-.012em', lineHeight:1.4, paddingTop:8})
+            : b.type === 'quote' ? Object.assign({}, base, {fontStyle:'italic', color:'var(--fg-muted)'})
+            : isTodo && b.done ? Object.assign({}, base, {textDecoration:'line-through', color:'var(--fg-muted)'})
+            : isDiv ? Object.assign({}, base, {height:1, minHeight:1, background:'var(--border-strong)', margin:'11px 0', padding:0, caretColor:'transparent'})
+            : base;
+          return {
+            id:b.id, type:b.type, style,
+            rowStyle:{display:'flex', gap:8, alignItems:'flex-start', borderLeft:b.type === 'quote' ? '2px solid var(--border-strong)' : 'none', paddingLeft:b.type === 'quote' ? 10 : 0},
+            hasMarker:b.type === 'bullet' || b.type === 'todo',
+            marker:b.type === 'bullet' ? '\u2022' : (b.done ? '\u2611' : '\u2610'),
+            markerStyle:{flex:'0 0 auto', width:16, textAlign:'center', color:'var(--fg-muted)', fontSize:b.type === 'bullet' ? 15 : 14, lineHeight:'24px', cursor:isTodo ? 'pointer' : 'default', userSelect:'none'},
+            onMarker:() => { if (!isTodo) return; const next = pBlocks.map(x => x.id === b.id ? Object.assign({}, x, {done:!x.done}) : x); this.setBlocks(pNode.id, next); },
+            placeholder:isDiv ? '' : (i === 0 ? 'Write freely, or press “/” for blocks' : (S.focusedBlock === b.id ? 'Press “/” for blocks' : '')),
+            ref:el => {
+              if (el) { this.blockRefs[b.id] = el; if (el.textContent !== b.text && document.activeElement !== el) el.textContent = b.text; }
+              else delete this.blockRefs[b.id];
+            },
+            onInput:e => this.blockInput(pNode.id, pBlocks, i, e),
+            onKey:e => this.blockKey(pNode.id, pBlocks, i, e),
+            onFocus:() => this.setState({focusedBlock:b.id}),
+            onBlur:() => { setTimeout(() => { if (this.state.slash && this.state.slash.blockId === b.id) this.setState({slash:null}); }, 140); this.save(); },
+          };
+        }),
+        commentsLabel:cmts.length ? 'Comments \u00b7 ' + cmts.length : 'Comments',
+        noComments:cmts.length === 0,
+        hasUnreadComments:unread > 0, unreadCommentsLabel:unread + ' unread',
+        comments:cmts.map(c => ({
+          author:c.mine ? 'You' : c.author, initials:initials(c.author),
+          body:c.body, time:fmtAgo(c.createdAt), unread:!c.read,
+          wrapStyle:{display:'flex', gap:10, padding:'10px 0', borderBottom:'1px solid var(--border-subtle)', background:c.read ? 'transparent' : 'linear-gradient(90deg, rgba(161,74,58,.06), transparent 60%)'},
+          avatarStyle:{flex:'0 0 auto', width:26, height:26, borderRadius:'50%', display:'grid', placeItems:'center', fontSize:10, fontWeight:600, background:c.mine ? 'var(--accent)' : 'var(--border-strong)', color:'var(--fg-inverse)'},
+          onDelete:() => this.commit({comments:S.comments.filter(x => x.id !== c.id)}, {undoable:true}),
+          onReply:() => { this.setState({commentDraft:'@' + (c.mine ? 'me' : c.author.split(' ')[0]) + ' '}); setTimeout(() => { const el = this.commentRef.current; if (el) { el.focus(); el.selectionStart = el.value.length; } }, 20); },
+        })),
+        idLabel:pNode.id, updatedLabel:'edited ' + fmtTime(pNode.updatedAt),
+        savingLabel:S.saving ? 'saving\u2026' : 'saved',
+        savingStyle:'opacity:' + (S.saving ? '1' : '.45') + ';color:' + (S.saving ? 'var(--accent)' : 'var(--fg-muted)') + ';',
+        noFiles:(pNode.fileIds || []).length === 0,
+        files:(pNode.fileIds || []).map(fid => {
+          const f = S.files[fid] || {name:'Missing file', sizeBytes:0, alive:false};
+          return {
+            name:f.name,
+            meta:f.alive ? fmtBytes(f.sizeBytes) + ' \u00b7 ' + (f.mime || '').split('/').pop() : 'File not available after reload',
+            metaColor:f.alive ? 'var(--fg-muted)' : 'var(--warn)',
+            thumbChar:f.alive && /^image\//.test(f.mime) ? '\u25a0' : '\u2261',
+            thumbStyle:{width:34, height:34, borderRadius:6, display:'grid', placeItems:'center', background:f.alive ? 'var(--bg-rail)' : 'transparent', border:'1px solid ' + (f.alive ? 'var(--border-subtle)' : 'var(--warn)'), color:'var(--fg-muted)', fontSize:13, flex:'0 0 auto'},
+            actionLabel:f.alive ? 'Open' : 'Re-attach',
+            onAction:() => { if (f.alive && f.objectUrl) window.open(f.objectUrl, '_blank'); else this.attachTo(pNode.id); },
+            onRemove:() => {
+              const before = this.snapshot();
+              this.commit({nodes:S.nodes.map(n => n.id === pNode.id ? Object.assign({}, n, {fileIds:n.fileIds.filter(x => x !== fid)}) : n)}, {undoable:true});
+              this.toast('File detached.', {actionLabel:'Undo', onAction:() => this.commit(before)});
+            },
+          };
+        }),
+        noConnections:groups.length === 0, groups,
+      };
+    }
+
+    const panelModal = (S.ui.panelMode || this.props.defaultPanelView || 'side') === 'modal';
+    const focusedType = (() => {
+      if (!pNode || !S.focusedBlock) return null;
+      const fb = this.blocksOf(pNode).find(b => b.id === S.focusedBlock);
+      return fb ? fb.type : null;
+    })();
+
+    const results = (() => {
+      const q = S.query.trim().toLowerCase();
+      const list = q ? S.nodes.filter(n => (n.title + ' ' + n.body).toLowerCase().indexOf(q) >= 0)
+                     : S.nodes.slice().sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
+      return list.map((n, i) => ({
+        title:n.title || 'Untitled node', sub:n.type + ' \u00b7 ' + (n.body ? n.body.slice(0, 70) : TYPE_MEANS[n.type]),
+        dotStyle:{width:7, height:7, borderRadius:'50%', background:color(n.type), display:'inline-block', flex:'0 0 auto'},
+        style:'display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:' + (i === S.highlight ? 'var(--bg-rail)' : 'transparent') + ';border:none;border-radius:var(--r-sm);padding:9px 11px;cursor:pointer;',
+        onHover:() => this.setState({highlight:i}),
+        onClick:() => { this.setState({searchOpen:false, query:'', selected:[n.id]}); setTimeout(() => this.panTo(n.id, {zoom:1}), 20); },
+      }));
+    })();
+
+    const chatViews = S.chat.map(m => {
+      const user = m.role === 'user';
+      return {
+        id:m.id, roleLabel:user ? 'You' : ('Assistant \u00b7 ' + (m.mode && m.mode !== 'auto' ? m.mode : 'librarian')), avatarChar:user ? (S.session ? S.session.name.slice(0,1).toUpperCase() : 'Y') : '\u25c6',
+        time:fmtTime(m.at || Date.now()), content:m.content,
+        wrapStyle:{display:'flex', flexDirection:'column', alignItems:'stretch'},
+        avatarStyle:{width:17, height:17, borderRadius:'50%', display:'grid', placeItems:'center', fontSize:9, background:user ? 'var(--border-strong)' : 'var(--accent)', color:'var(--fg-inverse)'},
+        bubbleStyle:{fontSize:'13.5px', lineHeight:1.55, color:'var(--fg-primary)', background:user ? 'var(--bg-elevated)' : 'transparent', border:user ? '1px solid var(--border-subtle)' : 'none', borderRadius:8, padding:user ? '9px 11px' : '0'},
+        streaming:m.status === 'streaming' && !!m.content,
+        showDots:m.status === 'streaming' && !m.content,
+        errored:m.status === 'error',
+        hasImage:!!m.image,
+        imageStyle:{display:'block', width:'100%', aspectRatio:String(m.imageAR || 1.5), backgroundImage:'url("' + (m.image || BLANK_PNG) + '")', backgroundSize:'cover', backgroundPosition:'center', backgroundColor:'var(--bg-canvas)', border:'1px solid var(--border-subtle)', borderRadius:'var(--r-md)', marginBottom:8},
+        hasSteps:(m.steps || []).length > 0,
+        steps:(m.steps || []).map((s, i) => ({
+          n:(i < 9 ? '0' : '') + (i + 1), text:s,
+          style:{display:'flex', gap:8, fontSize:12.5, lineHeight:1.5, color:'var(--fg-muted)', padding:'3px 0', animation:'mc-rise .22s ease both'},
+        })),
+        stepsOpen:!S.stepsClosed[m.id],
+        stepsCaret:S.stepsClosed[m.id] ? '+' : '\u2013',
+        stepsLabel:(m.status === 'streaming' && (m._steps || []).length > (m.steps || []).length) ? 'Reasoning\u2026' : 'Reasoning \u00b7 ' + (m.steps || []).length + ' steps',
+        onToggleSteps:() => this.setState(pr => ({stepsClosed:Object.assign({}, pr.stepsClosed, {[m.id]:!pr.stepsClosed[m.id]})})),
+        onRetry:() => { this.setState(p2 => ({chat:p2.chat.filter(x => x.id !== m.id)}), () => { const prevUser = S.chat[S.chat.indexOf(m) - 1]; if (prevUser) this.send(prevUser.content); }); },
+        hasCitations:(m.citedNodeIds || []).length > 0,
+        citations:(m.citedNodeIds || []).map(id => {
+          const n = nodeById[id];
+          return {
+            title:n ? (n.title || 'Untitled') : 'Deleted node',
+            style:'display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:999px;padding:4px 10px;font-size:11.5px;cursor:pointer;max-width:100%;',
+            dotStyle:{width:6, height:6, borderRadius:'50%', background:n ? color(n.type) : 'var(--border-strong)', flex:'0 0 auto'},
+            onClick:() => { if (n) { this.setState({selected:[id]}); this.panTo(id); } },
+          };
+        }),
+        hasProposal:!!m.proposal && m.status === 'complete',
+        proposalKind:m.proposal ? (m.proposal.kind === 'create-node' ? 'Proposed node' : 'Proposed connection') : '',
+        proposalLabel:m.proposal ? (m.proposal.kind === 'create-node' ? m.proposal.payload.title : ((nodeById[m.proposal.payload.fromId] || {}).title || '?') + ' \u2192 ' + ((nodeById[m.proposal.payload.toId] || {}).title || '?')) : '',
+        applied:!!m.applied,
+        onApply:() => this.applyProposal(m),
+        hasProposalPreview:!!(m.proposal && m.proposal.kind === 'create-node' && m.proposal.payload.body),
+        proposalPreview:m.proposal && m.proposal.payload.body ? m.proposal.payload.body.replace(/^#\s*/gm, '').replace(/^\[ \]\s*/gm, '\u2610 ').replace(/^\[x\]\s*/gim, '\u2611 ').replace(/^[-*]\s+/gm, '\u2022 ').replace(/^>\s+/gm, '\u201d ') : '',
+        applyLabel:m.applied ? 'Added' : 'Add to canvas',
+        applyStyle:'margin-top:10px;' + (m.applied
+          ? 'background:none;border:1px solid var(--border-subtle);color:var(--fg-muted);border-radius:var(--r-sm);padding:6px 12px;font-size:12.5px;cursor:default;'
+          : 'background:var(--accent);border:1px solid var(--accent);color:var(--fg-inverse);border-radius:var(--r-sm);padding:6px 12px;font-size:12.5px;font-weight:500;cursor:pointer;'),
+      };
+    });
+
+    const nCount = S.nodes.length;
+    const zoomPct = Math.round(v.zoom * 100) + '%';
+
+    return Object.assign(auth, {
+      // shell
+      shellStyle:{display:'flex', flexDirection:railSide === 'right' ? 'row-reverse' : 'row', height:'100vh', width:'100%'},
+      railOpen:S.ui.rail, railClosed:!S.ui.rail,
+      railStyle:S.narrow
+        ? {position:'fixed', top:0, bottom:0, left:railSide === 'right' ? 'auto' : 0, right:railSide === 'right' ? 0 : 'auto', width:'min(360px,88vw)', zIndex:70, display:'flex', flexDirection:'column', background:'var(--bg-rail)', borderRight:'1px solid var(--border-subtle)', boxShadow:'0 0 60px -18px rgba(0,0,0,.5)', animation:'mc-rise .18s ease both'}
+        : {flex:'0 0 360px', width:360, height:'100vh', display:'flex', flexDirection:'column', background:'var(--bg-rail)', borderRight:railSide === 'left' ? '1px solid var(--border-subtle)' : 'none', borderLeft:railSide === 'right' ? '1px solid var(--border-subtle)' : 'none'},
+      railStripStyle:S.narrow
+        ? {position:'fixed', left:railSide === 'right' ? 'auto' : 14, right:railSide === 'right' ? 14 : 'auto', bottom:14, zIndex:65, display:'flex', flexDirection:'row', gap:8, alignItems:'center'}
+        : {flex:'0 0 48px', width:48, height:'100vh', display:'flex', flexDirection:'column', alignItems:'center', gap:8, paddingTop:14, background:'var(--bg-rail)', borderRight:railSide === 'left' ? '1px solid var(--border-subtle)' : 'none', borderLeft:railSide === 'right' ? '1px solid var(--border-subtle)' : 'none'},
+      toggleRail:() => this.setState(pr => ({ui:Object.assign({}, pr.ui, {rail:!pr.ui.rail})}), () => this.save()),
+      toggleTheme:() => this.setState(pr => ({ui:Object.assign({}, pr.ui, {theme:pr.ui.theme === 'dark' ? 'light' : 'dark'})}), () => { this.applyTheme(); this.save(); }),
+      themeIcon:S.ui.theme === 'dark' ? '\u25d1' : '\u25d0',
+
+      // canvas
+      canvasRef:this.canvasRef,
+      canvasStyle:{position:'relative', flex:'1 1 auto', overflow:'hidden', background:'var(--bg-canvas)', backgroundImage:'radial-gradient(var(--grid-dot) 1px, transparent 1px)', backgroundSize:(26 * v.zoom) + 'px ' + (26 * v.zoom) + 'px', backgroundPosition:v.x + 'px ' + v.y + 'px', cursor:S.connect.on ? 'crosshair' : (S.spacePan ? 'grab' : ({pen:'crosshair', marker:'crosshair', eraser:'cell', sticky:'copy', text:'text', pin:'crosshair'}[S.tool] || 'default')), touchAction:'none'},
+      worldStyle:{position:'absolute', left:0, top:0, transform:'translate(' + v.x + 'px,' + v.y + 'px) scale(' + v.zoom + ')', transformOrigin:'0 0'},
+      onCanvasDown:e => this.onCanvasDown(e), onCanvasMove:e => this.onCanvasMove(e), onCanvasUp:e => this.onCanvasUp(e), onWheel:e => this.onWheel(e),
+      onCanvasLeave:e => this.onCanvasUp(e),
+      onDragOver:e => { e.preventDefault(); if (!S.dropping && !S.connect.on) this.setState({dropping:true}); },
+      onDragLeave:() => this.setState({dropping:false}),
+      onDrop:e => { e.preventDefault(); this.setState({dropping:false}); if (S.connect.on) return; this.ingestFiles(e.dataTransfer.files, this.toWorld(e.clientX, e.clientY)); },
+      dropping:S.dropping,
+
+      // whiteboard
+      tools:TOOLS.map(t => ({
+        id:t.id, icon:t.icon, tip:t.tip, label:t.label,
+        style:{width:32, height:32, display:'grid', placeItems:'center', borderRadius:8, cursor:'pointer', fontSize:14, flex:'0 0 auto',
+          background:S.tool === t.id ? 'var(--fg-primary)' : 'transparent', color:S.tool === t.id ? 'var(--fg-inverse)' : 'var(--fg-muted)',
+          border:'1px solid ' + (S.tool === t.id ? 'var(--fg-primary)' : 'transparent')},
+        onClick:() => this.setTool(t.id),
+      })),
+      inkOptions:S.tool === 'pen' || S.tool === 'marker',
+      inkColors:INK_COLORS.map(c => ({
+        onClick:() => this.setState({penColor:c}),
+        style:{width:18, height:18, borderRadius:'50%', background:c, cursor:'pointer', flex:'0 0 auto',
+          border:'2px solid ' + (S.penColor === c ? 'var(--fg-primary)' : 'transparent'), boxShadow:'0 0 0 1px var(--border-subtle) inset'},
+      })),
+      inkSizes:[2, 3, 6].map(sz => ({
+        onClick:() => this.setState({penSize:sz}),
+        style:{width:26, height:26, display:'grid', placeItems:'center', borderRadius:6, cursor:'pointer', border:'1px solid ' + (S.penSize === sz ? 'var(--border-strong)' : 'transparent'), background:S.penSize === sz ? 'var(--bg-rail)' : 'transparent'},
+        dotStyle:{width:sz + 4, height:sz + 4, borderRadius:'50%', background:S.penColor},
+      })),
+      inkViews:S.strokes.filter(s => !s.nodeId || nodeById[s.nodeId]).map(s => {
+        const o = this.originOf(s);
+        return {
+          id:s.id,
+          d:smoothPath(o.x || o.y ? s.pts.map(p => ({x:p.x + o.x, y:p.y + o.y})) : s.pts),
+          color:s.color, width:s.size || 3, opacity:s.tool === 'marker' ? 0.3 : 1,
+        };
+      }),
+      hasLiveStroke:!!(S.drawPts && S.drawPts.length > 1),
+      liveStroke:S.drawPts ? smoothPath(S.drawPts) : '',
+      liveColor:S.penColor,
+      liveWidth:S.tool === 'marker' ? S.penSize * 5 : S.penSize,
+      liveOpacity:S.tool === 'marker' ? 0.3 : 1,
+      inkCount:S.strokes.length,
+      hasInk:S.strokes.length > 0,
+      clearInk:() => this.clearInk(),
+      snapToChat:() => this.sendSnapshot(),
+      snapDisabled:S.streaming,
+      downloadPng:() => this.downloadPng(),
+
+      stickyViews:S.stickies.filter(s => !s.nodeId || nodeById[s.nodeId]).map(s => {
+        const o = this.originOf(s);
+        return {
+          id:'sticky-' + s.id, value:s.text,
+          wrapStyle:{position:'absolute', left:s.x + o.x, top:s.y + o.y, width:s.w, minHeight:s.h, cursor:S.tool === 'select' ? 'grab' : 'inherit', animation:'mc-pop .16s ease both'},
+          cardStyle:s.plain
+            ? {position:'relative', padding:'6px 8px', borderRadius:6, background:'transparent', border:'1px dashed ' + (S.editSticky === s.id ? 'var(--border-strong)' : 'transparent')}
+            : {position:'relative', padding:'12px 12px 16px', borderRadius:3, background:s.color, boxShadow:'0 6px 16px -10px rgba(0,0,0,.55)', border:'1px solid rgba(0,0,0,.06)'},
+          areaStyle:{width:'100%', minHeight:s.plain ? 24 : s.h - 30, background:'transparent', border:'none', outline:'none', resize:'none', color:'#252118',
+            fontFamily:s.plain ? "'Instrument Sans',sans-serif" : "'Instrument Sans',sans-serif",
+            fontSize:s.plain ? 17 : 13.5, fontWeight:s.plain ? 600 : 400, lineHeight:1.45, letterSpacing:s.plain ? '-.01em' : 0},
+          placeholder:s.plain ? 'Type\u2026' : 'Sticky note\u2026',
+          onChange:e => this.patchSticky(s.id, {text:e.target.value}),
+          onDown:e => this.stickyDown(s, e),
+          onFocus:() => this.setState({editSticky:s.id}),
+          onDelete:e => { e.stopPropagation(); this.deleteSticky(s.id); },
+          showDelete:S.editSticky === s.id,
+          delStyle:{position:'absolute', top:-9, right:-9, width:20, height:20, borderRadius:'50%', background:'var(--bg-elevated)', border:'1px solid var(--border-strong)', color:'var(--fg-muted)', fontSize:11, cursor:'pointer', display:'grid', placeItems:'center', padding:0},
+          anchored:!!s.nodeId,
+        };
+      }),
+
+      pinViews:S.pins.filter(p => !p.nodeId || nodeById[p.nodeId]).map((p, i) => {
+        const o = this.originOf(p);
+        return {
+          id:p.id, label:String(i + 1),
+          style:{position:'absolute', left:p.x + o.x, top:p.y + o.y, width:26, height:26, borderRadius:'50% 50% 50% 2px',
+            transform:'translate(-2px,-24px) scale(' + (1 / v.zoom) + ')', transformOrigin:'0 100%',
+            background:p.resolved ? 'var(--ok)' : (S.activePin === p.id ? 'var(--fg-primary)' : 'var(--danger)'),
+            color:'#fff', border:'2px solid var(--bg-canvas)', display:'grid', placeItems:'center', cursor:'pointer',
+            fontFamily:"'IBM Plex Mono',monospace", fontSize:11, padding:0, boxShadow:'0 4px 12px -6px rgba(0,0,0,.6)', animation:'mc-pop .16s ease both'},
+          onClick:e => { e.stopPropagation(); this.setState({activePin:S.activePin === p.id ? null : p.id, pinDraft:''}); },
+        };
+      }),
+      activePinOpen:!!S.activePin,
+      activePinView:(() => {
+        const p = S.pins.find(x => x.id === S.activePin);
+        if (!p) return {style:{display:'none'}, replies:[], author:'', body:'', createdAt:''};
+        const o = this.originOf(p);
+        const sx = v.x + (p.x + o.x) * v.zoom, sy = v.y + (p.y + o.y) * v.zoom;
+        const n = p.nodeId ? nodeById[p.nodeId] : null;
+        const el = this.canvasRef.current;
+        const cw = el ? el.clientWidth : 900, ch = el ? el.clientHeight : 600;
+        const left = sx + 18 + 280 > cw - 12 ? Math.max(12, sx - 298) : Math.max(12, sx + 18);
+        return {
+          style:{position:'absolute', left, top:clamp(sy - 10, 12, Math.max(12, ch - 260)), width:280, zIndex:60,
+            background:'var(--bg-panel)', border:'1px solid var(--border-subtle)', borderRadius:'var(--r-lg)', padding:14,
+            boxShadow:'0 18px 50px -24px rgba(0,0,0,.6)', animation:'mc-rise .16s ease both'},
+          isDraft:!!p.draft,
+          author:p.author, body:p.body,
+          when:new Date(p.createdAt).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}),
+          anchorLabel:n ? 'on \u201c' + n.title + '\u201d' : 'on the canvas',
+          replies:(p.replies || []).map(r => ({
+            author:r.author, body:r.body,
+            when:new Date(r.at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}),
+          })),
+          hasReplies:(p.replies || []).length > 0,
+          resolveLabel:p.resolved ? 'Reopen' : 'Resolve',
+          onResolve:() => this.togglePinResolved(p.id),
+          onDelete:() => this.deletePin(p.id),
+          onClose:() => this.closePin(),
+          placeholder:p.draft ? 'What about this?' : 'Reply\u2026',
+        };
+      })(),
+      pinDraft:S.pinDraft,
+      onPinDraft:e => this.setState({pinDraft:e.target.value}),
+      onPinKey:e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey || !e.shiftKey)) { e.preventDefault(); this.submitPin(); } },
+      submitPin:() => this.submitPin(),
+      pinSubmitDisabled:!S.pinDraft.trim(),
+      pinSubmitStyle:'background:' + (S.pinDraft.trim() ? 'var(--accent)' : 'var(--border-subtle)') + ';border:none;color:' + (S.pinDraft.trim() ? 'var(--fg-inverse)' : 'var(--fg-muted)') + ';border-radius:var(--r-sm);padding:6px 12px;font-size:12.5px;font-weight:500;cursor:' + (S.pinDraft.trim() ? 'pointer' : 'default') + ';',
+      toolHintOpen:S.tool !== 'select',
+      toolHint:({pen:'Draw \u2014 a mark that lands on a node sticks to it', marker:'Highlight \u2014 lands on a node, stays on that node',
+        eraser:'Drag over ink to erase', sticky:'Click to drop a sticky note', text:'Click to type on the board', pin:'Click where the comment belongs'}[S.tool] || ''),
+      exitTool:() => this.setTool('select'),
+
+      nodeViews, edgeViews,
+      hasPendingLine:!!src && S.connect.on, pendingLine,
+      boardEmpty:nCount === 0,
+
+      // toolbar
+      btnStyle, btnPrimary:'background:var(--accent);border:1px solid var(--accent);color:var(--fg-inverse);border-radius:var(--r-sm);padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;flex:0 0 auto;',
+      addLabel:S.narrow ? '+' : '+ Add',
+      connectLabel:S.narrow ? '⇄' : 'Connect',
+      searchLabel:S.narrow ? '⌕' : 'Search',
+      arrangeLabel:S.narrow ? '☰' : 'Auto-arrange',
+      fitLabel:S.narrow ? '⤢' : 'Fit',
+      undoLabel:S.narrow ? '↺' : 'Undo',
+      showZoomLabel:!S.narrow,
+      iconBtnStyle:'background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-sm);width:26px;height:26px;font-size:14px;cursor:pointer;display:grid;place-items:center;flex:0 0 auto;',
+      connectMode:S.connect.on,
+      connectHint:S.connect.sourceId ? 'Now pick the node it connects to' : 'Pick the node the connection starts from',
+      connectBtnStyle:nCount < 2 ? btnDisabled : (S.connect.on ? 'background:var(--fg-primary);border:1px solid var(--fg-primary);color:var(--fg-inverse);border-radius:var(--r-sm);padding:6px 11px;font-size:12.5px;cursor:pointer;' : btnBase),
+      connectDisabled:nCount < 2, connectTip:nCount < 2 ? 'Connections need two nodes.' : 'Connect \u2014 L',
+      searchDisabled:nCount === 0, searchTip:nCount === 0 ? 'Nothing to search yet.' : 'Search \u2014 \u2318F',
+      arrangeDisabled:nCount === 0, arrangeTip:nCount === 0 ? 'Add a node first.' : 'Lay out by lineage',
+      fitTip:nCount === 0 ? 'Add a node first.' : 'Zoom to fit',
+      zoomLabel:zoomPct, zoomIn:() => this.zoomBy(1.2), zoomOut:() => this.zoomBy(1/1.2),
+      zoomInDisabled:v.zoom >= MAX_Z - 0.01, zoomOutDisabled:v.zoom <= MIN_Z + 0.01,
+      undo:() => this.undo(), undoDisabled:S.undoStack.length === 0, undoTip:S.undoStack.length ? 'Undo \u2014 \u2318Z' : 'Nothing to undo',
+      fit:() => this.fit(), autoArrange:() => this.autoArrange(),
+      toggleConnect:() => this.toggleConnect(), openSearch:() => this.openSearch(),
+      loadExample:() => this.loadExample(),
+
+      // legend
+      showLegend:nCount > 0, legendOpen:S.ui.legend, legendCaret:S.ui.legend ? '\u2013' : '+',
+      toggleLegend:() => this.setState(pr => ({ui:Object.assign({}, pr.ui, {legend:!pr.ui.legend})}), () => this.save()),
+      legendItems:TYPES.map(t => ({label:t, dotStyle:{width:8, height:8, borderRadius:'50%', background:color(t), display:'inline-block'}})),
+
+      // peek
+      hasPeek:!!peekNode, peek,
+      peekStyle:peekNode ? {position:'absolute', left:clamp(peekNode.x * v.zoom + v.x, 12, 4000), top:peekNode.y * v.zoom + v.y + NODE_H * v.zoom + 12, width:250, background:'var(--bg-panel)', border:'1px solid var(--border-subtle)', borderRadius:'var(--r-md)', padding:13, boxShadow:'0 16px 40px -22px rgba(0,0,0,.55)', animation:'mc-pop .12s ease both', zIndex:20} : {},
+
+      // kind picker
+      kindPicker:!!S.connect.targetId,
+      kindPickerStyle:S.connect.targetId && nodeById[S.connect.targetId] ? {position:'absolute', left:clamp(nodeById[S.connect.targetId].x * v.zoom + v.x, 12, 4000), top:nodeById[S.connect.targetId].y * v.zoom + v.y + NODE_H * v.zoom + 10, width:230, background:'var(--bg-panel)', border:'1px solid var(--border-subtle)', borderRadius:'var(--r-md)', padding:11, boxShadow:'0 16px 40px -22px rgba(0,0,0,.55)', zIndex:30} : {},
+      servesReads:S.connect.sourceId && S.connect.targetId && nodeById[S.connect.sourceId] ? ((nodeById[S.connect.sourceId].title || 'this').slice(0, 16) + ' \u2192 ' + (nodeById[S.connect.targetId].title || 'that').slice(0, 16)) : 'directional',
+      servesDisabled:false, servesTip:'A serves B',
+      servesStyle:'display:flex;flex-direction:column;gap:2px;align-items:flex-start;width:100%;text-align:left;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--r-sm);padding:8px 10px;font-size:13px;cursor:pointer;',
+      pickServes:() => { const c = S.connect; if (this.addEdge(c.sourceId, c.toId || c.targetId, 'serves')) this.setState({connect:{on:false, sourceId:null, targetId:null, x:0, y:0}}); else this.setState({connect:Object.assign({}, c, {targetId:null})}); },
+      pickRelates:() => { const c = S.connect; if (this.addEdge(c.sourceId, c.targetId, 'relates-to')) this.setState({connect:{on:false, sourceId:null, targetId:null, x:0, y:0}}); else this.setState({connect:Object.assign({}, c, {targetId:null})}); },
+
+      // add menu
+      addMenu:S.addMenu, openAddMenu:() => this.setState({addMenu:true}), closeAddMenu:() => this.setState({addMenu:false}),
+      addNote:() => this.createNode({type:'note'}, {open:true}),
+      pickFile:() => { this.setState({addMenu:false}); if (this.fileInputRef.current) this.fileInputRef.current.click(); },
+      fromChat:() => this.setState({addMenu:false, ui:Object.assign({}, S.ui, {rail:true})}),
+      fromChatTip:S.streaming ? 'Wait for the current reply to finish.' : 'Ask the assistant',
+      fromChatStyle:'display:block;width:100%;text-align:left;background:none;border:none;border-radius:var(--r-sm);padding:9px 10px;font-size:13.5px;cursor:' + (S.streaming ? 'not-allowed' : 'pointer') + ';opacity:' + (S.streaming ? '.45' : '1') + ';',
+      fileInputRef:this.fileInputRef,
+      onFilePicked:e => { this.ingestFiles(e.target.files); e.target.value = ''; },
+
+      // search
+      searchOpen:S.searchOpen, query:S.query, searchRef:this.searchRef,
+      onQuery:e => this.setState({query:e.target.value, highlight:0}),
+      onQueryKey:e => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); this.setState(pr => ({highlight:Math.min(results.length - 1, pr.highlight + 1)})); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); this.setState(pr => ({highlight:Math.max(0, pr.highlight - 1)})); }
+        if (e.key === 'Enter') { const r = results[S.highlight]; if (r) r.onClick(); }
+      },
+      closeSearch:() => this.setState({searchOpen:false, query:''}),
+      stop:e => e.stopPropagation(),
+      results, noResults:S.query.trim().length > 0 && results.length === 0,
+      noResultsText:'No nodes match \u201c' + S.query.trim() + '\u201d.',
+      searchHeading:S.query.trim() ? 'Results' : 'Recent',
+      createFromQuery:() => { const q = S.query.trim(); this.setState({searchOpen:false, query:''}); this.createNode({type:'note', title:q}, {open:true}); },
+
+      // panel
+      panelOpen:!!S.panelId, panelReady:!!pNode, panelMissing:!!S.panelId && !pNode, p,
+      panelIsModal:panelModal && !S.narrow,
+      panelStyle:(panelModal && !S.narrow)
+        ? {position:'fixed', inset:0, margin:'auto', width:'min(860px,92vw)', height:'min(760px,86vh)', background:'var(--bg-panel)', border:'1px solid var(--border-subtle)', borderRadius:'var(--r-lg)', overflow:'hidden', zIndex:60, boxShadow:'0 40px 90px -40px rgba(0,0,0,.7)', animation:'mc-pop .16s ease both'}
+        : {position:'fixed', top:0, bottom:0, right:S.narrow ? 0 : (railSide === 'right' ? 'auto' : 0), left:S.narrow ? 0 : (railSide === 'right' ? 0 : 'auto'), width:S.narrow ? '100vw' : 'min(480px,100vw)', background:'var(--bg-panel)', borderLeft:'1px solid var(--border-subtle)', borderRight:'1px solid var(--border-subtle)', zIndex:60, boxShadow:'0 0 60px -20px rgba(0,0,0,.45)', animation:'mc-rise .18s ease both'},
+      panelModeIcon:panelModal ? '\u25e7' : '\u25a3',
+      panelModeLabel:panelModal ? 'Side' : 'Modal',
+      panelModeTip:panelModal ? 'Dock as a side panel' : 'Open as a centred modal',
+      togglePanelMode:() => this.setState(pr => ({ui:Object.assign({}, pr.ui, {panelMode:pr.ui.panelMode === 'modal' ? 'side' : 'modal'})}), () => this.save()),
+      panelScrollRef:this.panelScrollRef,
+      closePanel:() => this.setState({panelId:null, typeMenu:false}),
+      titleRef:this.titleRef,
+      onTitle:e => this.patchNode(S.panelId, {title:e.target.value}),
+      onTitleBlur:() => this.save(),
+      onBody:e => this.patchNode(S.panelId, {body:e.target.value}),
+      typeMenu:S.typeMenu,
+      toggleTypeMenu:() => this.setState(pr => ({typeMenu:!pr.typeMenu})),
+      typeBtnStyle:'display:inline-flex;align-items:center;gap:7px;background:var(--bg-elevated);border:1px solid ' + (S.typeMenu ? 'var(--border-strong)' : 'var(--border-subtle)') + ';border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;',
+      typeOptions:TYPES.map(t => ({
+        label:t, means:TYPE_MEANS[t], current:!!pNode && pNode.type === t,
+        dotStyle:{width:8, height:8, borderRadius:'50%', background:color(t), display:'inline-block', flex:'0 0 auto', marginTop:4},
+        style:'display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;background:' + (pNode && pNode.type === t ? 'var(--bg-rail)' : 'transparent') + ';border:none;border-radius:var(--r-sm);padding:8px 9px;cursor:pointer;',
+        onClick:() => { this.patchNode(S.panelId, {type:t}); this.setState({typeMenu:false}); },
+      })),
+      editorActive:!!S.focusedBlock,
+      editorHint:'Type “/” for blocks \u00b7 “# ” heading \u00b7 “- ” list \u00b7 “[] ” to-do \u00b7 “> ” quote',
+      slashOpen:!!S.slash,
+      slashStyle:S.slash ? {position:'fixed', top:Math.min(S.slash.top, (typeof window !== 'undefined' ? window.innerHeight : 900) - 300), left:S.slash.left, zIndex:70, width:262, maxHeight:288, overflowY:'auto', background:'var(--bg-panel)', border:'1px solid var(--border-subtle)', borderRadius:'var(--r-md)', padding:5, boxShadow:'0 22px 52px -24px rgba(0,0,0,.55)', animation:'mc-pop .12s ease both'} : {},
+      slashEmpty:!!S.slash && this.slashMatches(S.slash.query).length === 0,
+      slashQuery:S.slash ? S.slash.query : '',
+      slashItems:(S.slash ? this.slashMatches(S.slash.query) : []).map((it, i) => ({
+        label:it.label, hint:it.hint, icon:it.icon,
+        style:'display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:' + (i === S.slashIdx ? 'var(--bg-rail)' : 'transparent') + ';border:none;border-radius:var(--r-sm);padding:7px 8px;cursor:pointer;',
+        iconStyle:{flex:'0 0 auto', width:26, height:26, display:'grid', placeItems:'center', border:'1px solid var(--border-subtle)', borderRadius:'var(--r-sm)', fontSize:12, color:'var(--fg-muted)'},
+        onEnter:() => this.setState({slashIdx:i}),
+        onClick:() => this.runSlash(it),
+      })),
+      preventBlur:e => e.preventDefault(),
+      blockTools:[['p', 'Text', 'Aa'], ['h', 'Heading', 'H'], ['bullet', 'Bulleted list', '\u2022'], ['todo', 'To-do', '\u2610'], ['quote', 'Quote', '\u201d']].map(x => {
+        const active = focusedType === x[0];
+        return {
+          label:x[2], title:x[1],
+          style:'width:26px;height:24px;display:grid;place-items:center;background:' + (active ? 'var(--bg-rail)' : 'transparent') + ';border:1px solid ' + (active ? 'var(--border-strong)' : 'var(--border-subtle)') + ';border-radius:var(--r-sm);font-size:12px;cursor:pointer;color:' + (active ? 'var(--fg-primary)' : 'var(--fg-muted)') + ';',
+          onClick:() => this.setBlockType(x[0]),
+        };
+      }),
+      commentDraft:S.commentDraft, commentRef:this.commentRef,
+      onCommentDraft:e => this.setState({commentDraft:e.target.value}),
+      onCommentKey:e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); this.addComment(); } },
+      addComment:() => this.addComment(),
+      commentDisabled:!S.commentDraft.trim(),
+      commentBtnStyle:'background:' + (S.commentDraft.trim() ? 'var(--accent)' : 'var(--border-subtle)') + ';border:none;color:' + (S.commentDraft.trim() ? 'var(--fg-inverse)' : 'var(--fg-muted)') + ';border-radius:var(--r-sm);padding:9px 14px;font-size:13px;font-weight:500;cursor:' + (S.commentDraft.trim() ? 'pointer' : 'not-allowed') + ';flex:0 0 auto;',
+      attachFile:() => this.attachTo(S.panelId),
+      connectFromPanel:() => { const n = pNode; if (!n) return; if (S.nodes.length < 2) { this.toast('Add another node first \u2014 connections need two.', {tone:'warn'}); return; } this.setState({connect:{on:true, sourceId:n.id, targetId:null, x:n.x + NODE_W/2, y:n.y + NODE_H/2}}); },
+      annotationDraft:S.annotationDraft,
+      onAnnotationDraft:e => this.setState({annotationDraft:e.target.value}),
+      onAnnotationKey:e => { if (e.key === 'Enter') { e.preventDefault(); this.addAnnotation(); } },
+      addAnnotation:() => this.addAnnotation(),
+      annotationDisabled:!S.annotationDraft.trim(),
+      annotationBtnStyle:'background:' + (S.annotationDraft.trim() ? 'var(--accent)' : 'var(--border-subtle)') + ';border:none;color:' + (S.annotationDraft.trim() ? 'var(--fg-inverse)' : 'var(--fg-muted)') + ';border-radius:var(--r-sm);padding:8px 14px;font-size:13px;cursor:' + (S.annotationDraft.trim() ? 'pointer' : 'not-allowed') + ';',
+
+      // chat
+      chatViews, chatEmpty:S.chat.length === 0, chatScrollRef:this.chatScrollRef,
+      draft:S.draft, streaming:S.streaming,
+      composerValue:V.status === 'listening' || V.status === 'transcribing'
+        ? ((S.draft.trim() ? S.draft.trim() + ' ' : '') + (V.interim || (V.status === 'listening' ? '' : '')))
+        : S.draft,
+      inputDisabled:S.streaming || V.status === 'listening' || V.status === 'transcribing' || V.status === 'arming',
+      voiceIdle:V.status === 'idle' || V.status === 'error',
+      voiceArming:V.status === 'arming',
+      voiceListening:V.status === 'listening',
+      voiceTranscribing:V.status === 'transcribing',
+      voiceError:V.status === 'error',
+      voiceErrorMsg:V.err || 'Could not reach the microphone.',
+      voiceTimer:fmtDur(V.elapsed),
+      voiceHint:V.sim ? 'Demo audio \u00b7 Stop to transcribe' : 'Listening \u00b7 Stop to transcribe',
+      bars:(V.levels.length ? V.levels : new Array(28).fill(0.06)).map((l, i, arr) => ({
+        style:'flex:1 1 0;min-width:2px;border-radius:2px;background:var(--accent);opacity:' +
+          (0.28 + 0.62 * (i / Math.max(1, arr.length - 1))).toFixed(2) +
+          ';height:' + Math.round(3 + l * 23) + 'px;transition:height .07s linear',
+      })),
+      micStyle:'display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid ' +
+        (S.streaming ? 'var(--border-subtle)' : 'var(--border-strong)') + ';background:var(--bg-elevated);color:' +
+        (S.streaming ? 'var(--fg-muted)' : 'var(--fg-primary)') + ';cursor:' + (S.streaming ? 'default' : 'pointer') + ';padding:0',
+      onMic:() => this.startVoice(),
+      onStopVoice:() => this.stopVoice(),
+      onCancelVoice:() => this.cancelVoice(),
+      onDraft:e => this.setState({draft:e.target.value}),
+      onDraftKey:e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); } },
+      onSend:() => this.send(),
+      sendDisabled:S.streaming || !S.draft.trim(),
+      sendStyle:'background:' + (S.streaming || !S.draft.trim() ? 'var(--border-subtle)' : 'var(--accent)') + ';border:none;color:' + (S.streaming || !S.draft.trim() ? 'var(--fg-muted)' : 'var(--fg-inverse)') + ';border-radius:var(--r-sm);padding:6px 14px;font-size:12.5px;font-weight:600;cursor:' + (S.streaming || !S.draft.trim() ? 'not-allowed' : 'pointer') + ';',
+      composerStyle:{background:'var(--bg-elevated)', border:'1px solid ' + (S.streaming ? 'var(--border-subtle)' : 'var(--border-strong)'), borderRadius:'var(--r-md)', padding:11, opacity:S.streaming ? 0.6 : 1},
+      composerHint:S.streaming ? 'Replying\u2026' : 'Enter to send \u00b7 \u2318\u21e7V to dictate',
+      examplePrompts:[
+        {mode:'Generator', text:'Draft a reel script about linen care', onClick:() => this.setState({draft:'Draft a reel script about linen care', chatMode:'generator'})},
+        {mode:'Librarian', text:'What serves the Ramadan push?', onClick:() => this.setState({draft:'What serves the Ramadan push?', chatMode:'librarian'})},
+        {mode:'Reasoner', text:'What\u2019s the weakest part of this board?', onClick:() => this.setState({draft:'What\u2019s the weakest part of this board?', chatMode:'reasoner'})},
+      ],
+      modeOptions:MODES.map(m => ({
+        label:m.label, tip:m.tip,
+        style:'flex:1 1 auto;background:' + (S.chatMode === m.id ? 'var(--fg-primary)' : 'var(--bg-elevated)') + ';border:1px solid ' + (S.chatMode === m.id ? 'var(--fg-primary)' : 'var(--border-subtle)') + ';color:' + (S.chatMode === m.id ? 'var(--fg-inverse)' : 'var(--fg-muted)') + ';border-radius:var(--r-sm);padding:5px 4px;font-size:11px;font-weight:' + (S.chatMode === m.id ? '600' : '400') + ';cursor:pointer;',
+        onClick:() => this.setState({chatMode:m.id}, () => this.save()),
+      })),
+
+      // toasts
+      toasts:S.toasts.map(t => ({
+        id:t.id, message:t.message, role:(t.tone === 'warn' || t.tone === 'danger') ? 'alert' : 'status',
+        hasAction:!!t.actionLabel, actionLabel:t.actionLabel,
+        onAction:() => { if (t.onAction) t.onAction(); this.dismiss(t.id); },
+        onDismiss:() => this.dismiss(t.id),
+        dotStyle:{width:7, height:7, borderRadius:'50%', flex:'0 0 auto', background:t.tone === 'danger' ? 'var(--danger)' : t.tone === 'warn' ? 'var(--warn)' : 'var(--ok)'},
+        style:{display:'flex', alignItems:'center', gap:11, pointerEvents:'auto', background:'var(--fg-primary)', color:'var(--fg-inverse)', borderRadius:999, padding:'9px 14px', maxWidth:'min(560px,92vw)', boxShadow:'0 14px 34px -18px rgba(0,0,0,.7)', animation:'mc-rise .18s ease both'},
+      })),
+    });
+  }
+
+  attachTo(nodeId) {
+    this._attachTo = nodeId;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = () => {
+      const arr = Array.from(input.files || []);
+      const files = Object.assign({}, this.state.files);
+      const ids = [];
+      arr.forEach(file => {
+        if (file.size > MAX_BYTES) { this.toast('`' + file.name + '` is ' + fmtBytes(file.size) + ' \u2014 the limit is 25MB.', {tone:'danger'}); return; }
+        const id = uid('f');
+        let url = null;
+        try { url = URL.createObjectURL(file); } catch (e) {}
+        files[id] = {id, name:file.name, mime:file.type || 'application/octet-stream', sizeBytes:file.size, objectUrl:url, alive:!!url};
+        ids.push(id);
+      });
+      if (!ids.length) return;
+      this.commit({files, nodes:this.state.nodes.map(n => n.id === nodeId ? Object.assign({}, n, {fileIds:(n.fileIds || []).concat(ids)}) : n)}, {undoable:true});
+    };
+    input.click();
+  }
+  addAnnotation() {
+    const body = this.state.annotationDraft.trim();
+    if (!body || !this.state.panelId) return;
+    this.commit({annotations:this.state.annotations.concat([{id:uid('a'), nodeId:this.state.panelId, body, createdAt:Date.now()}]), annotationDraft:''}, {undoable:true});
+  }
+}
+</script>
+</body>
+</html>
