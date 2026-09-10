@@ -1,7 +1,10 @@
 # Marketing Canvas — Spec
 
-> Frontend-only build. No server, no external integrations. All persistence is local; all
-> chat responses are mocked. The seams where a backend attaches are marked **[SEAM]**.
+> Built against the local mock API in `api/`. Its contract is `api/README.md` — that file is
+> authoritative for every request, response shape and error code named here. The API is a
+> mock: it runs locally, has no external integrations, and its chat responses are generated
+> rather than modelled. It is nonetheless the system of record; the client caches, it does
+> not own the data.
 
 ---
 
@@ -20,8 +23,16 @@ Notion and Drive already store marketing documents. Neither shows lineage. This 
 Owner (you) → map, connect, trace, produce
 ```
 
-Single actor. No admin, no collaborator, no viewer, no sharing. A multi-user version is a
-different spec.
+One owner per board. A board belongs to one account, is never shared, and has no permission
+tiers.
+
+Comment threads on the board carry an **author** — a name and an avatar — so a thread reads as
+a conversation rather than a pile of anonymous text. That is attribution, not collaboration:
+other authors reach a board through seeded content, never by signing in to it. Nothing in this
+spec lets a second person open your board.
+
+Sharing, invitations, presence and live sync are v2. They are a different spec, and the mock
+API deliberately has no endpoints for them.
 
 ---
 
@@ -57,9 +68,13 @@ Overlays and modes of S3 — not separate screens, specified inline under S3:
 | O4 | Node quick-peek | `connect it` |
 | O5 | Search / jump-to-node | `connect it` |
 | O6 | Chat rail collapse/expand | spans path |
+| O7 | Whiteboard dock + tool modes | `add node` (annotating what you built) |
+| O8 | Marks — stickies and board text | `open it, annotate` |
+| O9 | Comment pins and threads | `open it, annotate` |
 
 **Cut, off-path:** settings/profile, onboarding tour, node-type manager, sharing, export,
-Notion/Drive sync. Each is a v2 file, not a v1 omission by accident.
+Notion/Drive sync, **sharing, presence, live sync and permission tiers**. Each is a v2 file,
+not a v1 omission by accident.
 
 ---
 
@@ -73,13 +88,30 @@ User        = { id, name, email, avatarUrl }
 Board       = { id, name, viewport: { x, y, zoom } }
 Node        = { id, type: NodeType, title, body, fileIds: string[],
                 x, y, createdAt, updatedAt }
-Edge        = { id, fromId, toId, kind: EdgeKind, label?: string }
+Edge        = { id, fromId, toId, kind: EdgeKind, label: string | null }
 Annotation  = { id, nodeId, body, createdAt }
-FileRef     = { id, name, mime, sizeBytes, objectUrl, thumbUrl? }
+
+InkTool     = 'pen' | 'highlighter'
+MarkVariant = 'sticky' | 'text'
+Stroke      = { id, tool: InkTool, color, width, points: number[], createdAt }
+Mark        = { id, variant: MarkVariant, x, y, body, color: string | null,
+                createdAt, updatedAt }
+Pin         = { id, x, y, resolved: boolean, createdAt, comments: Comment[] }
+Comment     = { id, body, createdAt, author: { id, name, avatarUrl } }
+FileRef     = { id, name, mime, sizeBytes, thumbUrl, createdAt }
 ChatMessage = { id, role: 'user' | 'assistant', content, status,
                 citedNodeIds: string[], proposal?: Proposal }
 Proposal    = { kind: 'create-node' | 'create-edge', payload: Partial<Node> | Partial<Edge> }
 ```
+
+`objectUrl` is **client-only** — it never round-trips to the API.
+
+**The whiteboard layer sits above the graph, not inside it.** Strokes, marks and pins have
+board coordinates but no edges and no node relationships. They annotate the canvas; they are
+not part of the traceability spine. Deleting a node never deletes ink near it.
+
+**One `Mark`, two variants.** A sticky and a board-text block are the same positioned text
+box, differing only in whether a card is painted behind the text.
 
 **Type semantics** — what each node means, so the graph is readable without a legend:
 
@@ -101,10 +133,14 @@ Proposal    = { kind: 'create-node' | 'create-edge', payload: Partial<Node> | Pa
 both endpoints. Node A's detail panel shows it under *Serves*; node B's shows it under
 *Served by*. Creating a connection from either side produces the same single edge.
 
-**[SEAM]** Persistence is `localStorage` behind a `store/` module with an async interface, so
-swapping in a real API is one file. Uploaded files become `URL.createObjectURL` blobs and do
-not survive a hard reload — the file *record* persists, the blob does not, and the asset node
-renders its `file-missing` state.
+Persistence is the API. `store/` is a cache over it, not the system of record: mutations issue
+a request and reconcile against the response. A reload re-fetches; nothing authoritative lives
+in the browser.
+
+Uploaded files are the one exception, and it is deliberate. `POST /files` registers **metadata
+only** — the API never receives the bytes. The blob stays in the tab as a
+`URL.createObjectURL` and does not survive a reload. The file *record* comes back, the blob
+does not, and the asset node renders its `file-missing` state.
 
 ---
 
@@ -121,6 +157,10 @@ tailwindcss          — styling (tokens in tailwind.config)
 lucide-react         — icons
 vitest · @testing-library/react · playwright  — tests
 ```
+
+No HTTP client is listed because none is needed — `fetch` is native. `zustand` holds a cache
+of API state plus genuinely client-only state (tool mode, selection, viewport before it is
+flushed), not the system of record.
 
 ---
 
@@ -159,7 +199,8 @@ User = { email, password }   // password never persisted, never logged
 ```
 Heading: "Sign in". Fields labelled `Email`, `Password`. Submit label `Sign in`.
 Footer: "No account? **Create one**" → S2.
-Dummy auth: any well-formed email + password ≥ 8 chars succeeds. **[SEAM]**
+Auth is `POST /auth/login`. Failures are the API's own codes: `bad_credentials` (401),
+`invalid_email` and `weak_password` (422). See `api/README.md` § Auth.
 
 ### Behavior
 ```
@@ -181,8 +222,8 @@ See `state-matrix.md`, row S1.
   inline error names the email field.
 - Given a valid email and a 7-character password, when the form is submitted, then submission
   is blocked and the error reads that the password needs at least 8 characters.
-- Given valid input, when submission succeeds, then the app navigates to `/` and a session
-  exists in local storage.
+- Given valid input, when submission succeeds, then the app navigates to `/` and the returned
+  token is held for subsequent requests.
 - While a submission is pending, the submit button shall be disabled and labelled `Signing in…`.
 - When a submission fails, the form shall retain both entered values and restore an
   interactive submit button.
@@ -200,7 +241,9 @@ Identical shell to S1. Fields: name, email, password, confirm password. Footer l
 { name, email, password, confirmPassword }
 ```
 Heading: "Create your workspace". Submit: `Create workspace`.
-Dummy: any input passing validation succeeds and creates a session + an empty board. **[SEAM]**
+Sign-up is `POST /auth/signup`, which returns a token, a user and an empty board. Failures:
+`invalid_email`, `weak_password` (422) and `email_taken` (409). The address
+`taken@example.com` always returns `email_taken`, so the duplicate path is testable on demand.
 
 ### Behavior
 ```
@@ -309,8 +352,9 @@ Unsupported type                     → reject that file, keep the rest, toast 
 File > 25MB                          → reject that file, toast names the size limit
 Drag over canvas                     → canvas shows a drop-target outline
 ```
-Accepted: images, PDF, plain text, markdown, common office formats. Files are held as object
-URLs. **[SEAM]**
+Accepted: images, PDF, plain text, markdown, common office formats. `POST /files` registers
+**metadata only** — the API never receives the bytes. The blob is held in the tab as an object
+URL and does not survive a reload; the record does. See `api/README.md` § Files.
 
 **O3 — Connect mode**
 ```
@@ -354,6 +398,21 @@ Board empty           → button disabled
 Manual drag always wins afterward; auto-arrange is an action, never a mode. Nothing
 re-arranges on its own.
 
+**O7 — Whiteboard dock**
+```
+Select (V)      → default. Drag pans, click selects, nodes are interactive.
+Pen (P)         → drag draws a stroke. Nodes are inert while drawing.
+Highlighter (H) → as Pen, wider and translucent. Draws beneath node cards.
+Eraser (E)      → click or drag over a stroke removes that whole stroke, not part of it.
+Sticky (S)      → click drops a sticky at that point and focuses it for typing.
+Text (T)        → click drops a text mark at that point and focuses it.
+Comment (C)     → click drops a pin at that point and opens its thread, composer focused.
+Esc             → returns to Select from any tool.
+Tool hint       → a pill naming the active tool and its Esc affordance, while not Select.
+```
+Ink, marks and pins persist through `/strokes`, `/marks` and `/pins`. They annotate the
+canvas and never join the graph — see § Data model.
+
 **Chat rail**
 ```
 Type + Enter            → append user message, append assistant message in `streaming` status
@@ -377,8 +436,15 @@ Three mocked response shapes, one component:
 | Generator | prompt starts with "write" / "draft" / "create" | text + `create-node` proposal |
 | Librarian | prompt is a question about existing nodes | text + `citedNodeIds` |
 | Operator | prompt mentions a node by title + an action | text + `create-edge` proposal |
+| Reasoner | selected explicitly — never auto-detected | a structural audit + `citedNodeIds`, never a proposal |
 
-**[SEAM]** All three come from `src/mocks/chat.ts`. One module replacement wires a real model.
+The composer carries a mode picker offering **Auto / Generator / Librarian / Reasoner**, with
+Auto selected by default. Operator is not in the picker: it triggers on naming two nodes,
+which Auto detects, and selecting it beforehand would strand you in a mode that cannot act.
+
+All four modes come from `POST /chat` as a server-sent event stream. The responses are
+generated by the mock, not by a model; swapping in a real model is a server change, not a
+client one. See `api/README.md` § Chat.
 
 ### States
 See `state-matrix.md`, row S3.
