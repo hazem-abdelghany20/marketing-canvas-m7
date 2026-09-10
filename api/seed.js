@@ -64,6 +64,76 @@ const files = [
   { id: 'fil_hero', name: 'linen-shoot-hero.jpg', mime: 'image/jpeg', sizeBytes: 1_204_887 },
 ]
 
+// The two people whose comments appear on the demo board. They exist only as
+// embedded authors — they are not users and cannot sign in. Attribution, not
+// collaboration.
+const RANIA = { id: 'usr_rania', name: 'Rania', avatarUrl: null }
+const OMAR = { id: 'usr_omar', name: 'Omar', avatarUrl: null }
+
+const strokes = [
+  // A circle scrawled around the linen campaign cluster.
+  {
+    id: 'stk_ring',
+    tool: 'pen',
+    color: '#a8674f',
+    width: 3,
+    points: [360, 440, 470, 430, 540, 470, 545, 545, 470, 590, 380, 575, 345, 510, 360, 440],
+  },
+  // A highlighter swipe across the best-performing reel.
+  {
+    id: 'stk_swipe',
+    tool: 'highlighter',
+    color: '#c0a25c',
+    width: 18,
+    points: [300, 712, 470, 712],
+  },
+]
+
+const marks = [
+  {
+    id: 'mrk_hook',
+    variant: 'sticky',
+    x: 600,
+    y: 640,
+    body: 'The hook is the whole reel. Everything after 0:02 is retention, not acquisition.',
+    color: '#c0a25c',
+  },
+  {
+    id: 'mrk_heading',
+    variant: 'text',
+    x: 40,
+    y: 400,
+    body: 'Q4 — everything below traces to one of the two goals',
+    color: null,
+  },
+]
+
+const pins = [
+  { id: 'pin_reel', x: 470, y: 690, resolved: false },
+  { id: 'pin_price', x: 640, y: 240, resolved: true },
+]
+
+const comments = [
+  {
+    id: 'cmt_1',
+    pinId: 'pin_reel',
+    author: RANIA,
+    body: 'This one carried the whole drop. Can we cut three more in the same shape?',
+  },
+  {
+    id: 'cmt_2',
+    pinId: 'pin_reel',
+    author: OMAR,
+    body: 'Shooting Thursday. Same location, different styling so it does not read as a repost.',
+  },
+  {
+    id: 'cmt_3',
+    pinId: 'pin_price',
+    author: RANIA,
+    body: 'Held the line on price. Closing this — revisit if it is still true in six weeks.',
+  },
+]
+
 function buildSeed(now = '2026-08-01T09:00:00.000Z') {
   return {
     users: [
@@ -90,10 +160,22 @@ function buildSeed(now = '2026-08-01T09:00:00.000Z') {
     edges: edges.map((e) => ({ label: null, ...e, boardId: DEMO_BOARD_ID })),
     annotations: annotations.map((a) => ({ ...a, createdAt: now })),
     files: files.map((f) => ({ ...f, thumbUrl: null, boardId: DEMO_BOARD_ID, createdAt: now })),
-    strokes: [],
-    marks: [],
-    pins: [],
-    comments: [],
+    strokes: strokes.map((s) => ({ ...s, boardId: DEMO_BOARD_ID, createdAt: now })),
+    marks: marks.map((m) => ({
+      color: null,
+      body: '',
+      ...m,
+      boardId: DEMO_BOARD_ID,
+      createdAt: now,
+      updatedAt: now,
+    })),
+    pins: pins.map((p) => ({ ...p, boardId: DEMO_BOARD_ID, createdAt: now })),
+    comments: comments.map((c, i) => ({
+      ...c,
+      boardId: DEMO_BOARD_ID,
+      // Stagger so the thread sorts oldest-first deterministically.
+      createdAt: new Date(Date.parse(now) + i * 1000).toISOString(),
+    })),
     sessions: {},
   }
 }

@@ -79,5 +79,6 @@ test('a deleted mark leaves the others alone', async (t) => {
 
   const listed = await api('GET', '/marks')
   const ids = listed.body.map((m) => m.id)
-  assert.deepEqual(ids, [b.body.id])
+  assert.ok(!ids.includes(a.body.id), 'the deleted mark is gone')
+  assert.ok(ids.includes(b.body.id), 'deleting one mark must not touch the others')
 })
