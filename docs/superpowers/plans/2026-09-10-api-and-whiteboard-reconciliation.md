@@ -2005,9 +2005,9 @@ cd app/docs && grep -niE 'out of storage|local storage|localStorage|hydrat' stat
 grep -c '^## ' state-matrix.md
 ```
 
-Expected: `no storage assumptions left`, and a section count of **11**
-(S1, S2, S3, O1–O6, S4, plus the three added here — recount against the file's own
-headings; the number must equal the rows in `spec.md` § Screen inventory).
+Expected: `no storage assumptions left`, and a section count of **13** — the four
+screens (S1, S2, S3, S4) plus the nine overlays (O1–O9). That number must equal the
+screen and overlay rows in `spec.md` § Screen inventory.
 
 - [ ] **Step 9: Verify every new cell is filled**
 
