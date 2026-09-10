@@ -15,7 +15,7 @@ const crypto = require('node:crypto')
 const { buildSeed } = require('./seed')
 
 const PORT = Number(process.env.PORT || 4000)
-const DATA_DIR = path.join(__dirname, '.data')
+const DATA_DIR = process.env.MC_DATA_DIR || path.join(__dirname, '.data')
 const DB_PATH = path.join(DATA_DIR, 'db.json')
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024
@@ -31,6 +31,10 @@ const ACCEPTED_MIME = [
 ]
 const NODE_TYPES = ['goal', 'strategy', 'campaign', 'content', 'asset', 'note']
 const EDGE_KINDS = ['serves', 'relates-to']
+// `operator` is intentionally absent — it is reachable through `auto` only.
+// Selecting it before naming two nodes would strand the user in a mode that
+// cannot act. See docs/superpowers/specs/2026-09-10-whiteboard-layer-design.md.
+const CHAT_MODES = ['auto', 'generator', 'librarian', 'reasoner']
 
 // ---------------------------------------------------------------- persistence
 
@@ -148,8 +152,91 @@ function findMentionedNodes(message, nodes) {
   return scored.sort((a, b) => b.hits - a.hits).map((s) => s.node)
 }
 
-function buildChatResponse(message, nodes) {
-  const mode = detectMode(message)
+/**
+ * The Reasoner audits structure rather than answering questions: it looks for
+ * places the traceability spine is broken. Every finding cites the real nodes
+ * it names, so the canvas can highlight them.
+ */
+function buildReasonerResponse(nodes, edges) {
+  if (!nodes.length) {
+    return {
+      mode: 'reasoner',
+      text: 'This board is empty, so there is no structure to audit yet. Add a goal, then hang a strategy off it and work down to content.',
+      citedNodeIds: [],
+      proposal: null,
+    }
+  }
+
+  const serves = edges.filter((e) => e.kind === 'serves')
+  const touched = new Set(edges.flatMap((e) => [e.fromId, e.toId]))
+  const isServed = new Set(serves.map((e) => e.toId))
+  const servesSomething = new Set(serves.map((e) => e.fromId))
+
+  const findings = []
+  const cited = new Set()
+
+  const list = (ns) => ns.map((n) => `"${n.title}"`).join(', ')
+  const record = (ns, sentence) => {
+    if (!ns.length) return
+    findings.push(sentence)
+    for (const n of ns) cited.add(n.id)
+  }
+
+  const orphans = nodes.filter((n) => !touched.has(n.id))
+  record(
+    orphans,
+    `**${orphans.length} node${orphans.length === 1 ? '' : 's'} connected to nothing** — ${list(orphans)}. ` +
+      `An unconnected node cannot be traced back to an outcome, which is the only reason this board exists.`,
+  )
+
+  const barrenGoals = nodes.filter((n) => n.type === 'goal' && !isServed.has(n.id))
+  record(
+    barrenGoals,
+    `**${barrenGoals.length} goal${barrenGoals.length === 1 ? '' : 's'} that nothing serves** — ${list(barrenGoals)}. ` +
+      `A goal with no work pointing at it is a wish. Connect a strategy to it.`,
+  )
+
+  const looseCampaigns = nodes.filter((n) => n.type === 'campaign' && !servesSomething.has(n.id))
+  record(
+    looseCampaigns,
+    `**${looseCampaigns.length} campaign${looseCampaigns.length === 1 ? '' : 's'} serving no strategy** — ${list(looseCampaigns)}. ` +
+      `A campaign that serves nothing is activity without a thesis.`,
+  )
+
+  const looseContent = nodes.filter((n) => n.type === 'content' && !servesSomething.has(n.id))
+  record(
+    looseContent,
+    `**${looseContent.length} piece${looseContent.length === 1 ? '' : 's'} of content serving no campaign** — ${list(looseContent)}. ` +
+      `Content that traces to nothing is decoration.`,
+  )
+
+  if (!findings.length) {
+    return {
+      mode: 'reasoner',
+      text:
+        `I audited all ${nodes.length} nodes and the spine holds.\n\n` +
+        `Every node is connected, every goal has work pointing at it, and every campaign and piece of ` +
+        `content serves something above it. Nothing to fix structurally.`,
+      citedNodeIds: [],
+      proposal: null,
+    }
+  }
+
+  return {
+    mode: 'reasoner',
+    text:
+      `I audited all ${nodes.length} nodes. ${findings.length} ` +
+      `${findings.length === 1 ? 'thing breaks' : 'things break'} the traceability spine:\n\n` +
+      findings.map((f, i) => `${i + 1}. ${f}`).join('\n\n') +
+      `\n\nI have highlighted every node named above.`,
+    citedNodeIds: [...cited],
+    proposal: null,
+  }
+}
+
+function buildChatResponse(message, nodes, edges, requested = 'auto') {
+  const mode = requested === 'auto' ? detectMode(message) : requested
+  if (mode === 'reasoner') return buildReasonerResponse(nodes, edges)
   const mentioned = findMentionedNodes(message, nodes)
 
   if (mode === 'generator') {
@@ -310,6 +397,7 @@ route('PATCH', '/board', async (ctx) => {
 // --- nodes ------------------------------------------------------------------
 
 const nodesOf = (user) => db.nodes.filter((n) => n.boardId === user.boardId)
+const edgesOf = (user) => db.edges.filter((e) => e.boardId === user.boardId)
 
 function findNode(user, nodeId) {
   const node = db.nodes.find((n) => n.id === nodeId && n.boardId === user.boardId)
@@ -492,11 +580,248 @@ route('DELETE', '/files/:id', async (ctx) => {
   return { status: 204 }
 })
 
+// --- strokes (whiteboard ink) -----------------------------------------------
+
+const INK_TOOLS = ['pen', 'highlighter']
+
+const strokesOf = (user) => db.strokes.filter((s) => s.boardId === user.boardId)
+
+/** Ink is a flat [x0,y0,x1,y1,...] array — at least two points, all finite. */
+function requirePoints(body) {
+  const points = body.points
+  const ok =
+    Array.isArray(points) &&
+    points.length >= 4 &&
+    points.length % 2 === 0 &&
+    points.every((n) => typeof n === 'number' && Number.isFinite(n))
+  if (!ok) {
+    throw bad(
+      'invalid_field',
+      'points must be a flat array of at least two x,y pairs, and every value must be a finite number.',
+      'points',
+    )
+  }
+  return points
+}
+
+route('GET', '/strokes', async (ctx) => ({
+  status: 200,
+  body: strokesOf(ctx.user).map((s) => shape(s)),
+}))
+
+route('POST', '/strokes', async (ctx) => {
+  if (!INK_TOOLS.includes(ctx.body.tool)) {
+    throw bad('invalid_tool', `tool must be one of: ${INK_TOOLS.join(', ')}.`, 'tool')
+  }
+  const stroke = {
+    id: id('stk'),
+    boardId: ctx.user.boardId,
+    tool: ctx.body.tool,
+    color: requireString(ctx.body, 'color', { label: 'Stroke colour', max: 32 }),
+    width: requireNumber(ctx.body, 'width'),
+    points: requirePoints(ctx.body),
+    createdAt: now(),
+  }
+  db.strokes.push(stroke)
+  saveDb()
+  return { status: 201, body: shape(stroke) }
+})
+
+// Registered before /strokes/:id — matchRoute compares segment counts, so the
+// two never collide, but keeping them adjacent makes the pair obvious.
+route('DELETE', '/strokes', async (ctx) => {
+  db.strokes = db.strokes.filter((s) => s.boardId !== ctx.user.boardId)
+  saveDb()
+  return { status: 204 }
+})
+
+route('DELETE', '/strokes/:id', async (ctx) => {
+  const stroke = db.strokes.find((s) => s.id === ctx.params.id && s.boardId === ctx.user.boardId)
+  if (!stroke) {
+    throw new ApiError(
+      404,
+      'stroke_not_found',
+      `No stroke with id ${ctx.params.id} on this board. It may already be erased — reload the board.`,
+    )
+  }
+  db.strokes = db.strokes.filter((s) => s.id !== stroke.id)
+  saveDb()
+  return { status: 204 }
+})
+
+// --- marks (stickies and board text) ----------------------------------------
+
+const MARK_VARIANTS = ['sticky', 'text']
+
+const marksOf = (user) => db.marks.filter((m) => m.boardId === user.boardId)
+
+function findMark(user, markId) {
+  const mark = db.marks.find((m) => m.id === markId && m.boardId === user.boardId)
+  if (!mark) {
+    throw new ApiError(
+      404,
+      'mark_not_found',
+      `No sticky or text mark with id ${markId} on this board. It may have been deleted — reload the board.`,
+    )
+  }
+  return mark
+}
+
+route('GET', '/marks', async (ctx) => ({
+  status: 200,
+  body: marksOf(ctx.user).map((m) => shape(m)),
+}))
+
+route('POST', '/marks', async (ctx) => {
+  if (!MARK_VARIANTS.includes(ctx.body.variant)) {
+    throw bad('invalid_variant', `variant must be one of: ${MARK_VARIANTS.join(', ')}.`, 'variant')
+  }
+  const mark = {
+    id: id('mrk'),
+    boardId: ctx.user.boardId,
+    variant: ctx.body.variant,
+    x: requireNumber(ctx.body, 'x'),
+    y: requireNumber(ctx.body, 'y'),
+    body: typeof ctx.body.body === 'string' ? ctx.body.body.slice(0, 2000) : '',
+    color: typeof ctx.body.color === 'string' ? ctx.body.color.slice(0, 32) : null,
+    createdAt: now(),
+    updatedAt: now(),
+  }
+  db.marks.push(mark)
+  saveDb()
+  return { status: 201, body: shape(mark) }
+})
+
+route('PATCH', '/marks/:id', async (ctx) => {
+  const mark = findMark(ctx.user, ctx.params.id)
+  if (ctx.body.variant !== undefined) {
+    if (!MARK_VARIANTS.includes(ctx.body.variant)) {
+      throw bad('invalid_variant', `variant must be one of: ${MARK_VARIANTS.join(', ')}.`, 'variant')
+    }
+    mark.variant = ctx.body.variant
+  }
+  if (ctx.body.x !== undefined) mark.x = requireNumber(ctx.body, 'x')
+  if (ctx.body.y !== undefined) mark.y = requireNumber(ctx.body, 'y')
+  if (typeof ctx.body.body === 'string') mark.body = ctx.body.body.slice(0, 2000)
+  if (ctx.body.color !== undefined) {
+    mark.color = typeof ctx.body.color === 'string' ? ctx.body.color.slice(0, 32) : null
+  }
+  mark.updatedAt = now()
+  saveDb()
+  return { status: 200, body: shape(mark) }
+})
+
+route('DELETE', '/marks/:id', async (ctx) => {
+  const mark = findMark(ctx.user, ctx.params.id)
+  db.marks = db.marks.filter((m) => m.id !== mark.id)
+  saveDb()
+  return { status: 204 }
+})
+
+// --- pins and comments (attributed threads on the board) --------------------
+
+const pinsOf = (user) => db.pins.filter((p) => p.boardId === user.boardId)
+
+/** Comments live flat in db.comments and are inlined when a pin is read. */
+function shapePin(pin) {
+  const comments = db.comments
+    .filter((c) => c.pinId === pin.id)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((c) => shape(c, ['boardId', 'pinId']))
+  return { ...shape(pin), comments }
+}
+
+function findPin(user, pinId) {
+  const pin = db.pins.find((p) => p.id === pinId && p.boardId === user.boardId)
+  if (!pin) {
+    throw new ApiError(
+      404,
+      'pin_not_found',
+      `No comment pin with id ${pinId} on this board. It may have been deleted — reload the board.`,
+    )
+  }
+  return pin
+}
+
+route('GET', '/pins', async (ctx) => ({
+  status: 200,
+  body: pinsOf(ctx.user).map((p) => shapePin(p)),
+}))
+
+route('POST', '/pins', async (ctx) => {
+  const pin = {
+    id: id('pin'),
+    boardId: ctx.user.boardId,
+    x: requireNumber(ctx.body, 'x'),
+    y: requireNumber(ctx.body, 'y'),
+    resolved: false,
+    createdAt: now(),
+  }
+  db.pins.push(pin)
+  saveDb()
+  return { status: 201, body: shapePin(pin) }
+})
+
+route('PATCH', '/pins/:id', async (ctx) => {
+  const pin = findPin(ctx.user, ctx.params.id)
+  if (ctx.body.x !== undefined) pin.x = requireNumber(ctx.body, 'x')
+  if (ctx.body.y !== undefined) pin.y = requireNumber(ctx.body, 'y')
+  if (ctx.body.resolved !== undefined) {
+    if (typeof ctx.body.resolved !== 'boolean') {
+      throw bad('invalid_field', 'resolved must be true or false.', 'resolved')
+    }
+    pin.resolved = ctx.body.resolved
+  }
+  saveDb()
+  return { status: 200, body: shapePin(pin) }
+})
+
+route('DELETE', '/pins/:id', async (ctx) => {
+  const pin = findPin(ctx.user, ctx.params.id)
+  db.pins = db.pins.filter((p) => p.id !== pin.id)
+  db.comments = db.comments.filter((c) => c.pinId !== pin.id)
+  saveDb()
+  return { status: 204 }
+})
+
+route('POST', '/pins/:id/comments', async (ctx) => {
+  const pin = findPin(ctx.user, ctx.params.id)
+  const comment = {
+    id: id('cmt'),
+    boardId: ctx.user.boardId,
+    pinId: pin.id,
+    body: requireString(ctx.body, 'body', { label: 'Comment' }),
+    author: { id: ctx.user.id, name: ctx.user.name, avatarUrl: ctx.user.avatarUrl ?? null },
+    createdAt: now(),
+  }
+  db.comments.push(comment)
+  saveDb()
+  return { status: 201, body: shape(comment, ['boardId', 'pinId']) }
+})
+
+route('DELETE', '/comments/:id', async (ctx) => {
+  const comment = db.comments.find((c) => c.id === ctx.params.id && c.boardId === ctx.user.boardId)
+  if (!comment) {
+    throw new ApiError(
+      404,
+      'comment_not_found',
+      `No comment with id ${ctx.params.id}. It may already be deleted — reopen the thread to see what is there now.`,
+    )
+  }
+  db.comments = db.comments.filter((c) => c.id !== comment.id)
+  saveDb()
+  return { status: 204 }
+})
+
 // --- chat (server-sent events) ----------------------------------------------
 
 route('POST', '/chat', async (ctx) => {
   const message = requireString(ctx.body, 'message', { label: 'Message' })
-  const response = buildChatResponse(message, nodesOf(ctx.user))
+  const requested = ctx.body.mode === undefined ? 'auto' : ctx.body.mode
+  if (!CHAT_MODES.includes(requested)) {
+    throw bad('invalid_mode', `mode must be one of: ${CHAT_MODES.join(', ')}.`, 'mode')
+  }
+  const response = buildChatResponse(message, nodesOf(ctx.user), edgesOf(ctx.user), requested)
   const shouldFail = /__fail\b/.test(message)
 
   const res = ctx.res
