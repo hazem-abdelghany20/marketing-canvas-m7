@@ -1,17 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { apiError, deferred, emptyBoard, json, network, renderAt, resetApp, serveEmptyBoard, user } from "./harness";
 import { appStore } from "../../store";
-
-beforeAll(() => {
-  // React Flow measures its container; jsdom has no layout engine.
-  globalThis.ResizeObserver ??= class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-});
 
 beforeEach(() => {
   resetApp();

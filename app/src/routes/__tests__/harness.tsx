@@ -30,6 +30,13 @@ export const network = {
   },
 };
 
+// React Flow measures its container; jsdom has no layout engine to observe.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = new URL(String(input));
   const method = init?.method ?? "GET";
