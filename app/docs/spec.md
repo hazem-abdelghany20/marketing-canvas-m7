@@ -150,6 +150,7 @@ Tickets may not add dependencies outside this list.
 
 ```
 react · react-dom · typescript · vite
+@vitejs/plugin-react — React Fast Refresh in dev (state-preserving hot reload)
 @xyflow/react        — canvas: nodes, edges, pan, zoom, selection
 zustand              — app state
 react-router-dom     — routing
