@@ -1,7 +1,7 @@
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import { Spline } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
-import { Navigate, Outlet, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 import { createNote } from "../canvas/actions";
 import { Canvas } from "../canvas/Canvas";
@@ -41,6 +41,7 @@ function WorkspaceScreen() {
   const nodeCount = useStore(appStore, (s) => Object.keys(s.nodes).length);
   const addMenuOpen = useUi((s) => s.addMenuOpen);
   const connecting = useUi((s) => s.connect.active);
+  const panelOpen = useMatch("/node/:id") !== null;
   const flow = useReactFlow();
   const fileInput = useRef<HTMLInputElement>(null);
   const { initialViewport, onViewportChange } = useViewport();
@@ -173,7 +174,7 @@ function WorkspaceScreen() {
         </div>
       ) : null}
 
-      <Toolbar ready={ready} addMenuOpen={addMenuOpen} onAdd={openAddMenu}>
+      <Toolbar ready={ready} addMenuOpen={addMenuOpen} onAdd={openAddMenu} besidePanel={panelOpen}>
         <ToolButton
           label="Connect"
           icon={<Spline size={14} aria-hidden="true" />}

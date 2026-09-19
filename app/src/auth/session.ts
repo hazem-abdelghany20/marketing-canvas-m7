@@ -117,10 +117,21 @@ export async function signUp(values: SignUpValues): Promise<void> {
 
 // Loaders run before the route renders, so a redirect lands before first paint.
 
-export function requireSession(): Response | null {
-  return appStore.getState().token ? null : redirect("/signin");
+/**
+ * Where to go after signing in: the page that sent the visitor to /signin, if it
+ * is a path on this site. Anything else (another origin, "//evil") lands on /.
+ */
+export function returnPath(search: string): string {
+  const next = new URLSearchParams(search).get("next");
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
 }
 
-export function redirectIfSignedIn(): Response | null {
-  return appStore.getState().token ? redirect("/") : null;
+export function requireSession({ request }: { request: Request }): Response | null {
+  if (appStore.getState().token) return null;
+  const { pathname } = new URL(request.url);
+  return redirect(pathname === "/" ? "/signin" : `/signin?next=${encodeURIComponent(pathname)}`);
+}
+
+export function redirectIfSignedIn({ request }: { request: Request }): Response | null {
+  return appStore.getState().token ? redirect(returnPath(new URL(request.url).search)) : null;
 }

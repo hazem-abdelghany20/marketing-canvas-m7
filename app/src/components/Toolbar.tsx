@@ -14,6 +14,8 @@ interface ToolbarProps {
   ready: boolean;
   addMenuOpen: boolean;
   onAdd: () => void;
+  /** The detail panel is open on the right: sit to its left rather than under it. */
+  besidePanel?: boolean;
   /** Slots for controls that arrive with later tickets (connect, search, arrange). */
   children?: ReactNode;
 }
@@ -22,7 +24,7 @@ interface ToolbarProps {
  * Floats top-right over the canvas and never pushes layout. Below 900px the
  * labels collapse to icons; the accessible names stay.
  */
-export function Toolbar({ ready, addMenuOpen, onAdd, children }: ToolbarProps) {
+export function Toolbar({ ready, addMenuOpen, onAdd, besidePanel, children }: ToolbarProps) {
   const flow = useReactFlow();
   const zoom = useFlowStore((s) => s.transform[2]);
   const nodeCount = useStore(appStore, (s) => Object.keys(s.nodes).length);
@@ -35,7 +37,7 @@ export function Toolbar({ ready, addMenuOpen, onAdd, children }: ToolbarProps) {
     <div
       role="toolbar"
       aria-label="Canvas tools"
-      className="absolute right-3.5 top-3.5 z-30 flex max-w-[calc(100%-28px)] items-center gap-1.5 rounded-md border border-subtle bg-panel p-[5px] shadow-[0_6px_20px_-14px_rgba(0,0,0,.4)]"
+      className={`absolute ${besidePanel ? "right-[494px] max-[899px]:right-3.5" : "right-3.5"} top-3.5 z-30 flex max-w-[calc(100%-28px)] items-center gap-1.5 rounded-md border border-subtle bg-panel p-[5px] shadow-[0_6px_20px_-14px_rgba(0,0,0,.4)]`}
     >
       <ToolButton
         id="toolbar-add"

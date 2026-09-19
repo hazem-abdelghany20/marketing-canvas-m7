@@ -1,9 +1,9 @@
 import { Check } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthCard, FormAlert, SubmitButton, SUCCESS_BEAT_MS } from "../components/AuthCard";
 import { Field } from "../components/Field";
-import { formErrorFor, signIn, validateSignIn, type FieldErrors, type FormError } from "../auth/session";
+import { formErrorFor, signIn, validateSignIn, type FieldErrors, type FormError, returnPath } from "../auth/session";
 import type { ApiError } from "../api/client";
 import type { LoginInput } from "../types";
 
@@ -11,6 +11,7 @@ type Status = "idle" | "pending" | "success";
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [values, setValues] = useState<LoginInput>({ email: "", password: "" });
   const [errors, setErrors] = useState<FieldErrors<LoginInput>>({});
   const [formError, setFormError] = useState<FormError | null>(null);
@@ -43,7 +44,7 @@ export default function SignIn() {
     try {
       await signIn(values);
       setStatus("success");
-      setTimeout(() => navigate("/", { replace: true }), SUCCESS_BEAT_MS);
+      setTimeout(() => navigate(returnPath(location.search), { replace: true }), SUCCESS_BEAT_MS);
     } catch (error) {
       setFormError(formErrorFor(error as ApiError, "signin"));
       setStatus("idle");
@@ -90,7 +91,13 @@ export default function SignIn() {
           error={errors.password}
         />
         <SubmitButton status={status}>
-          {status === "pending" ? "Signing in…" : status === "success" ? <Check aria-label="Signed in" size={18} /> : "Sign in"}
+          {status === "pending" ? (
+            "Signing in…"
+          ) : status === "success" ? (
+            <Check aria-label="Signed in" size={18} />
+          ) : (
+            "Sign in"
+          )}
         </SubmitButton>
       </form>
     </AuthCard>

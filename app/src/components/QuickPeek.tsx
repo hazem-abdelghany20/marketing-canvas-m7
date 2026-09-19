@@ -1,6 +1,6 @@
 import { useStore as useFlowStore, useViewport as useFlowViewport } from "@xyflow/react";
 import { useLayoutEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 import { deleteNodes } from "../canvas/actions";
 import { plural } from "../lib/format";
@@ -54,6 +54,8 @@ export function placePeek(
 export function QuickPeek({ onConnect }: { onConnect: (sourceId: string) => void }) {
   const selectedIds = useStore(uiStore, (s) => s.selectedIds);
   const connecting = useStore(uiStore, (s) => s.connect.active);
+  // With the detail panel open, the panel is the closer look.
+  const panelOpen = useMatch("/node/:id") !== null;
   const id = selectedIds.length === 1 ? selectedIds[0]! : null;
   const node = useStore(appStore, (s) => (id ? s.nodes[id] : undefined));
   const nodeCount = useStore(appStore, (s) => Object.keys(s.nodes).length);
@@ -61,7 +63,7 @@ export function QuickPeek({ onConnect }: { onConnect: (sourceId: string) => void
     id ? Object.values(s.edges).filter((e) => e.fromId === id || e.toId === id).length : 0,
   );
 
-  if (!node || connecting) return null;
+  if (!node || connecting || panelOpen) return null;
   return (
     <PeekCard key={node.id} nodeId={node.id} edgeCount={edgeCount} onlyNode={nodeCount < 2} onConnect={onConnect} />
   );

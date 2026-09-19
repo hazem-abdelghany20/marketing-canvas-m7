@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthCard, FormAlert, SubmitButton, SUCCESS_BEAT_MS } from "../components/AuthCard";
 import { Field } from "../components/Field";
 import {
@@ -11,6 +11,7 @@ import {
   type FieldErrors,
   type FormError,
   type SignUpValues,
+  returnPath,
 } from "../auth/session";
 import type { ApiError } from "../api/client";
 
@@ -20,6 +21,7 @@ const EMPTY: SignUpValues = { name: "", email: "", password: "", confirmPassword
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [values, setValues] = useState<SignUpValues>(EMPTY);
   const [errors, setErrors] = useState<FieldErrors<SignUpValues>>({});
   const [formError, setFormError] = useState<FormError | null>(null);
@@ -53,7 +55,7 @@ export default function SignUp() {
     try {
       await signUp(values);
       setStatus("success");
-      setTimeout(() => navigate("/", { replace: true }), SUCCESS_BEAT_MS);
+      setTimeout(() => navigate(returnPath(location.search), { replace: true }), SUCCESS_BEAT_MS);
     } catch (error) {
       setFormError(formErrorFor(error as ApiError, "signup"));
       // Every value is kept except the passwords.
@@ -133,7 +135,13 @@ export default function SignUp() {
           hint={confirmHint}
         />
         <SubmitButton status={status}>
-          {status === "pending" ? "Creating…" : status === "success" ? <Check aria-label="Created" size={18} /> : "Create workspace"}
+          {status === "pending" ? (
+            "Creating…"
+          ) : status === "success" ? (
+            <Check aria-label="Created" size={18} />
+          ) : (
+            "Create workspace"
+          )}
         </SubmitButton>
       </form>
     </AuthCard>

@@ -16,6 +16,21 @@ export const COPY = {
   addNodeFailed: "Couldn't add the node. Check your connection and try again.",
   waitForReply: "Wait for the current reply to finish.",
 
+  // S4 — Node detail
+  nodeMissingTitle: "That node doesn't exist.",
+  nodeMissingBody: "It may have been deleted.",
+  nodeDeletedElsewhere: "That node no longer exists — it was deleted.",
+  autosaveFailed:
+    "Changes aren't saving. Check your connection — your text is still here, and we'll retry when you next edit.",
+  noBody: "Add a description.",
+  noFiles: "No files attached",
+  noConnections: "Not connected to anything yet",
+  noAnnotations: "No notes yet.",
+  fileMissing: "File not available after reload",
+  typeWhileSaving: "Saving — the type can change once this save lands.",
+  finishConnecting: "Finish connecting first.",
+  emptyAnnotation: "Write something first.",
+
   // O4 — Quick-peek
   noDescription: "No description yet",
   connectNeedsAnother: "Add another node to connect to.",
