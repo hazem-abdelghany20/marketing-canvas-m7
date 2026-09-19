@@ -3,14 +3,14 @@ import "@xyflow/react/dist/base.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
-import type { CardNode } from "../components/NodeCard";
+import type { CardNode, PendingNode } from "../components/NodeCard";
 import { appStore } from "../store";
 import { omit } from "../store/records";
 import type { Viewport } from "../types";
 import { uiStore } from "../ui/uiStore";
 import { moveNode, nudgeNode } from "./actions";
 import { CanvasActionsContext, type CanvasActions } from "./canvasActions";
-import { nodeTypes, toFlowNodes } from "./nodeTypes";
+import { nodeTypes, toFlowNodes, toPendingNodes } from "./nodeTypes";
 import { MAX_ZOOM, MIN_ZOOM } from "./useViewport";
 
 /** Spacing of the dot grid, shared with the loading placeholder so the two match. */
@@ -22,6 +22,7 @@ interface CanvasProps {
 }
 
 type Point = { x: number; y: number };
+type FlowNode = CardNode | PendingNode;
 
 /**
  * The pan/zoom surface and the cards on it. Dragging empty space pans; scroll
@@ -33,6 +34,9 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
   const nodes = useStore(appStore, (s) => s.nodes);
   const edges = useStore(appStore, (s) => s.edges);
   const annotations = useStore(appStore, (s) => s.annotations);
+  const files = useStore(appStore, (s) => s.files);
+  const objectUrls = useStore(appStore, (s) => s.objectUrls);
+  const pending = useStore(uiStore, (s) => s.pendingImports);
   const selectedIds = useStore(uiStore, (s) => s.selectedIds);
   const openId = useMatch("/node/:id")?.params.id ?? null;
   const [dragging, setDragging] = useState<Record<string, Point>>({});
@@ -44,9 +48,18 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
   }, [nodes, selectedIds]);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const flowNodes = useMemo(
-    () => toFlowNodes(nodes, edges, annotations, { selectedIds: selectedSet, dragging, highlightedId: openId }),
-    [nodes, edges, annotations, selectedSet, dragging, openId],
+  const flowNodes = useMemo<FlowNode[]>(
+    () => [
+      ...toFlowNodes(
+        nodes,
+        edges,
+        annotations,
+        { selectedIds: selectedSet, dragging, highlightedId: openId },
+        { files, objectUrls },
+      ),
+      ...toPendingNodes(pending),
+    ],
+    [nodes, edges, annotations, selectedSet, dragging, openId, files, objectUrls, pending],
   );
 
   const actions = useMemo<CanvasActions>(
@@ -57,7 +70,7 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
     [navigate],
   );
 
-  const onNodesChange = useCallback((changes: NodeChange<CardNode>[]) => {
+  const onNodesChange = useCallback((changes: NodeChange<FlowNode>[]) => {
     let selection: Set<string> | null = null;
     const moved: Record<string, Point> = {};
     for (const change of changes) {
@@ -73,7 +86,7 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
     if (Object.keys(moved).length > 0) setDragging((d) => ({ ...d, ...moved }));
   }, []);
 
-  const onNodeDragStop = useCallback<OnNodeDrag<CardNode>>((_event, _node, dragged) => {
+  const onNodeDragStop = useCallback<OnNodeDrag<FlowNode>>((_event, _node, dragged) => {
     const stored = appStore.getState().nodes;
     for (const { id, position } of dragged) {
       const x = Math.round(position.x);
@@ -87,7 +100,7 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
 
   return (
     <CanvasActionsContext.Provider value={actions}>
-      <ReactFlow<CardNode>
+      <ReactFlow<FlowNode>
         nodes={flowNodes}
         edges={[]}
         nodeTypes={nodeTypes}

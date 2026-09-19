@@ -44,7 +44,9 @@ export async function demoSession(page: Page): Promise<Session> {
 export async function freshSession(page: Page): Promise<Session> {
   const api = await request.newContext({ baseURL: API_URL });
   const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
-  const { token } = await (await api.post("/auth/signup", { data: { name: "Ada", email, password: "password123" } })).json();
+  const { token } = await (
+    await api.post("/auth/signup", { data: { name: "Ada", email, password: "password123" } })
+  ).json();
   await api.dispose();
   await page.addInitScript((t) => localStorage.setItem("mc-session-token", t), token);
   return session(token);

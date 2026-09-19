@@ -30,7 +30,7 @@ export interface BoardSlice {
 const EMPTY: Pick<
   AppState,
   | "board" | "boardStatus" | "boardError" | "viewportSaveError"
-  | "nodes" | "edges" | "annotations" | "files" | "strokes" | "marks" | "pins"
+  | "nodes" | "edges" | "annotations" | "files" | "objectUrls" | "strokes" | "marks" | "pins"
   | "chatMessages" | "chatStreaming" | "undoStack"
 > = {
   board: null,
@@ -41,6 +41,7 @@ const EMPTY: Pick<
   edges: {},
   annotations: {},
   files: {},
+  objectUrls: {},
   strokes: {},
   marks: {},
   pins: {},

@@ -13,24 +13,26 @@ test("every type renders in its own token color with its label as text", async (
     await expect(first).toBeVisible();
     await expect(first.locator("[data-type-chip]")).toHaveText(new RegExp(`^${type}$`, "i"));
     const bar = await first.locator("[data-type-bar]").evaluate((el) => getComputedStyle(el).backgroundColor);
-    const token = await page.evaluate(
-      (t) => {
-        const probe = document.createElement("div");
-        probe.style.backgroundColor = `var(--node-${t})`;
-        document.body.append(probe);
-        const color = getComputedStyle(probe).backgroundColor;
-        probe.remove();
-        return color;
-      },
-      type,
-    );
+    const token = await page.evaluate((t) => {
+      const probe = document.createElement("div");
+      probe.style.backgroundColor = `var(--node-${t})`;
+      document.body.append(probe);
+      const color = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return color;
+    }, type);
     expect(bar).toBe(token);
   }
 });
 
 test("a long body is clamped to two lines", async ({ page }) => {
   const s = await demoSession(page);
-  const node = await s.createNode({ title: "Wordy", body: "A description that keeps going and going. ".repeat(20), x: 200, y: 1200 });
+  const node = await s.createNode({
+    title: "Wordy",
+    body: "A description that keeps going and going. ".repeat(20),
+    x: 200,
+    y: 1200,
+  });
   await setViewport(s, { x: 0, y: -1100, zoom: 1 });
   await openCanvas(page);
 

@@ -4,7 +4,9 @@ import { freshSession, openCanvas, setViewport } from "./support";
 
 const cards = (page: import("@playwright/test").Page) => page.locator("[data-node-card]");
 
-test("the first-run affordance opens the menu, and Note lands an untitled note at viewport centre", async ({ page }) => {
+test("the first-run affordance opens the menu, and Note lands an untitled note at viewport centre", async ({
+  page,
+}) => {
   const s = await freshSession(page);
   await setViewport(s, { x: 0, y: 0, zoom: 1 });
   const canvas = await openCanvas(page);
@@ -52,12 +54,18 @@ test("Escape closes the menu and creates nothing", async ({ page }) => {
   expect(await s.nodes()).toHaveLength(0);
 });
 
-test("a failed create closes the menu, asks to check the connection, offers Retry, and leaves no node", async ({ page }) => {
+test("a failed create closes the menu, asks to check the connection, offers Retry, and leaves no node", async ({
+  page,
+}) => {
   const s = await freshSession(page);
   await openCanvas(page);
   await page.route(`${API_URL}/nodes`, (route) =>
     route.request().method() === "POST"
-      ? route.fulfill({ status: 503, contentType: "application/json", body: '{"error":{"code":"forced_failure","message":"x"}}' })
+      ? route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: '{"error":{"code":"forced_failure","message":"x"}}',
+        })
       : route.continue(),
   );
 

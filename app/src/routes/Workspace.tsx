@@ -1,4 +1,4 @@
-import { ReactFlowProvider } from "@xyflow/react";
+import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef } from "react";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
@@ -7,11 +7,14 @@ import { Canvas } from "../canvas/Canvas";
 import { useViewport } from "../canvas/useViewport";
 import { useViewportCenter } from "../canvas/viewportCenter";
 import { useWorkspaceShortcuts } from "../canvas/useWorkspaceShortcuts";
-import { AddNodeMenu } from "../components/AddNodeMenu";
+import { AddNodeMenu, MenuItem } from "../components/AddNodeMenu";
 import { Button } from "../components/Button";
+import { FileDropZone } from "../components/FileDropZone";
+import { CARD_HEIGHT, CARD_WIDTH } from "../components/NodeCard";
 import { QuickPeek } from "../components/QuickPeek";
 import { ToastViewport } from "../components/Toast";
 import { Toolbar } from "../components/Toolbar";
+import { FILE_ACCEPT, importFiles, ROW_GAP } from "../files/importFiles";
 import { appStore } from "../store";
 import { uiStore, useUi } from "../ui/uiStore";
 
@@ -34,6 +37,9 @@ function WorkspaceScreen() {
   const status = useStore(appStore, (s) => s.boardStatus);
   const nodeCount = useStore(appStore, (s) => Object.keys(s.nodes).length);
   const addMenuOpen = useUi((s) => s.addMenuOpen);
+  const connecting = useUi((s) => s.connect.active);
+  const flow = useReactFlow();
+  const fileInput = useRef<HTMLInputElement>(null);
   const { initialViewport, onViewportChange } = useViewport();
   const viewportCenter = useViewportCenter();
 
@@ -71,6 +77,32 @@ function WorkspaceScreen() {
     document.querySelector<HTMLElement>("[data-chat-composer]")?.focus();
   }, [closeAddMenu]);
 
+  const runImport = useCallback(async (files: File[], origin: { x: number; y: number }) => {
+    const { messages } = await importFiles(files, origin, { store: appStore, ui: uiStore });
+    if (messages.length > 0) uiStore.getState().toast({ message: messages.join(" "), tone: "warn", durationMs: 9000 });
+  }, []);
+
+  // Dropped files centre on the drop point; picked files centre on the viewport.
+  const onDropFiles = useCallback(
+    (files: File[], at: { clientX: number; clientY: number }) => {
+      const point = flow.screenToFlowPosition({ x: at.clientX, y: at.clientY });
+      void runImport(files, { x: point.x - CARD_WIDTH / 2, y: point.y - CARD_HEIGHT / 2 });
+    },
+    [flow, runImport],
+  );
+  const onPickFiles = useCallback(
+    (files: File[]) => {
+      const center = viewportCenter();
+      const rowWidth = (files.length - 1) * (CARD_WIDTH + ROW_GAP);
+      void runImport(files, { x: center.x - rowWidth / 2, y: center.y });
+    },
+    [runImport, viewportCenter],
+  );
+  const pickFile = useCallback(() => {
+    closeAddMenu(false);
+    fileInput.current?.click();
+  }, [closeAddMenu]);
+
   useWorkspaceShortcuts(ready, { onAdd: openAddMenu });
 
   if (!token) return <Navigate to="/signin" replace />;
@@ -80,16 +112,18 @@ function WorkspaceScreen() {
   return (
     // One container for every state, so nothing shifts when the data lands.
     <main data-canvas-state={state} className="relative h-screen w-screen overflow-hidden bg-canvas">
-      {ready ? (
-        <Canvas initialViewport={initialViewport} onViewportChange={onViewportChange} />
-      ) : (
-        // The same dots as the canvas (GRID_GAP apart), dimmed while the board loads.
-        <div
-          data-grid
-          aria-hidden="true"
-          className="absolute inset-0 bg-[radial-gradient(var(--grid-dot)_1.2px,transparent_1.2px)] bg-[length:26px_26px] opacity-50"
-        />
-      )}
+      <FileDropZone enabled={ready && !connecting} onFiles={onDropFiles}>
+        {ready ? (
+          <Canvas initialViewport={initialViewport} onViewportChange={onViewportChange} />
+        ) : (
+          // The same dots as the canvas (GRID_GAP apart), dimmed while the board loads.
+          <div
+            data-grid
+            aria-hidden="true"
+            className="absolute inset-0 bg-[radial-gradient(var(--grid-dot)_1.2px,transparent_1.2px)] bg-[length:26px_26px] opacity-50"
+          />
+        )}
+      </FileDropZone>
 
       {state === "loading" ? (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
@@ -132,7 +166,24 @@ function WorkspaceScreen() {
       ) : null}
 
       <Toolbar ready={ready} addMenuOpen={addMenuOpen} onAdd={openAddMenu} />
-      {addMenuOpen && ready ? <AddNodeMenu onClose={closeAddMenu} onNote={addNote} onFromChat={fromChat} /> : null}
+      {addMenuOpen && ready ? (
+        <AddNodeMenu onClose={closeAddMenu} onNote={addNote} onFromChat={fromChat}>
+          <MenuItem label="File" hint="Images, PDF, text, Office · 25MB" onSelect={pickFile} />
+        </AddNodeMenu>
+      ) : null}
+      <input
+        ref={fileInput}
+        type="file"
+        multiple
+        accept={FILE_ACCEPT}
+        hidden
+        data-file-input
+        onChange={(event) => {
+          const files = Array.from(event.target.files ?? []);
+          event.target.value = "";
+          if (files.length > 0) onPickFiles(files);
+        }}
+      />
 
       {ready ? <QuickPeek onConnect={() => {}} /> : null}
       <Outlet />

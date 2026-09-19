@@ -105,7 +105,9 @@ test("while hydrating: dimmed grid, loading indicator, and no layout shift when 
   const loading = page.locator("[data-canvas-state=loading]");
   await expect(loading).toBeVisible();
   await expect(page.getByRole("status", { name: "Loading your board" })).toBeVisible();
-  expect(Number(await loading.evaluate((el) => getComputedStyle(el.querySelector("[data-grid]")!).opacity))).toBeLessThan(1);
+  expect(
+    Number(await loading.evaluate((el) => getComputedStyle(el.querySelector("[data-grid]")!).opacity)),
+  ).toBeLessThan(1);
   const before = await loading.boundingBox();
 
   const ready = page.locator("[data-canvas-state=ready]");

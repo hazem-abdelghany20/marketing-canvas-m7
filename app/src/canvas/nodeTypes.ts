@@ -1,10 +1,24 @@
 import type { NodeTypes } from "@xyflow/react";
-import { CARD_HEIGHT, CARD_WIDTH, NodeCard, type CardNode } from "../components/NodeCard";
+import {
+  CARD_HEIGHT,
+  CARD_WIDTH,
+  NodeCard,
+  PendingCard,
+  type CardNode,
+  type PendingNode,
+} from "../components/NodeCard";
 import type { ById } from "../store/records";
-import type { Annotation, CanvasNode, Edge } from "../types";
+import type { Annotation, CanvasNode, Edge, FileRef } from "../types";
+import type { PendingImport } from "../ui/uiStore";
 
 /** Module-level so React Flow never sees a new object and remounts every card. */
-export const nodeTypes: NodeTypes = { card: NodeCard };
+export const nodeTypes: NodeTypes = { card: NodeCard, pending: PendingCard };
+
+/** Files and their in-tab bytes, for asset cards. */
+export interface FileLookup {
+  files: ById<FileRef>;
+  objectUrls: ById<string>;
+}
 
 export interface CardFlags {
   selectedIds: ReadonlySet<string>;
@@ -35,23 +49,44 @@ export function toFlowNodes(
   edges: ById<Edge>,
   annotations: ById<Annotation>,
   flags: CardFlags,
+  lookup: FileLookup = { files: {}, objectUrls: {} },
 ): CardNode[] {
   const counts = countsByNode(edges, annotations);
-  return Object.values(nodes).map((node) => ({
-    id: node.id,
-    type: "card",
-    position: flags.dragging[node.id] ?? { x: node.x, y: node.y },
+  return Object.values(nodes).map((node) => {
+    const fileId = node.fileIds[0];
+    return {
+      id: node.id,
+      type: "card",
+      position: flags.dragging[node.id] ?? { x: node.x, y: node.y },
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
+      selected: flags.selectedIds.has(node.id),
+      data: {
+        node,
+        fileCount: node.fileIds.length,
+        annotationCount: counts.annotationCount.get(node.id) ?? 0,
+        edgeCount: counts.edgeCount.get(node.id) ?? 0,
+        highlighted: flags.highlightedId === node.id,
+        connectSource: flags.connectSourceId === node.id,
+        flashing: flags.flashIds?.has(node.id) ?? false,
+        file: fileId ? (lookup.files[fileId] ?? null) : null,
+        objectUrl: fileId ? (lookup.objectUrls[fileId] ?? null) : null,
+      },
+    };
+  });
+}
+
+/** Files being read render as placeholders at the spot their asset node will take. */
+export function toPendingNodes(pending: PendingImport[]): PendingNode[] {
+  return pending.map((p) => ({
+    id: p.id,
+    type: "pending",
+    position: { x: p.x, y: p.y },
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    selected: flags.selectedIds.has(node.id),
-    data: {
-      node,
-      fileCount: node.fileIds.length,
-      annotationCount: counts.annotationCount.get(node.id) ?? 0,
-      edgeCount: counts.edgeCount.get(node.id) ?? 0,
-      highlighted: flags.highlightedId === node.id,
-      connectSource: flags.connectSourceId === node.id,
-      flashing: flags.flashIds?.has(node.id) ?? false,
-    },
+    draggable: false,
+    selectable: false,
+    connectable: false,
+    data: { pending: p },
   }));
 }
