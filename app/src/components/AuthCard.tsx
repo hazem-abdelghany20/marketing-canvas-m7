@@ -13,7 +13,7 @@ interface AuthCardProps {
 export function AuthCard({ heading, subheading, children, footer }: AuthCardProps) {
   return (
     <AuthGround>
-      <main className="w-full max-w-[400px] rounded-lg border border-subtle bg-panel px-8 py-9 shadow-[0_12px_40px_-20px_color-mix(in_srgb,var(--fg-primary)_35%,transparent)] max-[480px]:px-5">
+      <main className="w-full max-w-[400px] rounded-lg border border-subtle bg-panel px-8 py-9 shadow-[0_1px_2px_rgb(0_0_0/0.03),0_12px_40px_-20px_rgb(0_0_0/0.25)] max-[480px]:px-5">
         <Logo />
         <h1 className="mb-1.5 text-[27px] font-semibold leading-tight tracking-[-0.02em] text-primary">{heading}</h1>
         <p className="mb-[26px] text-sm leading-normal text-muted">{subheading}</p>
