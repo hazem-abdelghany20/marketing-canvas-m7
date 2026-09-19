@@ -156,7 +156,7 @@ zustand              — app state
 react-router-dom     — routing
 tailwindcss          — styling (tokens in tailwind.config)
 lucide-react         — icons
-vitest · @testing-library/react · playwright  — tests
+vitest · @testing-library/react · playwright (@playwright/test)  — tests
 jsdom · @testing-library/dom — the DOM that @testing-library/react needs under vitest (dev only)
 ```
 

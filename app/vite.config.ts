@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "tailwindcss";
 
@@ -12,5 +12,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+  },
+  test: {
+    // Playwright owns e2e/; vitest would otherwise collect its *.spec.ts files.
+    exclude: [...configDefaults.exclude, "e2e/**"],
   },
 });
