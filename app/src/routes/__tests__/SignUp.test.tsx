@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { apiError, deferred, emptyBoard, json, network, renderAt, resetApp, serveEmptyBoard, user } from "./harness";
+import { apiError, deferred, emptyBoard, json, network, openAt, resetApp, serveEmptyBoard, user } from "./harness";
 
 const field = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
 const submit = () => screen.getByRole("button", { name: /creat/i }) as HTMLButtonElement;
@@ -16,7 +16,7 @@ afterEach(cleanup);
 
 describe("Sign up", () => {
   it("shows the 8-character rule as guidance from the start, and marks it met live", async () => {
-    renderAt("/signup");
+    await openAt("/signup");
     const rule = await screen.findByText("At least 8 characters");
 
     fireEvent.change(field("Password"), { target: { value: "12345678" } });
@@ -26,7 +26,7 @@ describe("Sign up", () => {
   });
 
   it("blocks a mismatched confirmation and names that field", async () => {
-    renderAt("/signup");
+    await openAt("/signup");
     fillAll({ "Confirm password": "12345679" });
 
     fireEvent.click(submit());
@@ -38,7 +38,7 @@ describe("Sign up", () => {
 
   it("renders email_taken with a link to sign in, keeping everything but the passwords", async () => {
     network.on("POST /auth/signup", () => apiError(409, "email_taken", "raw server text"));
-    renderAt("/signup");
+    await openAt("/signup");
     fillAll({ Email: "taken@example.com" });
 
     fireEvent.click(submit());
@@ -56,7 +56,7 @@ describe("Sign up", () => {
   it("disables every field and labels the button Creating… while pending", async () => {
     const gate = deferred<Response>();
     network.on("POST /auth/signup", () => gate.promise);
-    renderAt("/signup");
+    await openAt("/signup");
     fillAll();
 
     fireEvent.click(submit());
@@ -71,7 +71,7 @@ describe("Sign up", () => {
   it("lands on / and shows the first-run empty state for the new, empty board", async () => {
     network.on("POST /auth/signup", () => json(201, { token: "tok_new", user, board: emptyBoard }));
     serveEmptyBoard();
-    const { router } = renderAt("/signup");
+    const { router } = await openAt("/signup");
     fillAll();
 
     fireEvent.click(submit());

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { apiError, deferred, json, network, renderAt, resetApp, serveEmptyBoard, user } from "./harness";
+import { apiError, deferred, json, network, openAt, renderAt, resetApp, serveEmptyBoard, user } from "./harness";
 import { appStore } from "../../store";
 
 const email = () => screen.getByLabelText("Email") as HTMLInputElement;
@@ -18,12 +18,12 @@ afterEach(cleanup);
 
 describe("Sign in", () => {
   it("focuses the email field on load", async () => {
-    renderAt("/signin");
+    await openAt("/signin");
     await waitFor(() => expect(document.activeElement).toBe(email()));
   });
 
   it("blocks an email without @ client-side, names the field, and sends nothing", async () => {
-    renderAt("/signin");
+    await openAt("/signin");
     fill({ email: "ada.example.com", password: "12345678" });
 
     fireEvent.click(submit());
@@ -36,7 +36,7 @@ describe("Sign in", () => {
   });
 
   it("blocks a 7-character password with the 8-character rule", async () => {
-    renderAt("/signin");
+    await openAt("/signin");
     fill({ email: "ada@example.com", password: "1234567" });
 
     fireEvent.click(submit());
@@ -46,7 +46,7 @@ describe("Sign in", () => {
   });
 
   it("clears a field's error as soon as that field is edited", async () => {
-    renderAt("/signin");
+    await openAt("/signin");
     fill({ email: "nope", password: "12345678" });
     fireEvent.click(submit());
     await screen.findByText("Enter a valid email address.");
@@ -59,7 +59,7 @@ describe("Sign in", () => {
   it("labels and disables the submit button while pending, and freezes the fields", async () => {
     const gate = deferred<Response>();
     network.on("POST /auth/login", () => gate.promise);
-    renderAt("/signin");
+    await openAt("/signin");
     fill({ email: "ada@example.com", password: "12345678" });
 
     fireEvent.click(submit());
@@ -74,7 +74,7 @@ describe("Sign in", () => {
 
   it("keeps both values, shows a form-level error and re-enables submit on bad_credentials", async () => {
     network.on("POST /auth/login", () => apiError(401, "bad_credentials", "raw server text"));
-    renderAt("/signin");
+    await openAt("/signin");
     fill({ email: "ada@example.com", password: "wrongpass" });
 
     fireEvent.click(submit());
@@ -90,7 +90,7 @@ describe("Sign in", () => {
 
   it("offers Retry when the server can't be reached, and retrying resubmits", async () => {
     network.on("POST /auth/login", () => Promise.reject(new TypeError("Failed to fetch")));
-    renderAt("/signin");
+    await openAt("/signin");
     fill({ email: "ada@example.com", password: "12345678" });
     fireEvent.click(submit());
 
@@ -103,7 +103,7 @@ describe("Sign in", () => {
   it("stores the token and sends it as a bearer on every later request", async () => {
     network.on("POST /auth/login", () => json(200, { token: "tok_live", user }));
     serveEmptyBoard();
-    const { router } = renderAt("/signin");
+    const { router } = await openAt("/signin");
     fill({ email: "ada@example.com", password: "12345678" });
 
     fireEvent.click(submit());
@@ -133,7 +133,7 @@ describe("Sign in", () => {
   });
 
   it("links to sign-up", async () => {
-    const { router } = renderAt("/signin");
+    const { router } = await openAt("/signin");
 
     fireEvent.click(await screen.findByRole("link", { name: "Create one" }));
 

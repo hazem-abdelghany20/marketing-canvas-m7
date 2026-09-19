@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { routes } from "../../App";
@@ -68,6 +68,13 @@ export function renderAt(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   const utils = render(<RouterProvider router={router} />);
   return { router, ...utils };
+}
+
+/** Renders and waits until the screen at `path` has painted its heading. */
+export async function openAt(path: string) {
+  const rendered = renderAt(path);
+  await screen.findByRole("heading", { level: 1 });
+  return rendered;
 }
 
 export function deferred<T>() {
