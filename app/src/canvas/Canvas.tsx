@@ -30,6 +30,8 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
         zoomOnPinch
         zoomOnDoubleClick={false}
         aria-label="Canvas"
+        // React Flow's credit ships with a white chip; restyle it with the tokens.
+        className="[&_.react-flow\_\_attribution]:bg-transparent [&_.react-flow\_\_attribution_a]:!text-muted"
       >
         <Background variant={BackgroundVariant.Dots} gap={GRID_GAP} size={1.2} color="var(--grid-dot)" />
       </ReactFlow>
