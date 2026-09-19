@@ -67,7 +67,8 @@ async function toApiError(response: Response): Promise<ApiError> {
 }
 
 export function createClient(options: ClientOptions): ApiClient {
-  const fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);
+  // Looked up per request, not captured once: a fetch installed later still applies.
+  const fetchImpl: typeof fetch = (input, init) => (options.fetch ?? globalThis.fetch)(input, init);
 
   async function open(method: HttpMethod, requestPath: string, body?: unknown, signal?: AbortSignal) {
     // The path is resolved against the base, never glued onto it.
