@@ -23,4 +23,4 @@ Panel over the canvas — do not unmount the canvas on open.
 Do not modify edge creation from ticket 008.
 
 ## Verify
-`npx vitest run src/routes/NodeDetail src/components/detail && npx playwright test e2e/node-detail.spec.ts`
+`npx vitest run src/routes/__tests__/NodeDetail src/auth && npx playwright test e2e/node-detail.spec.ts`

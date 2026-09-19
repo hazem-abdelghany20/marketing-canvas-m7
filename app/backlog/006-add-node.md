@@ -22,4 +22,4 @@
 Type selection happens in the detail panel, not at creation.
 
 ## Verify
-`npx vitest run src/components && npx playwright test e2e/add-node.spec.ts`
+`npx vitest run src/components src/store/__tests__/createNode && npx playwright test e2e/add-node.spec.ts`

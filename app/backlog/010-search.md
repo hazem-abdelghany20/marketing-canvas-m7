@@ -20,4 +20,4 @@
 Local in-memory filter only — no index library, no fuzzy-search dependency.
 
 ## Verify
-`npx vitest run src/components/SearchOverlay && npx playwright test e2e/search.spec.ts`
+`npx vitest run src/components/__tests__/SearchOverlay && npx playwright test e2e/search.spec.ts`

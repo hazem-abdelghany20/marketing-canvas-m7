@@ -23,4 +23,4 @@ One stored edge per connection — never write a mirrored duplicate.
 `--edge-serves` and `--edge-relates` tokens only.
 
 ## Verify
-`npx vitest run src/store/edges src/components && npx playwright test e2e/connect.spec.ts`
+`npx vitest run src/store/__tests__/edges src/canvas/__tests__/connect src/components && npx playwright test e2e/connect.spec.ts`
