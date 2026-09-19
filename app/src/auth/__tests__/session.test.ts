@@ -8,6 +8,7 @@ import {
   requireSession,
   validateSignIn,
   validateSignUp,
+  returnPath,
 } from "../session";
 
 const user = { id: "us_1", name: "Ada", email: "ada@example.com", avatarUrl: null };
@@ -91,27 +92,44 @@ describe("formErrorFor", () => {
 });
 
 describe("route guards", () => {
+  const at = (path: string) => ({ request: new Request(`http://app.test${path}`) });
+
   beforeEach(() => {
     appStore.setState({ token: null, user: null });
   });
 
   it("sends a signed-out visitor from / to /signin", () => {
-    const result = requireSession();
+    const result = requireSession(at("/"));
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).headers.get("Location")).toBe("/signin");
   });
 
-  it("lets a signed-in visitor through to /", () => {
-    appStore.getState().signIn({ token: "tok", user });
-    expect(requireSession()).toBeNull();
+  it("remembers a deep link, so signing in returns to /node/:id", () => {
+    const result = requireSession(at("/node/nd_goal"));
+    expect((result as Response).headers.get("Location")).toBe("/signin?next=%2Fnode%2Fnd_goal");
   });
 
-  it("sends a signed-in visitor from /signin to /", () => {
+  it("lets a signed-in visitor through to /", () => {
     appStore.getState().signIn({ token: "tok", user });
-    expect((redirectIfSignedIn() as Response).headers.get("Location")).toBe("/");
+    expect(requireSession(at("/"))).toBeNull();
+  });
+
+  it("sends a signed-in visitor from /signin to /, or to where they were headed", () => {
+    appStore.getState().signIn({ token: "tok", user });
+    expect((redirectIfSignedIn(at("/signin")) as Response).headers.get("Location")).toBe("/");
+    expect((redirectIfSignedIn(at("/signin?next=%2Fnode%2Fnd_1")) as Response).headers.get("Location")).toBe(
+      "/node/nd_1",
+    );
   });
 
   it("lets a signed-out visitor see /signin", () => {
-    expect(redirectIfSignedIn()).toBeNull();
+    expect(redirectIfSignedIn(at("/signin"))).toBeNull();
+  });
+
+  it("only returns to paths on this site", () => {
+    expect(returnPath("?next=%2Fnode%2Fnd_1")).toBe("/node/nd_1");
+    expect(returnPath("?next=https%3A%2F%2Fevil.test")).toBe("/");
+    expect(returnPath("?next=%2F%2Fevil.test")).toBe("/");
+    expect(returnPath("")).toBe("/");
   });
 });

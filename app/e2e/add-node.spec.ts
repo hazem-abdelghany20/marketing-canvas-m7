@@ -16,6 +16,10 @@ test("the first-run affordance opens the menu, and Note lands an untitled note a
 
   await expect(cards(page)).toHaveCount(1);
   await expect(page).toHaveURL(/\/node\/nd_/);
+  // The detail panel opens with the title focused, ready to be typed over.
+  const title = page.getByRole("complementary", { name: "Node detail" }).getByRole("textbox", { name: "Title" });
+  await expect(title).toBeFocused();
+  await expect(title).toHaveValue("Untitled");
   const [node] = await s.nodes();
   expect(node).toMatchObject({ type: "note", title: "Untitled" });
 
