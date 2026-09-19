@@ -15,7 +15,7 @@ function echoPatch(nodes: Record<string, CanvasNode>): Handler {
   };
 }
 
-function serverNodes() {
+function serverNodes(): Record<string, CanvasNode> {
   return Object.fromEntries(fixtures.nodes.map((n) => [n.id, { ...n }]));
 }
 
