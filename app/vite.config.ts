@@ -16,5 +16,6 @@ export default defineConfig({
   test: {
     // Playwright owns e2e/; vitest would otherwise collect its *.spec.ts files.
     exclude: [...configDefaults.exclude, "e2e/**"],
+    setupFiles: ["src/test/setup.ts"],
   },
 });

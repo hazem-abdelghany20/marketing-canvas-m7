@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { appStore } from "../store";
 import { uiStore } from "../ui/uiStore";
 import { deleteNodes, undoLast } from "./actions";
@@ -9,8 +9,16 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
 }
 
+export interface ShortcutHandlers {
+  /** N — open the add-node menu. */
+  onAdd: () => void;
+}
+
 /** The workspace's global keys, from docs/spec.md § S3 Behavior. */
-export function useWorkspaceShortcuts(enabled: boolean) {
+export function useWorkspaceShortcuts(enabled: boolean, handlers: ShortcutHandlers) {
+  const latest = useRef(handlers);
+  latest.current = handlers;
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -26,6 +34,11 @@ export function useWorkspaceShortcuts(enabled: boolean) {
       }
       if (mod || event.altKey) return;
 
+      if (key === "n") {
+        event.preventDefault();
+        latest.current.onAdd();
+        return;
+      }
       if (event.key === "Delete" || event.key === "Backspace") {
         const { selectedIds } = uiStore.getState();
         if (selectedIds.length > 0) {

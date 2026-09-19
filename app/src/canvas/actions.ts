@@ -1,5 +1,6 @@
-import { appStore } from "../store";
 import { plural } from "../lib/format";
+import { appStore } from "../store";
+import type { CanvasNode } from "../types";
 import { COPY } from "../ui/copy";
 import { uiStore } from "../ui/uiStore";
 
@@ -61,4 +62,45 @@ export async function deleteNodes(ids: string[]) {
     onAction: () => undoLast(deleted),
     durationMs: 8000,
   });
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/** How far a new node steps diagonally off one already sitting exactly where it would land. */
+export const OVERLAP_STEP = 24;
+
+/** Nudges a position until no node sits exactly on it. */
+export function avoidOverlap(at: Point, nodes: CanvasNode[]): Point {
+  let x = Math.round(at.x);
+  let y = Math.round(at.y);
+  while (nodes.some((n) => n.x === x && n.y === y)) {
+    x += OVERLAP_STEP;
+    y += OVERLAP_STEP;
+  }
+  return { x, y };
+}
+
+/** O1 — creates a note, or says it couldn't and offers to try again. Nothing half-made stays behind. */
+export async function createNote(
+  at: Point,
+  options: { title?: string; onCreated?: (node: CanvasNode) => void } = {},
+): Promise<CanvasNode | null> {
+  const { nodes, createNode } = appStore.getState();
+  const { x, y } = avoidOverlap(at, Object.values(nodes));
+  try {
+    const node = await createNode({ type: "note", x, y, ...(options.title ? { title: options.title } : {}) });
+    options.onCreated?.(node);
+    return node;
+  } catch {
+    uiStore.getState().toast({
+      message: COPY.addNodeFailed,
+      tone: "danger",
+      actionLabel: "Retry",
+      onAction: () => void createNote(at, options),
+    });
+    return null;
+  }
 }

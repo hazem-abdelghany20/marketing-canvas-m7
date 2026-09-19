@@ -7,6 +7,14 @@ export const COPY = {
   saveFailed: "Couldn't save that change. Check your connection and try again.",
   undoFailed: "Couldn't undo that. Check your connection and try again.",
   loading: "Waiting for the board.",
+  nothingToFit: "Nothing to fit yet.",
+  nothingToUndo: "Nothing to undo yet.",
+  maxZoom: "Already zoomed in as far as it goes (200%).",
+  minZoom: "Already zoomed out as far as it goes (25%).",
+
+  // O1 — Add-node menu
+  addNodeFailed: "Couldn't add the node. Check your connection and try again.",
+  waitForReply: "Wait for the current reply to finish.",
 
   // O4 — Quick-peek
   noDescription: "No description yet",

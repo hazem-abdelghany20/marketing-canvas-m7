@@ -1,4 +1,4 @@
-import type { Annotation, CanvasNode, Edge, NodePatch } from "../types";
+import type { Annotation, CanvasNode, Edge, NodeInput, NodePatch } from "../types";
 import { record } from "./history";
 import { mutate, notFound } from "./mutation";
 import { omit, reinsert, type ById } from "./records";
@@ -6,17 +6,35 @@ import type { AppStore, SliceCreator, StoreContext } from "./state";
 
 export interface NodesSlice {
   nodes: ById<CanvasNode>;
+  /**
+   * Not optimistic: the node appears once the API has it, so a failed create
+   * never leaves a half-made node on the canvas.
+   */
+  createNode: (input: NodeInput) => Promise<CanvasNode>;
   updateNode: (id: string, patch: NodePatch) => Promise<CanvasNode>;
   /** The API cascades to the node's edges and annotations; so does the cache. */
   deleteNode: (id: string) => Promise<void>;
-  // createNode arrives with ticket 006.
 }
 
 export const createNodesSlice: SliceCreator<NodesSlice> = (ctx) => (_set, _get, store) => ({
   nodes: {},
+  createNode: (input) => createNode(ctx, store, input),
   updateNode: (id, patch) => updateNode(ctx, store, id, patch, true),
   deleteNode: (id) => deleteNode(ctx, store, id, true),
 });
+
+async function createNode(ctx: StoreContext, store: AppStore, input: NodeInput) {
+  const node = await mutate(store, {
+    request: () => ctx.api.nodes.create(input),
+    commit: (s, created) => ({ nodes: { ...s.nodes, [created.id]: created } }),
+    rollback: () => ({}),
+  });
+  record(store, {
+    label: "Add node",
+    undo: () => deleteNode(ctx, store, ctx.ids.resolve(node.id), false),
+  });
+  return node;
+}
 
 async function updateNode(ctx: StoreContext, store: AppStore, id: string, patch: NodePatch, track: boolean) {
   const before = store.getState().nodes[id];
