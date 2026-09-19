@@ -17,5 +17,7 @@ export default defineConfig({
     // Playwright owns e2e/; vitest would otherwise collect its *.spec.ts files.
     exclude: [...configDefaults.exclude, "e2e/**"],
     setupFiles: ["src/test/setup.ts"],
+    // A test may wait on several 5s queries (see src/test/setup.ts); give it room for them.
+    testTimeout: 15_000,
   },
 });

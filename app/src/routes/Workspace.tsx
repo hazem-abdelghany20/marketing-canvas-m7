@@ -1,9 +1,12 @@
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
+import { Spline } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 import { createNote } from "../canvas/actions";
 import { Canvas } from "../canvas/Canvas";
+import { CONNECT_COPY, exitConnect, startConnect } from "../canvas/connect";
+import { ConnectMode } from "../canvas/ConnectMode";
 import { useViewport } from "../canvas/useViewport";
 import { useViewportCenter } from "../canvas/viewportCenter";
 import { useWorkspaceShortcuts } from "../canvas/useWorkspaceShortcuts";
@@ -13,7 +16,7 @@ import { FileDropZone } from "../components/FileDropZone";
 import { CARD_HEIGHT, CARD_WIDTH } from "../components/NodeCard";
 import { QuickPeek } from "../components/QuickPeek";
 import { ToastViewport } from "../components/Toast";
-import { Toolbar } from "../components/Toolbar";
+import { Toolbar, ToolButton } from "../components/Toolbar";
 import { FILE_ACCEPT, importFiles, ROW_GAP } from "../files/importFiles";
 import { appStore } from "../store";
 import { uiStore, useUi } from "../ui/uiStore";
@@ -103,7 +106,12 @@ function WorkspaceScreen() {
     fileInput.current?.click();
   }, [closeAddMenu]);
 
-  useWorkspaceShortcuts(ready, { onAdd: openAddMenu });
+  const toggleConnect = useCallback(() => {
+    if (uiStore.getState().connect.active) exitConnect();
+    else startConnect();
+  }, []);
+
+  useWorkspaceShortcuts(ready, { onAdd: openAddMenu, onConnect: toggleConnect });
 
   if (!token) return <Navigate to="/signin" replace />;
 
@@ -165,7 +173,20 @@ function WorkspaceScreen() {
         </div>
       ) : null}
 
-      <Toolbar ready={ready} addMenuOpen={addMenuOpen} onAdd={openAddMenu} />
+      <Toolbar ready={ready} addMenuOpen={addMenuOpen} onAdd={openAddMenu}>
+        <ToolButton
+          label="Connect"
+          icon={<Spline size={14} aria-hidden="true" />}
+          aria-label="Connect"
+          aria-pressed={connecting}
+          variant={connecting ? "active" : "secondary"}
+          title={connecting ? "Leave connect mode — Esc" : "Connect two nodes — C"}
+          disabledReason={!ready ? "Waiting for the board." : nodeCount < 2 ? CONNECT_COPY.needsTwo : null}
+          // Trying anyway gets the same explanation as the C key.
+          onDisabledClick={() => ready && startConnect()}
+          onClick={toggleConnect}
+        />
+      </Toolbar>
       {addMenuOpen && ready ? (
         <AddNodeMenu onClose={closeAddMenu} onNote={addNote} onFromChat={fromChat}>
           <MenuItem label="File" hint="Images, PDF, text, Office · 25MB" onSelect={pickFile} />
@@ -185,7 +206,8 @@ function WorkspaceScreen() {
         }}
       />
 
-      {ready ? <QuickPeek onConnect={() => {}} /> : null}
+      {ready ? <QuickPeek onConnect={(id) => void startConnect(id)} /> : null}
+      {ready ? <ConnectMode /> : null}
       <Outlet />
       <ToastViewport />
     </main>

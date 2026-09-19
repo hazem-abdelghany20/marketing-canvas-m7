@@ -12,6 +12,8 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 export interface ShortcutHandlers {
   /** N — open the add-node menu. */
   onAdd: () => void;
+  /** C — enter connect mode, or leave it. */
+  onConnect: () => void;
 }
 
 /** The workspace's global keys, from docs/spec.md § S3 Behavior. */
@@ -34,9 +36,20 @@ export function useWorkspaceShortcuts(enabled: boolean, handlers: ShortcutHandle
       }
       if (mod || event.altKey) return;
 
+      if (event.key === "Escape" && uiStore.getState().connect.active) {
+        event.preventDefault();
+        uiStore.getState().exitConnect();
+        return;
+      }
+
       if (key === "n") {
         event.preventDefault();
         latest.current.onAdd();
+        return;
+      }
+      if (key === "c") {
+        event.preventDefault();
+        latest.current.onConnect();
         return;
       }
       if (event.key === "Delete" || event.key === "Backspace") {

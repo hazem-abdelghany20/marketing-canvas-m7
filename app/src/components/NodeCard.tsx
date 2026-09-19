@@ -7,9 +7,12 @@ import type { CanvasNode, FileRef } from "../types";
 import type { PendingImport } from "../ui/uiStore";
 import { TYPE_BG, TypeChip, typeLabel } from "./TypeChip";
 
-/** Cards are a fixed size, so layout maths never has to wait for a measurement. */
+/**
+ * Cards are a fixed size, so layout maths never has to wait for a measurement.
+ * Tall enough for a two-line title and a two-line excerpt at once.
+ */
 export const CARD_WIDTH = 236;
-export const CARD_HEIGHT = 132;
+export const CARD_HEIGHT = 140;
 /** How far one arrow-key press moves a focused card. */
 export const NUDGE_PX = 8;
 
@@ -104,17 +107,16 @@ export function NodeCard({ id, data, selected }: NodeProps<CardNode>) {
       >
         <span aria-hidden="true" data-type-bar className={`absolute inset-y-0 left-0 w-1 ${TYPE_BG[node.type]}`} />
         <TypeChip type={node.type} />
-        <h3 className="m-0 line-clamp-2 text-[14.5px] font-semibold leading-[18.5px] tracking-[-0.01em] text-primary">
+        <h3 className="m-0 line-clamp-2 flex-none text-[14.5px] font-semibold leading-[18.5px] tracking-[-0.01em] text-primary">
           {title}
         </h3>
         {node.type === "asset" && data.file ? (
           <AssetDetails file={data.file} objectUrl={data.objectUrl ?? null} />
         ) : node.body ? (
-          <p data-excerpt className="m-0 line-clamp-2 text-[12.5px] leading-[17.5px] text-muted">
+          <p data-excerpt className="m-0 line-clamp-2 flex-none text-[12.5px] leading-[17.5px] text-muted">
             {node.body}
           </p>
         ) : null}
-        <div className="flex-1" />
         <Badges files={fileCount} annotations={annotationCount} edges={edgeCount} />
       </article>
       {HANDLES.map((handle) => (
@@ -167,7 +169,7 @@ export function PendingCard({ data }: NodeProps<PendingNode>) {
     >
       <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${TYPE_BG.asset}`} />
       <TypeChip type="asset" />
-      <h3 className="m-0 line-clamp-2 text-[14.5px] font-semibold leading-[18.5px] text-primary">{name}</h3>
+      <h3 className="m-0 line-clamp-2 flex-none text-[14.5px] font-semibold leading-[18.5px] text-primary">{name}</h3>
       <span className="font-mono text-[10px] text-muted">{formatBytes(sizeBytes)}</span>
       <div className="flex-1" />
       <div
@@ -191,7 +193,7 @@ function Badges({ files, annotations, edges }: { files: number; annotations: num
   if (badges.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-[9px] font-mono text-[9.5px] tracking-[0.06em] text-muted">
+    <div className="mt-auto flex items-center gap-[9px] font-mono text-[9.5px] tracking-[0.06em] text-muted">
       {badges.map(({ count, label, Icon }) => (
         <span key={label} data-badge aria-label={label} title={label} className="inline-flex items-center gap-1">
           <Icon size={11} aria-hidden="true" />
