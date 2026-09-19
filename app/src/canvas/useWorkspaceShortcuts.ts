@@ -3,6 +3,14 @@ import { appStore } from "../store";
 import { uiStore } from "../ui/uiStore";
 import { deleteNodes, undoLast } from "./actions";
 
+/**
+ * Delete acts on the canvas selection, so it only counts while the canvas (or
+ * nothing in particular) has focus — never from a button in a panel or menu.
+ */
+function focusIsOnCanvas(target: EventTarget | null): boolean {
+  return target === document.body || (target instanceof Element && target.closest("[data-drop-zone]") !== null);
+}
+
 /** Keys typed into a field belong to the field, not to the canvas. */
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -61,7 +69,7 @@ export function useWorkspaceShortcuts(enabled: boolean, handlers: ShortcutHandle
         latest.current.onConnect();
         return;
       }
-      if (event.key === "Delete" || event.key === "Backspace") {
+      if ((event.key === "Delete" || event.key === "Backspace") && focusIsOnCanvas(event.target)) {
         const { selectedIds } = uiStore.getState();
         if (selectedIds.length > 0) {
           event.preventDefault();

@@ -14,6 +14,7 @@ import {
 } from "../../routes/__tests__/harness";
 import { appStore } from "../../store";
 import type { CanvasNode } from "../../types";
+import { uiStore } from "../../ui/uiStore";
 
 const T = "2026-09-02T00:00:00.000Z";
 const note = (over: Partial<CanvasNode> = {}): CanvasNode => ({
@@ -142,5 +143,22 @@ describe("Toolbar", () => {
     expect(screen.getByRole("button", { name: "Fit to screen" }).title).toBe("Nothing to fit yet.");
     expect(screen.getByRole("button", { name: "Undo" }).title).toBe("Nothing to undo yet.");
     expect(screen.getByRole("button", { name: "Add node" }).getAttribute("aria-disabled")).toBeNull();
+  });
+});
+
+describe("Delete key", () => {
+  it("never deletes the canvas selection from a control outside the canvas", async () => {
+    renderAt("/");
+    await screen.findByText("Nothing on the canvas yet.");
+    appStore.setState({ nodes: { nd_1: note({ id: "nd_1" }) } });
+    uiStore.getState().select(["nd_1"]);
+
+    const undo = screen.getByRole("button", { name: "Undo" });
+    fireEvent.keyDown(undo, { key: "Backspace" });
+    expect(network.callsTo("DELETE /nodes/nd_1")).toHaveLength(0);
+
+    network.on("DELETE /nodes/nd_1", () => json(204));
+    fireEvent.keyDown(document.body, { key: "Backspace" });
+    await waitFor(() => expect(network.callsTo("DELETE /nodes/nd_1")).toHaveLength(1));
   });
 });
