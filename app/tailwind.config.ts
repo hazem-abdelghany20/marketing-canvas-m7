@@ -50,6 +50,21 @@ const config: Config = {
       outlineColor: {
         focus: "var(--focus-ring)",
       },
+      // Motion from design/marketing-canvas.dc.html. tokens.css flattens every
+      // animation under prefers-reduced-motion, so none of these need guarding.
+      keyframes: {
+        "mc-pop": { from: { opacity: "0", transform: "scale(.94)" }, to: { opacity: "1", transform: "scale(1)" } },
+        "mc-rise": { from: { opacity: "0", transform: "translateY(8px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        "mc-flash": { "0%, 100%": { opacity: "1" }, "50%": { opacity: ".25" } },
+        "mc-slide": { from: { transform: "translateX(-100%)" }, to: { transform: "translateX(250%)" } },
+      },
+      animation: {
+        "mc-pop": "mc-pop .14s ease both",
+        "mc-rise": "mc-rise .18s ease both",
+        "mc-flash": "mc-flash .6s ease 2",
+        "mc-pulse": "mc-flash 1.2s ease infinite",
+        "mc-slide": "mc-slide 1.1s ease-in-out infinite",
+      },
       fontFamily: {
         sans: ["Instrument Sans", "system-ui", "sans-serif"],
         mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
