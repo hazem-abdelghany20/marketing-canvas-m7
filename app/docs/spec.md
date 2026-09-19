@@ -157,6 +157,7 @@ react-router-dom     — routing
 tailwindcss          — styling (tokens in tailwind.config)
 lucide-react         — icons
 vitest · @testing-library/react · playwright  — tests
+jsdom · @testing-library/dom — the DOM that @testing-library/react needs under vitest (dev only)
 ```
 
 No HTTP client is listed because none is needed — `fetch` is native. `zustand` holds a cache
