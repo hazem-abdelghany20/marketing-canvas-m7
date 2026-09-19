@@ -14,6 +14,8 @@ export interface ShortcutHandlers {
   onAdd: () => void;
   /** C — enter connect mode, or leave it. */
   onConnect: () => void;
+  /** Cmd/Ctrl+F — open search. Returns false when there is nothing to search, so the browser's find runs instead. */
+  onSearch: () => boolean;
 }
 
 /** The workspace's global keys, from docs/spec.md § S3 Behavior. */
@@ -25,9 +27,16 @@ export function useWorkspaceShortcuts(enabled: boolean, handlers: ShortcutHandle
     if (!enabled) return;
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented || isTypingTarget(event.target)) return;
+      if (event.defaultPrevented) return;
       const mod = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
+
+      // Search works from anywhere, a text field included.
+      if (mod && key === "f" && !event.shiftKey && !event.altKey) {
+        if (latest.current.onSearch()) event.preventDefault();
+        return;
+      }
+      if (isTypingTarget(event.target)) return;
 
       if (mod && key === "z" && !event.shiftKey) {
         event.preventDefault();

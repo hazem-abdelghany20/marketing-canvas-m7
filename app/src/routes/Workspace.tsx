@@ -1,5 +1,5 @@
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
-import { Spline } from "lucide-react";
+import { Search, Spline } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { Navigate, Outlet, useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
@@ -7,6 +7,7 @@ import { createNote } from "../canvas/actions";
 import { Canvas } from "../canvas/Canvas";
 import { CONNECT_COPY, exitConnect, startConnect } from "../canvas/connect";
 import { ConnectMode } from "../canvas/ConnectMode";
+import { panToNode } from "../canvas/panToNode";
 import { useViewport } from "../canvas/useViewport";
 import { useViewportCenter } from "../canvas/viewportCenter";
 import { useWorkspaceShortcuts } from "../canvas/useWorkspaceShortcuts";
@@ -14,10 +15,13 @@ import { AddNodeMenu, MenuItem } from "../components/AddNodeMenu";
 import { Button } from "../components/Button";
 import { FileDropZone } from "../components/FileDropZone";
 import { CARD_HEIGHT, CARD_WIDTH } from "../components/NodeCard";
+import { PANEL_WIDTH } from "../components/detail/ConnectionList";
 import { QuickPeek } from "../components/QuickPeek";
+import { SearchOverlay } from "../components/SearchOverlay";
 import { ToastViewport } from "../components/Toast";
 import { Toolbar, ToolButton } from "../components/Toolbar";
 import { FILE_ACCEPT, importFiles, ROW_GAP } from "../files/importFiles";
+import type { CanvasNode } from "../types";
 import { appStore } from "../store";
 import { uiStore, useUi } from "../ui/uiStore";
 
@@ -34,12 +38,16 @@ export default function Workspace() {
   );
 }
 
+/** Where a search result lands: close enough to read the card. */
+const SEARCH_FOCUS_ZOOM = 1.25;
+
 function WorkspaceScreen() {
   const navigate = useNavigate();
   const token = useStore(appStore, (s) => s.token);
   const status = useStore(appStore, (s) => s.boardStatus);
   const nodeCount = useStore(appStore, (s) => Object.keys(s.nodes).length);
   const addMenuOpen = useUi((s) => s.addMenuOpen);
+  const searchOpen = useUi((s) => s.searchOpen);
   const connecting = useUi((s) => s.connect.active);
   const panelOpen = useMatch("/node/:id") !== null;
   const flow = useReactFlow();
@@ -112,7 +120,43 @@ function WorkspaceScreen() {
     else startConnect();
   }, []);
 
-  useWorkspaceShortcuts(ready, { onAdd: openAddMenu, onConnect: toggleConnect });
+  // O5 — focus comes back to where it was, unless a result was chosen: then it goes to that card.
+  const searchReturn = useRef<HTMLElement | null>(null);
+  const openSearch = useCallback(() => {
+    if (Object.keys(appStore.getState().nodes).length === 0) return false;
+    if (!uiStore.getState().searchOpen) {
+      const active = document.activeElement;
+      searchReturn.current = active instanceof HTMLElement && active !== document.body ? active : null;
+    }
+    uiStore.getState().setSearchOpen(true);
+    return true;
+  }, []);
+  const closeSearch = useCallback(() => {
+    uiStore.getState().setSearchOpen(false);
+    searchReturn.current?.focus();
+  }, []);
+  const goToNode = useCallback(
+    (node: CanvasNode) => {
+      uiStore.getState().setSearchOpen(false);
+      uiStore.getState().select([node.id]);
+      const covered = panelOpen && window.innerWidth >= 900 ? PANEL_WIDTH : 0;
+      void panToNode(flow, node, { zoom: SEARCH_FOCUS_ZOOM, coveredRight: covered });
+      document.querySelector<HTMLElement>(`[data-node-card="${CSS.escape(node.id)}"]`)?.focus({ preventScroll: true });
+    },
+    [flow, panelOpen],
+  );
+  const createFromSearch = useCallback(
+    (title: string) => {
+      uiStore.getState().setSearchOpen(false);
+      void createNote(viewportCenter(), {
+        title,
+        onCreated: (node) => navigate(`/node/${encodeURIComponent(node.id)}`, { state: { focusTitle: true } }),
+      });
+    },
+    [navigate, viewportCenter],
+  );
+
+  useWorkspaceShortcuts(ready, { onAdd: openAddMenu, onConnect: toggleConnect, onSearch: openSearch });
 
   if (!token) return <Navigate to="/signin" replace />;
 
@@ -187,6 +231,15 @@ function WorkspaceScreen() {
           onDisabledClick={() => ready && startConnect()}
           onClick={toggleConnect}
         />
+        <ToolButton
+          label="Search"
+          icon={<Search size={14} aria-hidden="true" />}
+          aria-label="Search"
+          aria-haspopup="dialog"
+          title="Search nodes — ⌘F / Ctrl+F"
+          disabledReason={!ready ? "Waiting for the board." : nodeCount === 0 ? "Nothing to search yet." : null}
+          onClick={() => void openSearch()}
+        />
       </Toolbar>
       {addMenuOpen && ready ? (
         <AddNodeMenu onClose={closeAddMenu} onNote={addNote} onFromChat={fromChat}>
@@ -209,6 +262,9 @@ function WorkspaceScreen() {
 
       {ready ? <QuickPeek onConnect={(id) => void startConnect(id)} /> : null}
       {ready ? <ConnectMode /> : null}
+      {ready && searchOpen ? (
+        <SearchOverlay onClose={closeSearch} onGo={goToNode} onCreateNote={createFromSearch} />
+      ) : null}
       <Outlet />
       <ToastViewport />
     </main>
