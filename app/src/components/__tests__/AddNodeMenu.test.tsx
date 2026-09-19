@@ -49,7 +49,7 @@ describe("AddNodeMenu", () => {
   it("opens from the first-run affordance with its first option focused", async () => {
     const { menu } = await openMenuFromFirstRun();
     const options = Array.from(menu.querySelectorAll("[role=menuitem]")).map((el) => el.firstChild?.textContent);
-    expect(options).toEqual(["Note", "From chat"]);
+    expect(options).toEqual(["Note", "File", "From chat"]);
     expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: /^Note/ }));
   });
 

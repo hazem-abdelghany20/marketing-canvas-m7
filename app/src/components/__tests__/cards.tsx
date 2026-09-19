@@ -5,7 +5,7 @@ import { vi } from "vitest";
 import { CanvasActionsContext, type CanvasActions } from "../../canvas/canvasActions";
 import { nodeTypes, toFlowNodes } from "../../canvas/nodeTypes";
 import { byId } from "../../store/records";
-import type { Annotation, CanvasNode, Edge } from "../../types";
+import type { Annotation, CanvasNode, Edge, FileRef } from "../../types";
 
 // React Flow measures its container; jsdom has no layout engine to observe.
 globalThis.ResizeObserver ??= class {
@@ -23,14 +23,29 @@ export function makeNode(overrides: Partial<CanvasNode> & Pick<CanvasNode, "id">
 /** Mounts real cards inside a real React Flow, the way the canvas does. */
 export function renderCards(
   nodes: CanvasNode[],
-  { edges = [], annotations = [], selected = [] }: { edges?: Edge[]; annotations?: Annotation[]; selected?: string[] } = {},
+  {
+    edges = [],
+    annotations = [],
+    selected = [],
+    files = [],
+    objectUrls = {},
+  }: {
+    edges?: Edge[];
+    annotations?: Annotation[];
+    selected?: string[];
+    files?: FileRef[];
+    objectUrls?: Record<string, string>;
+  } = {},
   children?: ReactNode,
 ) {
   const actions: CanvasActions = { open: vi.fn(), nudge: vi.fn() };
-  const flowNodes = toFlowNodes(byId(nodes), byId(edges), byId(annotations), {
-    selectedIds: new Set(selected),
-    dragging: {},
-  });
+  const flowNodes = toFlowNodes(
+    byId(nodes),
+    byId(edges),
+    byId(annotations),
+    { selectedIds: new Set(selected), dragging: {} },
+    { files: byId(files), objectUrls },
+  );
   const utils = render(
     <ReactFlowProvider>
       <CanvasActionsContext.Provider value={actions}>

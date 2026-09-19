@@ -80,4 +80,30 @@ describe("NodeCard", () => {
     const el = card("Ramadan push, Campaign");
     expect(el.tabIndex).toBe(0);
   });
+
+  it("shows an asset's file name, size and, for an image in this tab, a thumbnail", () => {
+    const T = "2026-09-01T00:00:00.000Z";
+    renderCards(
+      [
+        makeNode({ id: "nd_img", type: "asset", title: "hero.jpg", fileIds: ["fl_img"] }),
+        makeNode({ id: "nd_pdf", type: "asset", title: "deck.pdf", fileIds: ["fl_pdf"], x: 300 }),
+      ],
+      {
+        files: [
+          { id: "fl_img", name: "hero.jpg", mime: "image/jpeg", sizeBytes: 2 * 1024 * 1024, thumbUrl: null, createdAt: T },
+          { id: "fl_pdf", name: "deck.pdf", mime: "application/pdf", sizeBytes: 4096, thumbUrl: null, createdAt: T },
+        ],
+        objectUrls: { fl_img: "blob:hero" },
+      },
+    );
+
+    const img = card(/hero\.jpg/);
+    expect(img.textContent).toContain("2.0MB");
+    expect(img.querySelector("[data-thumbnail] img")!.getAttribute("src")).toBe("blob:hero");
+
+    const pdf = card(/deck\.pdf/);
+    expect(pdf.textContent).toContain("4KB");
+    expect(pdf.querySelector("[data-thumbnail] img")).toBeNull();
+    expect(pdf.textContent).toContain("Not loaded in this tab");
+  });
 });
