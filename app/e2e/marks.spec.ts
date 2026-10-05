@@ -110,9 +110,12 @@ test.describe("moving and persisting marks", () => {
     await expect(heading).toHaveAttribute("data-mark-variant", "text");
     await expect(heading.locator("[data-mark-card]")).toHaveCount(0);
 
+    // Measured once the marks have finished easing in, which scales them a little for a moment.
+    await page.waitForTimeout(400);
     const placed = await sticky.boundingBox();
     await page.reload();
     await expect(page.locator("[data-mark-id]")).toHaveCount(2);
+    await page.waitForTimeout(400);
     const again = await mark(page, "mrk_hook").boundingBox();
     expect(again!.x).toBeCloseTo(placed!.x, 0);
     expect(again!.y).toBeCloseTo(placed!.y, 0);
@@ -120,7 +123,8 @@ test.describe("moving and persisting marks", () => {
 
   test("a sticky is beneath the node cards it overlaps, and above the highlighter", async ({ page }) => {
     const s = await demoSession(page);
-    await setViewport(s, { x: 0, y: 0, zoom: 1 });
+    // Panned so both are on screen.
+    await setViewport(s, { x: -200, y: -500, zoom: 1 });
     await openCanvas(page);
 
     // The seeded hook sticky (600, 640) overlaps the "quiet luxury" carousel card (560, 700).
@@ -152,7 +156,8 @@ test.describe("when a request fails", () => {
       route.request().method() === "POST" ? route.fulfill({ status: 503, contentType: "application/json", body: FAIL }) : route.continue(),
     );
     await page.keyboard.press("s");
-    await clickCanvas(page, 400, 300);
+    // Off to one side: the first-run card sits in the middle of an empty board and would cover Retry.
+    await clickCanvas(page, 200, 250);
     await page.keyboard.type("Reshoot the hook");
     await page.keyboard.press("Escape");
 

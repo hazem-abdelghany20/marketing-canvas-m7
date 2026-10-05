@@ -85,17 +85,12 @@ test.describe("drawing", () => {
     const layers = await page.evaluate(() => {
       const under = document.querySelector('[data-ink-layer="under"]')!;
       const over = document.querySelector('[data-ink-layer="over"]')!;
-      const z = (el: Element | null) => {
-        for (let e = el; e; e = e.parentElement) {
-          const v = getComputedStyle(e).zIndex;
-          if (v !== "auto") return { z: Number(v), tag: e.className };
-        }
-        return { z: 0, tag: "" };
-      };
+      // The highlighter's layer is stacked by the viewport layer it sits in; the pen's by its own z-index.
+      const stack = (el: Element) => Number(getComputedStyle(el.closest(".react-flow__viewport-portal") ?? el).zIndex);
       const node = document.querySelector(".react-flow__node")!;
       return {
-        under: z(under).z,
-        over: z(over).z,
+        under: stack(under),
+        over: Number(getComputedStyle(over).zIndex),
         node: Number(getComputedStyle(node).zIndex) || 0,
         opacity: getComputedStyle(under.querySelector("[data-stroke-id]")!).strokeOpacity,
       };

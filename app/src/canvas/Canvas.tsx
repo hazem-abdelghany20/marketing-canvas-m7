@@ -20,6 +20,7 @@ import { omit } from "../store/records";
 import type { Viewport } from "../types";
 import { uiStore } from "../ui/uiStore";
 import { InkLayer } from "../whiteboard/InkLayer";
+import { MarkLayer } from "../whiteboard/MarkLayer";
 import { moveNode, nudgeNode } from "./actions";
 import { CanvasActionsContext, type CanvasActions } from "./canvasActions";
 import { connectByDrag, pickNode } from "./connect";
@@ -221,6 +222,7 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
       >
         <Background variant={BackgroundVariant.Dots} gap={GRID_GAP} size={1.2} color="var(--grid-dot)" />
         <PendingLine />
+        <MarkLayer />
         <InkLayer />
       </ReactFlow>
     </CanvasActionsContext.Provider>

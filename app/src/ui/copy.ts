@@ -61,6 +61,10 @@ export const COPY = {
   nothingToErase: "Nothing to erase yet.",
   inkSaveFailed: "Couldn't save that mark. Check your connection and try again.",
   clearInkFailed: "Couldn't clear the ink. Check your connection and try again.",
+  noteSaveFailed: "Couldn't save that note. Check your connection and try again.",
+  noteDeleteFailed: "Couldn't delete that note. Check your connection and try again.",
+  noteDeleted: "Note deleted.",
+  typeANote: "Type a note",
   clearInkTitle: "Clear all ink?",
   clearInkBody: "Every stroke on this board is removed. Notes, stickies and comments stay.",
 

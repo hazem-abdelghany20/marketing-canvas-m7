@@ -30,7 +30,7 @@ export interface BoardSlice {
 const EMPTY: Pick<
   AppState,
   | "board" | "boardStatus" | "boardError" | "viewportSaveError"
-  | "nodes" | "edges" | "annotations" | "files" | "objectUrls" | "strokes" | "strokeSync" | "marks" | "pins"
+  | "nodes" | "edges" | "annotations" | "files" | "objectUrls" | "strokes" | "strokeSync" | "marks" | "markSync" | "pins"
   | "chatMessages" | "chatStreaming" | "chatApplied" | "undoStack"
 > = {
   board: null,
@@ -45,6 +45,7 @@ const EMPTY: Pick<
   strokes: {},
   strokeSync: {},
   marks: {},
+  markSync: {},
   pins: {},
   chatMessages: [],
   chatStreaming: false,
@@ -125,6 +126,7 @@ export const createBoardSlice: SliceCreator<BoardSlice> = (ctx) => (set, get, st
           strokes: byId(strokes),
           strokeSync: {},
           marks: byId(marks),
+          markSync: {},
           pins: byId(pins),
           undoStack: [],
         });

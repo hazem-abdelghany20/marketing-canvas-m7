@@ -42,7 +42,8 @@ export function InkLayer() {
         <svg
           data-ink-layer="under"
           aria-hidden="true"
-          style={{ pointerEvents: "none" }}
+          // Beneath the marks, which share this viewport layer at z-index 1.
+          style={{ pointerEvents: "none", zIndex: 0 }}
           className="absolute left-0 top-0 size-px overflow-visible"
         >
           {under.map((stroke) => (
