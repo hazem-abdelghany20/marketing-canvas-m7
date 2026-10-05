@@ -63,6 +63,32 @@ describe("sendChat", () => {
     expect(store.getState().edges).toEqual(edgesBefore);
   });
 
+  it("remembers the titles of the nodes a connection proposal names, so a missing one can be named later", async () => {
+    const { chat } = await chatStore(() =>
+      sseResponse([
+        sseFrame("token", { token: "Link them." }),
+        done(["nd_reel", "nd_goal"], {
+          kind: "create-edge",
+          payload: { fromId: "nd_reel", toId: "nd_goal", kind: "serves" },
+        }),
+      ]),
+    );
+
+    await chat().sendChat("connect the reel to the goal");
+
+    expect(chat().chatMessages[1]!.proposalTitles).toEqual({ nd_reel: "Reel", nd_goal: "500 orders" });
+  });
+
+  it("records no titles for a reply without a connection proposal", async () => {
+    const { chat } = await chatStore(() =>
+      sseResponse([done([], { kind: "create-node", payload: { type: "content", title: "T" } })]),
+    );
+
+    await chat().sendChat("draft a reel");
+
+    expect(chat().chatMessages[1]!.proposalTitles).toBeUndefined();
+  });
+
   it("is already streaming the moment sendChat returns, so a second call in the same tick is refused", async () => {
     const stream = controlledSse();
     const { chat, posts } = await chatStore(() => stream.response);
