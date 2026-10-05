@@ -361,7 +361,7 @@ URL and does not survive a reload; the record does. See `api/README.md` § Files
 
 **O3 — Connect mode**
 ```
-Click [Connect] or press C   → enter connect mode; cursor changes; canvas dims non-node areas
+Click [Connect] or press L   → enter connect mode; cursor changes; canvas dims non-node areas
 Click source node            → source marked; a live line follows the cursor
 Click target node            → open a small kind picker: `serves` / `relates-to`
 Pick kind                    → create edge, exit connect mode, both endpoints flash once
@@ -413,6 +413,10 @@ Comment (C)     → click drops a pin at that point and opens its thread, compos
 Esc             → returns to Select from any tool.
 Tool hint       → a pill naming the active tool and its Esc affordance, while not Select.
 ```
+Connect is on **L**, not C: C belongs to the Comment tool, and `design/marketing-canvas.dc.html` puts
+Connect on L. A drawing tool is put away when connect mode begins, and the tools that draw, write or
+pin are disabled while it is on.
+
 Ink, marks and pins persist through `/strokes`, `/marks` and `/pins`. They annotate the
 canvas and never join the graph — see § Data model.
 
