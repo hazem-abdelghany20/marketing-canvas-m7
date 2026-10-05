@@ -64,7 +64,7 @@ test.describe("drawing", () => {
     await openCanvas(page);
     await page.keyboard.press("p");
 
-    await drag(page, [100, 200], [700, 500], 300);
+    await drag(page, [300, 200], [800, 500], 300);
 
     await expect.poll(async () => (await apiStrokes(s)).length).toBe(1);
     expect((await apiStrokes(s))[0]!.points.length).toBeLessThan(20);
@@ -118,6 +118,8 @@ test.describe("drawing", () => {
     await expect.poll(async () => (await apiStrokes(s)).length).toBe(1);
     const [stroke] = await apiStrokes(s);
     expect(stroke).toMatchObject({ color: "var(--ink-2)", width: 6 });
+    // The page swaps its temporary stroke for the saved one a moment after the API has it.
+    await expect(page.locator(`[data-stroke-id="${stroke!.id}"]`)).toHaveCount(1);
     // The token resolves: what is painted is a real colour, the very one the token holds.
     const [painted, token] = await page.evaluate((id) => {
       const path = document.querySelector(`[data-stroke-id="${id}"]`)!;

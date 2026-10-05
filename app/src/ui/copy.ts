@@ -59,6 +59,10 @@ export const COPY = {
 
   // O7 — Whiteboard dock
   nothingToErase: "Nothing to erase yet.",
+  inkSaveFailed: "Couldn't save that mark. Check your connection and try again.",
+  clearInkFailed: "Couldn't clear the ink. Check your connection and try again.",
+  clearInkTitle: "Clear all ink?",
+  clearInkBody: "Every stroke on this board is removed. Notes, stickies and comments stay.",
 
   // O4 — Quick-peek
   noDescription: "No description yet",

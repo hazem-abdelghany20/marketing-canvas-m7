@@ -1,6 +1,7 @@
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
 import { isNarrow } from "../lib/useMediaQuery";
+import type { InkColorId } from "../whiteboard/inkPalette";
 import type { Tool } from "../whiteboard/toolMode";
 
 /**
@@ -73,6 +74,13 @@ function writeRailCollapsed(collapsed: boolean) {
   }
 }
 
+/** What the pen and highlighter draw with next. A preference of the screen, so it is not sent anywhere. */
+export interface InkPrefs {
+  color: InkColorId;
+  /** The pen's width in board units; the highlighter draws it five times wider. */
+  size: number;
+}
+
 export const FLASH_MS = 1200;
 const DEFAULT_TOAST_MS = 5000;
 const ACTION_TOAST_MS = 10_000;
@@ -101,6 +109,9 @@ export interface UiState {
   composerFocusPending: boolean;
   /** The whiteboard tool in hand. Client-only; Select is the resting state. */
   tool: Tool;
+  ink: InkPrefs;
+  /** The "Clear all ink?" confirmation is open. */
+  clearInkOpen: boolean;
 
   select: (ids: string[]) => void;
   setConnect: (connect: Partial<ConnectState>) => void;
@@ -125,6 +136,8 @@ export interface UiState {
   consumeComposerFocus: () => void;
   /** Raw setter: whether the tool may be used is decided by `reduceTool`, before this is called. */
   setTool: (tool: Tool) => void;
+  setInk: (patch: Partial<InkPrefs>) => void;
+  setClearInkOpen: (open: boolean) => void;
   startArrangement: (from: Arrangement["from"], durationMs: number) => void;
   endArrangement: () => void;
   toast: (toast: ToastInput) => number;
@@ -149,6 +162,8 @@ const INITIAL = {
   chatDraft: "",
   composerFocusPending: false,
   tool: "select" as Tool,
+  ink: { color: "ink-1", size: 3 } as InkPrefs,
+  clearInkOpen: false,
 };
 
 let nextToastId = 1;
@@ -196,6 +211,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   },
   consumeComposerFocus: () => set({ composerFocusPending: false }),
   // A drawing tool makes the cards inert, so a selection (and the quick-peek on it) has nothing to point at.
+  setInk: (patch) => set((s) => ({ ink: { ...s.ink, ...patch } })),
+  setClearInkOpen: (open) => set({ clearInkOpen: open }),
   setTool: (tool) =>
     set((s) => (tool === "select" || s.selectedIds.length === 0 ? { tool } : { tool, selectedIds: [] })),
 

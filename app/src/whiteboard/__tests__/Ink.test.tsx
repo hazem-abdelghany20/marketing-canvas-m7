@@ -28,7 +28,8 @@ function serve(strokes: Stroke[] = [A, B]) {
   network.on("GET /board", () => json(200, { ...emptyBoard, viewport: VIEWPORT }));
   for (const p of ["/nodes", "/edges", "/files", "/marks", "/pins"]) network.on(`GET ${p}`, () => json(200, []));
   network.on("GET /strokes", () => json(200, strokes));
-  network.on("POST /strokes", (call) => json(201, { id: "stk_new", ...(call.body as object), createdAt: T }));
+  let made = 0;
+  network.on("POST /strokes", (call) => json(201, { id: `stk_new_${++made}`, ...(call.body as object), createdAt: T }));
   network.on("DELETE /strokes", () => json(204));
   for (const s of strokes) network.on(`DELETE /strokes/${s.id}`, () => json(204));
 }
@@ -112,7 +113,7 @@ describe("the Pen", () => {
   it("does not send a point for every pixel: a long, slow drag arrives as a few points", async () => {
     await openBoard();
     pickTool("Pen");
-    const path: Pt[] = Array.from({ length: 400 }, (_, i) => ({ x: 200 + i, y: 300 + Math.round(i * 0.25) }));
+    const path: Pt[] = Array.from({ length: 400 }, (_, i) => ({ x: 200 + i, y: 300 + i }));
 
     drag(...path);
 

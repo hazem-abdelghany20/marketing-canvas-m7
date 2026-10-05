@@ -33,7 +33,9 @@ import type { CanvasNode } from "../types";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
 import { uiStore, useUi } from "../ui/uiStore";
+import { ClearInkDialog } from "../whiteboard/ClearInkDialog";
 import { Dock } from "../whiteboard/Dock";
+import { InkOptions } from "../whiteboard/InkOptions";
 import { ToolHint } from "../whiteboard/ToolHint";
 import { useToolShortcuts } from "../whiteboard/useToolShortcuts";
 
@@ -242,7 +244,8 @@ function WorkspaceScreen() {
           />
         </Toolbar>
 
-        <Dock />
+        <Dock onClearInk={() => uiStore.getState().setClearInkOpen(true)} />
+        <InkOptions />
         <ToolHint />
 
         {/* The panels below are inside the drop zone, so a file dropped on one of them still lands. */}
@@ -315,6 +318,7 @@ function WorkspaceScreen() {
           }}
         />
 
+        {ready ? <ClearInkDialog /> : null}
         {ready ? <QuickPeek onConnect={(id) => void startConnect(id)} /> : null}
         {ready ? <ConnectMode /> : null}
         {ready && searchOpen ? (

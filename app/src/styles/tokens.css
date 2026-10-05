@@ -57,6 +57,15 @@
   /* Canvas grid */
   --grid-dot: #ddd6ca;
 
+  /* Ink — the whiteboard pen and highlighter palette. Strokes store the token (var(--ink-N)), so the
+     same stroke is drawn in the light value or the dark one as the theme changes. */
+  --ink-1: #a14a3a;
+  --ink-2: #3d6b6f;
+  --ink-3: #a3853f;
+  --ink-4: #5b7a5b;
+  --ink-5: #7d6b8f;
+  --ink-6: #252118;
+
   /* Radius */
   --r-sm: 4px;
   --r-md: 8px;
@@ -94,6 +103,13 @@
     --focus-ring: #6fa8a6;
 
     --grid-dot: #2e2a24;
+
+    --ink-1: #d98a7b;
+    --ink-2: #6fa8a6;
+    --ink-3: #c0a25c;
+    --ink-4: #86b086;
+    --ink-5: #9c89ae;
+    --ink-6: #f0ebe2;
   }
 }
 
@@ -127,6 +143,13 @@
   --focus-ring: #6fa8a6;
 
   --grid-dot: #2e2a24;
+
+  --ink-1: #d98a7b;
+  --ink-2: #6fa8a6;
+  --ink-3: #c0a25c;
+  --ink-4: #86b086;
+  --ink-5: #9c89ae;
+  --ink-6: #f0ebe2;
 }
 
 @layer base {
@@ -190,4 +213,14 @@
       scroll-behavior: auto !important;
     }
   }
+}
+
+/*
+ * Highlighter ink and sticky notes live in React Flow's viewport layer, which would otherwise paint
+ * above the cards. Below them is where the whiteboard puts them (docs/spec.md § O7). Outside
+ * @layer on purpose: Tailwind drops an unused class selector from a layer, and nothing in the
+ * markup names this one.
+ */
+.react-flow__viewport-portal {
+  z-index: -1;
 }
