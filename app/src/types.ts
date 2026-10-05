@@ -123,6 +123,10 @@ export interface ChatMessage {
   status: ChatMessageStatus;
   citedNodeIds: string[];
   proposal?: Proposal;
+  /** ISO time the turn began, for the timestamp on the message. */
+  createdAt: string;
+  /** How the server chose to answer, reported on `start`; set on assistant messages only. */
+  mode?: ResolvedChatMode;
 }
 
 // ------------------------------------------------------------ request bodies

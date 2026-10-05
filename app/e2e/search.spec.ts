@@ -53,9 +53,10 @@ test("↓ then Enter pans and zooms to the highlighted node and selects it", asy
   await expect(target).toHaveAttribute("aria-pressed", "true");
 
   const box = (await target.boundingBox())!;
-  const view = page.viewportSize()!;
-  expect(Math.abs(box.x + box.width / 2 - view.width / 2)).toBeLessThan(4);
-  expect(Math.abs(box.y + box.height / 2 - view.height / 2)).toBeLessThan(4);
+  // Centred in the canvas, which has the chat rail beside it.
+  const area = (await page.locator("[data-canvas-state=ready]").boundingBox())!;
+  expect(Math.abs(box.x + box.width / 2 - (area.x + area.width / 2))).toBeLessThan(4);
+  expect(Math.abs(box.y + box.height / 2 - (area.y + area.height / 2))).toBeLessThan(4);
 });
 
 test("a query matching nothing shows the empty state, and Enter goes nowhere", async ({ page }) => {

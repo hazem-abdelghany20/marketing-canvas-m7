@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { Navigate, Outlet, useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 import { arrangeBoard, createNote } from "../canvas/actions";
+import { ChatRail } from "../chat/ChatRail";
 import { Canvas } from "../canvas/Canvas";
 import { CONNECT_COPY, exitConnect, startConnect } from "../canvas/connect";
 import { ConnectMode } from "../canvas/ConnectMode";
@@ -21,6 +22,7 @@ import { QuickPeek } from "../components/QuickPeek";
 import { SearchOverlay } from "../components/SearchOverlay";
 import { ToastViewport } from "../components/Toast";
 import { Toolbar, ToolButton } from "../components/Toolbar";
+import { isNarrow, useNarrow } from "../lib/useMediaQuery";
 import { FILE_ACCEPT, importFiles, ROW_GAP } from "../files/importFiles";
 import type { CanvasNode } from "../types";
 import { appStore } from "../store";
@@ -52,6 +54,8 @@ function WorkspaceScreen() {
   const searchOpen = useUi((s) => s.searchOpen);
   const connecting = useUi((s) => s.connect.active);
   const panelOpen = useMatch("/node/:id") !== null;
+  const narrow = useNarrow();
+  const sheetOpen = useUi((s) => s.chatSheetOpen);
   const flow = useReactFlow();
   const fileInput = useRef<HTMLInputElement>(null);
   const { initialViewport, onViewportChange } = useViewport();
@@ -88,8 +92,8 @@ function WorkspaceScreen() {
 
   const fromChat = useCallback(() => {
     closeAddMenu(false);
-    // The chat rail (ticket 012) marks its composer; until then there is nothing to focus.
-    document.querySelector<HTMLElement>("[data-chat-composer]")?.focus();
+    // Opens the rail if it is folded away, then the composer takes focus.
+    uiStore.getState().openChat();
   }, [closeAddMenu]);
 
   const runImport = useCallback(async (files: File[], origin: { x: number; y: number }) => {
@@ -121,7 +125,7 @@ function WorkspaceScreen() {
   // Auto-arrange is an action, never a mode: it runs here and nowhere else.
   const arrange = useCallback(() => {
     // The camera frames what the detail panel leaves uncovered.
-    arrangeBoard((bounds) => fitToBounds(bounds, panelOpen && window.innerWidth >= 900 ? PANEL_WIDTH : 0));
+    arrangeBoard((bounds) => fitToBounds(bounds, panelOpen && !isNarrow() ? PANEL_WIDTH : 0));
   }, [fitToBounds, panelOpen]);
 
   const toggleConnect = useCallback(() => {
@@ -148,7 +152,7 @@ function WorkspaceScreen() {
     (node: CanvasNode) => {
       uiStore.getState().setSearchOpen(false);
       uiStore.getState().select([node.id]);
-      const covered = panelOpen && window.innerWidth >= 900 ? PANEL_WIDTH : 0;
+      const covered = panelOpen && !isNarrow() ? PANEL_WIDTH : 0;
       void panToNode(flow, node, { zoom: SEARCH_FOCUS_ZOOM, coveredRight: covered });
       document.querySelector<HTMLElement>(`[data-node-card="${CSS.escape(node.id)}"]`)?.focus({ preventScroll: true });
     },
@@ -165,125 +169,130 @@ function WorkspaceScreen() {
     [navigate, viewportCenter],
   );
 
-  useWorkspaceShortcuts(ready, { onAdd: openAddMenu, onConnect: toggleConnect, onSearch: openSearch });
+  // Below 900px the open chat sheet covers everything; keys must not act on what is hidden beneath it.
+  useWorkspaceShortcuts(ready && !(narrow && sheetOpen), { onAdd: openAddMenu, onConnect: toggleConnect, onSearch: openSearch });
 
   if (!token) return <Navigate to="/signin" replace />;
 
   const state = ready ? "ready" : status === "error" ? "error" : "loading";
 
   return (
-    // One container for every state, so nothing shifts when the data lands.
-    <main data-canvas-state={state} className="relative h-screen w-screen overflow-hidden bg-canvas">
-      <FileDropZone enabled={ready && !connecting} onFiles={onDropFiles}>
-        {ready ? (
-          <Canvas initialViewport={initialViewport} onViewportChange={onViewportChange} />
-        ) : (
-          // The same dots as the canvas (GRID_GAP apart), dimmed while the board loads.
-          <div
-            data-grid
-            aria-hidden="true"
-            className="absolute inset-0 bg-[radial-gradient(var(--grid-dot)_1.2px,transparent_1.2px)] bg-[length:26px_26px] opacity-50"
-          />
-        )}
-      </FileDropZone>
+    // The rail sits beside the canvas as a column (an overlay below 900px); the canvas fills the rest.
+    <div className="flex h-screen w-screen overflow-hidden bg-canvas">
+      <ChatRail />
+      {/* One container for every state, so nothing shifts when the data lands. */}
+      <main data-canvas-state={state} className="relative h-full min-w-0 flex-1 overflow-hidden bg-canvas">
+        <FileDropZone enabled={ready && !connecting} onFiles={onDropFiles}>
+          {ready ? (
+            <Canvas initialViewport={initialViewport} onViewportChange={onViewportChange} />
+          ) : (
+            // The same dots as the canvas (GRID_GAP apart), dimmed while the board loads.
+            <div
+              data-grid
+              aria-hidden="true"
+              className="absolute inset-0 bg-[radial-gradient(var(--grid-dot)_1.2px,transparent_1.2px)] bg-[length:26px_26px] opacity-50"
+            />
+          )}
+        </FileDropZone>
 
-      {state === "loading" ? (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <span
-            role="status"
-            aria-label="Loading your board"
-            className="size-6 animate-spin rounded-full border-2 border-subtle border-t-accent [animation-duration:0.7s]"
-          />
-        </div>
-      ) : null}
-
-      {state === "error" ? (
-        <div className="absolute inset-0 grid place-items-center p-6">
-          <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-            <p className="text-sm text-primary">We couldn't load your board. Check your connection, then reload.</p>
-            <button
-              type="button"
-              onClick={() => void appStore.getState().loadBoard()}
-              className="rounded-md border border-strong bg-elevated px-3 py-1.5 text-sm font-medium text-primary"
-            >
-              Reload
-            </button>
+        {state === "loading" ? (
+          <div className="pointer-events-none absolute inset-0 grid place-items-center">
+            <span
+              role="status"
+              aria-label="Loading your board"
+              className="size-6 animate-spin rounded-full border-2 border-subtle border-t-accent [animation-duration:0.7s]"
+            />
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {ready && nodeCount === 0 ? (
-        // The backdrop lets canvas gestures through; only the card itself takes clicks.
-        <div className="pointer-events-none absolute inset-0 grid place-items-center p-6">
-          <div className="pointer-events-auto flex max-w-sm flex-col items-center gap-2 rounded-lg border border-subtle bg-panel px-7 py-6 text-center">
-            <h1 className="text-base font-semibold text-primary">Nothing on the canvas yet.</h1>
-            <p className="text-[13px] leading-relaxed text-muted">
-              Six kinds of node live here: goal, strategy, campaign, content, asset and note.
-            </p>
-            <Button variant="primary" className="mt-2 px-4 py-2 text-[13.5px]" onClick={openAddMenu}>
-              Add your first node
-            </Button>
+        {state === "error" ? (
+          <div className="absolute inset-0 grid place-items-center p-6">
+            <div className="flex max-w-sm flex-col items-center gap-3 text-center">
+              <p className="text-sm text-primary">We couldn't load your board. Check your connection, then reload.</p>
+              <button
+                type="button"
+                onClick={() => void appStore.getState().loadBoard()}
+                className="rounded-md border border-strong bg-elevated px-3 py-1.5 text-sm font-medium text-primary"
+              >
+                Reload
+              </button>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      <Toolbar ready={ready} addMenuOpen={addMenuOpen} onAdd={openAddMenu} besidePanel={panelOpen}>
-        <ToolButton
-          label="Connect"
-          icon={<Spline size={14} aria-hidden="true" />}
-          aria-label="Connect"
-          aria-pressed={connecting}
-          variant={connecting ? "active" : "secondary"}
-          title={connecting ? "Leave connect mode — Esc" : "Connect two nodes — C"}
-          disabledReason={!ready ? "Waiting for the board." : nodeCount < 2 ? CONNECT_COPY.needsTwo : null}
-          // Trying anyway gets the same explanation as the C key.
-          onDisabledClick={() => ready && startConnect()}
-          onClick={toggleConnect}
-        />
-        <ToolButton
-          label="Search"
-          icon={<Search size={14} aria-hidden="true" />}
-          aria-label="Search"
-          aria-haspopup="dialog"
-          title="Search nodes — ⌘F / Ctrl+F"
-          disabledReason={!ready ? "Waiting for the board." : nodeCount === 0 ? "Nothing to search yet." : null}
-          onClick={() => void openSearch()}
-        />
-        <ToolButton
-          label="Auto-arrange"
-          icon={<Network size={14} aria-hidden="true" />}
-          aria-label="Auto-arrange"
-          title="Auto-arrange — lay the nodes out by lineage"
-          disabledReason={!ready ? COPY.loading : nodeCount === 0 ? COPY.nothingToArrange : null}
-          onClick={arrange}
-        />
-      </Toolbar>
-      {addMenuOpen && ready ? (
-        <AddNodeMenu onClose={closeAddMenu} onNote={addNote} onFromChat={fromChat}>
-          <MenuItem label="File" hint="Images, PDF, text, Office · 25MB" onSelect={pickFile} />
-        </AddNodeMenu>
-      ) : null}
-      <input
-        ref={fileInput}
-        type="file"
-        multiple
-        accept={FILE_ACCEPT}
-        hidden
-        data-file-input
-        onChange={(event) => {
-          const files = Array.from(event.target.files ?? []);
-          event.target.value = "";
-          if (files.length > 0) onPickFiles(files);
-        }}
-      />
+        {ready && nodeCount === 0 ? (
+          // The backdrop lets canvas gestures through; only the card itself takes clicks.
+          <div className="pointer-events-none absolute inset-0 grid place-items-center p-6">
+            <div className="pointer-events-auto flex max-w-sm flex-col items-center gap-2 rounded-lg border border-subtle bg-panel px-7 py-6 text-center">
+              <h1 className="text-base font-semibold text-primary">Nothing on the canvas yet.</h1>
+              <p className="text-[13px] leading-relaxed text-muted">
+                Six kinds of node live here: goal, strategy, campaign, content, asset and note.
+              </p>
+              <Button variant="primary" className="mt-2 px-4 py-2 text-[13.5px]" onClick={openAddMenu}>
+                Add your first node
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
-      {ready ? <QuickPeek onConnect={(id) => void startConnect(id)} /> : null}
-      {ready ? <ConnectMode /> : null}
-      {ready && searchOpen ? (
-        <SearchOverlay onClose={closeSearch} onGo={goToNode} onCreateNote={createFromSearch} />
-      ) : null}
-      <Outlet />
-      <ToastViewport />
-    </main>
+        <Toolbar ready={ready} addMenuOpen={addMenuOpen} onAdd={openAddMenu} besidePanel={panelOpen}>
+          <ToolButton
+            label="Connect"
+            icon={<Spline size={14} aria-hidden="true" />}
+            aria-label="Connect"
+            aria-pressed={connecting}
+            variant={connecting ? "active" : "secondary"}
+            title={connecting ? "Leave connect mode — Esc" : "Connect two nodes — C"}
+            disabledReason={!ready ? "Waiting for the board." : nodeCount < 2 ? CONNECT_COPY.needsTwo : null}
+            // Trying anyway gets the same explanation as the C key.
+            onDisabledClick={() => ready && startConnect()}
+            onClick={toggleConnect}
+          />
+          <ToolButton
+            label="Search"
+            icon={<Search size={14} aria-hidden="true" />}
+            aria-label="Search"
+            aria-haspopup="dialog"
+            title="Search nodes — ⌘F / Ctrl+F"
+            disabledReason={!ready ? "Waiting for the board." : nodeCount === 0 ? "Nothing to search yet." : null}
+            onClick={() => void openSearch()}
+          />
+          <ToolButton
+            label="Auto-arrange"
+            icon={<Network size={14} aria-hidden="true" />}
+            aria-label="Auto-arrange"
+            title="Auto-arrange — lay the nodes out by lineage"
+            disabledReason={!ready ? COPY.loading : nodeCount === 0 ? COPY.nothingToArrange : null}
+            onClick={arrange}
+          />
+        </Toolbar>
+        {addMenuOpen && ready ? (
+          <AddNodeMenu onClose={closeAddMenu} onNote={addNote} onFromChat={fromChat}>
+            <MenuItem label="File" hint="Images, PDF, text, Office · 25MB" onSelect={pickFile} />
+          </AddNodeMenu>
+        ) : null}
+        <input
+          ref={fileInput}
+          type="file"
+          multiple
+          accept={FILE_ACCEPT}
+          hidden
+          data-file-input
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            event.target.value = "";
+            if (files.length > 0) onPickFiles(files);
+          }}
+        />
+
+        {ready ? <QuickPeek onConnect={(id) => void startConnect(id)} /> : null}
+        {ready ? <ConnectMode /> : null}
+        {ready && searchOpen ? (
+          <SearchOverlay onClose={closeSearch} onGo={goToNode} onCreateNote={createFromSearch} />
+        ) : null}
+        <Outlet />
+        <ToastViewport />
+      </main>
+    </div>
   );
 }

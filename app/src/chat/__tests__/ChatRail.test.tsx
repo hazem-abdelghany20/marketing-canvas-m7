@@ -125,6 +125,22 @@ describe("sending", () => {
     expect(composer().value).toBe("a line");
   });
 
+  it("stops at the 5000 characters the API accepts", async () => {
+    await openRail();
+
+    expect(composer().maxLength).toBe(5000);
+  });
+
+  it("does not send on the Enter that confirms an input method's composition (Safari reports it as keyCode 229)", async () => {
+    await openRail();
+    type("日本語");
+
+    press("Enter", { keyCode: 229 });
+
+    await new Promise((r) => setTimeout(r, 50));
+    expect(posts()).toHaveLength(0);
+  });
+
   it("does not send on Enter while an input method is composing", async () => {
     await openRail();
     type("日本語");
@@ -278,6 +294,18 @@ describe("a failed reply", () => {
     );
   });
 
+  it("hands focus to the composer when Retry is pressed, instead of dropping it to the page", async () => {
+    await failed();
+    network.on("POST /chat", () => controlledSse().response);
+    const retry = within(message(1)).getByRole("button", { name: "Retry" });
+    retry.focus();
+
+    fireEvent.click(retry);
+
+    await waitFor(() => expect(appStore.getState().chatStreaming).toBe(true));
+    expect(document.activeElement).toBe(composer());
+  });
+
   it("treats a refused request the same way", async () => {
     network.on("POST /chat", () => apiError(503, "forced_failure", "Down."));
     await openRail();
@@ -311,6 +339,8 @@ describe("announcing a reply", () => {
     stream.push("done", { citedNodeIds: [], proposal: null });
     stream.close();
     await waitFor(() => expect(announcer().textContent).toBe("3 nodes speak to that."));
+    // A screen reader meets the finished reply once: the visible copy steps aside for the announcer.
+    expect(body(message(1)).getAttribute("aria-hidden")).toBe("true");
   });
 });
 
@@ -446,6 +476,19 @@ describe("below 900px", () => {
     await waitFor(() => expect(document.activeElement).toBe(composer()));
     expect(screen.getByRole("complementary", { name: "Assistant" }).getAttribute("data-mode")).toBe("sheet");
     expect(composer().value).toBe("");
+  });
+
+  it("keeps the canvas shortcuts quiet while the sheet covers it", async () => {
+    stubViewport(true);
+    renderAt("/");
+    await waitFor(() => expect(appStore.getState().boardStatus).toBe("ready"));
+    fireEvent.click(await screen.findByRole("button", { name: "Open assistant" }));
+    await screen.findByRole("textbox", { name: "Message" });
+
+    fireEvent.keyDown(window, { key: "n" });
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(screen.queryByRole("menu", { name: "Add node" })).toBeNull();
   });
 
   it("is a column on a wide screen", async () => {

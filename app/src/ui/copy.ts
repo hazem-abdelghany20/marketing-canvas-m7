@@ -13,6 +13,15 @@ export const COPY = {
   maxZoom: "Already zoomed in as far as it goes (200%).",
   minZoom: "Already zoomed out as far as it goes (25%).",
 
+  // O6 — Chat rail
+  chatEmptyPrompt: "Ask about your canvas, or ask me to draft something.",
+  chatReplyFailed: "That reply didn't finish. Try again.",
+  chatWriteFirst: "Write a message first.",
+  chatReplying: "Assistant is replying",
+  chatPlaceholder: "Ask, or say \u201cdraft a\u2026\u201d",
+  chatHint: "Enter to send \u00b7 Shift+Enter for a new line",
+  chatHintBusy: "Replying\u2026",
+
   // O1 — Add-node menu
   addNodeFailed: "Couldn't add the node. Check your connection and try again.",
   waitForReply: "Wait for the current reply to finish.",
@@ -36,3 +45,14 @@ export const COPY = {
   noDescription: "No description yet",
   connectNeedsAnother: "Add another node to connect to.",
 } as const;
+
+/**
+ * Three starting points, one for each way the server answers on its own: it drafts a node,
+ * it names the nodes it is reading from, or it proposes a connection between two it recognises.
+ * (Its fourth way, the Reasoner, has to be asked for, which arrives with the mode picker.)
+ */
+export const CHAT_EXAMPLES = [
+  { mode: "Generator", text: "Draft a reel script about linen care" },
+  { mode: "Librarian", text: "What serves the Ramadan push?" },
+  { mode: "Operator", text: "Connect the linen shoot hero to the Ramadan push" },
+] as const;

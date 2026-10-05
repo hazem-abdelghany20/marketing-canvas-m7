@@ -2,6 +2,7 @@ import { useReactFlow } from "@xyflow/react";
 import { useStore } from "zustand";
 import { reportSaveFailure, undoLast } from "../../canvas/actions";
 import { startConnect } from "../../canvas/connect";
+import { isNarrow } from "../../lib/useMediaQuery";
 import { panToNode } from "../../canvas/panToNode";
 import { appStore } from "../../store";
 import { groupConnections, otherEnd } from "../../store/edges";
@@ -38,7 +39,7 @@ export function ConnectionList({ nodeId }: { nodeId: string }) {
     const other = appStore.getState().nodes[otherId];
     if (!other) return;
     uiStore.getState().select([otherId]);
-    const covered = window.innerWidth >= 900 ? PANEL_WIDTH : 0;
+    const covered = isNarrow() ? 0 : PANEL_WIDTH;
     void panToNode(flow, other, { coveredRight: covered });
   }
 

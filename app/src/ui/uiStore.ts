@@ -1,5 +1,6 @@
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
+import { isNarrow } from "../lib/useMediaQuery";
 
 /**
  * Client-only state: what is selected, which overlay is open, what the toasts
@@ -47,6 +48,30 @@ export interface Arrangement {
   durationMs: number;
 }
 
+/**
+ * The rail's collapse is remembered for this tab across a reload. It is a preference of
+ * the screen, not board data, so it is not sent to the API; and localStorage is for the
+ * session token and the theme alone, so it lives in sessionStorage.
+ */
+const RAIL_COLLAPSED_KEY = "mc-rail-collapsed";
+
+function readRailCollapsed(): boolean {
+  try {
+    return globalThis.sessionStorage?.getItem(RAIL_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeRailCollapsed(collapsed: boolean) {
+  try {
+    if (collapsed) globalThis.sessionStorage?.setItem(RAIL_COLLAPSED_KEY, "1");
+    else globalThis.sessionStorage?.removeItem(RAIL_COLLAPSED_KEY);
+  } catch {
+    /* storage unavailable: the rail simply opens expanded next time */
+  }
+}
+
 export const FLASH_MS = 1200;
 const DEFAULT_TOAST_MS = 5000;
 
@@ -60,6 +85,14 @@ export interface UiState {
   toasts: Toast[];
   /** Null at rest, and always under prefers-reduced-motion: the move is then instant. */
   arrangement: Arrangement | null;
+  /** The chat rail's column is collapsed to a strip (wide screens). Persisted for the tab. */
+  railCollapsed: boolean;
+  /** The chat rail's overlay sheet is open (below 900px). Not persisted. */
+  chatSheetOpen: boolean;
+  /** What is typed in the composer, so it survives collapsing the rail. */
+  chatDraft: string;
+  /** Set by "From chat": the composer takes focus as soon as it is on screen, once. */
+  composerFocusPending: boolean;
 
   select: (ids: string[]) => void;
   setConnect: (connect: Partial<ConnectState>) => void;
@@ -70,6 +103,16 @@ export interface UiState {
   flash: (ids: string[]) => void;
   addPending: (pending: PendingImport) => void;
   removePending: (id: string) => void;
+  setRailCollapsed: (collapsed: boolean) => void;
+  setChatSheetOpen: (open: boolean) => void;
+  setChatDraft: (text: string) => void;
+  /** Puts text in the composer without sending it, and focuses the composer. */
+  prefillChat: (text: string) => void;
+  /** Asks for focus in the composer, leaving its text alone. */
+  prefillChatFocus: () => void;
+  /** Shows the rail (opening the sheet when narrow, expanding the column otherwise) and focuses the composer. */
+  openChat: () => void;
+  consumeComposerFocus: () => void;
   startArrangement: (from: Arrangement["from"], durationMs: number) => void;
   endArrangement: () => void;
   toast: (toast: ToastInput) => number;
@@ -88,12 +131,16 @@ const INITIAL = {
   pendingImports: [] as PendingImport[],
   toasts: [] as Toast[],
   arrangement: null as Arrangement | null,
+  chatSheetOpen: false,
+  chatDraft: "",
+  composerFocusPending: false,
 };
 
 let nextToastId = 1;
 
 export const uiStore = createStore<UiState>()((set) => ({
   ...INITIAL,
+  railCollapsed: readRailCollapsed(),
 
   select: (ids) => set({ selectedIds: ids }),
   setConnect: (connect) => set((s) => ({ connect: { ...s.connect, ...connect } })),
@@ -109,6 +156,24 @@ export const uiStore = createStore<UiState>()((set) => ({
   addPending: (pending) => set((s) => ({ pendingImports: [...s.pendingImports, pending] })),
   removePending: (id) => set((s) => ({ pendingImports: s.pendingImports.filter((p) => p.id !== id) })),
 
+  setRailCollapsed(collapsed) {
+    writeRailCollapsed(collapsed);
+    set({ railCollapsed: collapsed });
+  },
+  setChatSheetOpen: (open) => set({ chatSheetOpen: open }),
+  setChatDraft: (text) => set({ chatDraft: text }),
+  prefillChat: (text) => set({ chatDraft: text, composerFocusPending: true }),
+  prefillChatFocus: () => set({ composerFocusPending: true }),
+  openChat() {
+    if (isNarrow()) {
+      set({ chatSheetOpen: true, composerFocusPending: true });
+    } else {
+      writeRailCollapsed(false);
+      set({ railCollapsed: false, composerFocusPending: true });
+    }
+  },
+  consumeComposerFocus: () => set({ composerFocusPending: false }),
+
   startArrangement: (from, durationMs) => set({ arrangement: { from, durationMs, startedAt: performance.now() } }),
   endArrangement: () => set({ arrangement: null }),
 
@@ -120,7 +185,7 @@ export const uiStore = createStore<UiState>()((set) => ({
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
-  reset: () => set(INITIAL),
+  reset: () => set({ ...INITIAL, railCollapsed: readRailCollapsed() }),
 }));
 
 export function useUi<T>(selector: (state: UiState) => T): T {

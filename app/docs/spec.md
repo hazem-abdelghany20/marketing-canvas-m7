@@ -100,7 +100,8 @@ Pin         = { id, x, y, resolved: boolean, createdAt, comments: Comment[] }
 Comment     = { id, body, createdAt, author: { id, name, avatarUrl } }
 FileRef     = { id, name, mime, sizeBytes, thumbUrl, createdAt }
 ChatMessage = { id, role: 'user' | 'assistant', content, status,
-                citedNodeIds: string[], proposal?: Proposal }
+                citedNodeIds: string[], proposal?: Proposal,
+                createdAt: string, mode?: 'generator' | 'librarian' | 'operator' | 'reasoner' }
 Proposal    = { kind: 'create-node' | 'create-edge', payload: Partial<Node> | Partial<Edge> }
 ```
 

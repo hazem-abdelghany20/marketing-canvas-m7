@@ -6,8 +6,10 @@
 - `docs/state-matrix.md` § O6 — Chat rail
 
 ## Scope
-`src/chat/ChatRail.tsx`, `src/chat/Composer.tsx`, `src/chat/MessageList.tsx`,
-`src/components/ChatMessage.tsx`, `src/mocks/chat.ts`, `src/store/chat.ts`.
+`src/chat/ChatRail.tsx`, `src/chat/Composer.tsx`, `src/chat/MessageList.tsx`, `src/chat/markdown.tsx`,
+`src/components/ChatMessage.tsx`, `src/store/chat.ts` (`sendChat`, `retryChat`), the rail state in
+`src/ui/uiStore.ts`, and the rail beside the canvas in `src/routes/Workspace.tsx`.
+There is no `src/mocks/chat.ts`: the mock lives in the API (see Guardrails).
 
 ## Acceptance
 - Given the composer, when a message is sent with Enter, then the user message appears and an assistant message begins streaming.
@@ -20,8 +22,11 @@
 - Given a viewport narrower than 900px, when the rail is opened, then it renders as an overlay sheet over the canvas rather than a column.
 
 ## Guardrails
-All responses come from `src/mocks/chat.ts` — no network calls, no model SDK.
-No canvas mutation in this ticket.
+Replies stream from `POST /chat` through `api.chat.stream` (`api/README.md` § Chat; the API's mock
+generates them) — no model SDK, and nothing is built from a reply here. The ticket first said
+`src/mocks/chat.ts`, which predates the API; `docs/spec.md` and the API are authoritative.
+No canvas mutation in this ticket. The collapse is kept in `sessionStorage`: `localStorage` is for
+the session token and the theme alone.
 
 ## Verify
-`npx vitest run src/chat && npx playwright test e2e/chat.spec.ts`
+`npx vitest run src/chat src/store/__tests__/chat && npx playwright test e2e/chat.spec.ts`

@@ -16,7 +16,9 @@ export default defineConfig({
     baseURL: `http://localhost:${APP_PORT}`,
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // The chat rail is a 360px column beside the canvas, so the window is 360px wider than Desktop
+  // Chrome's 1280 and the canvas keeps the 1280x720 that older geometry specs were written against.
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1280 + 360, height: 720 } } }],
   webServer: [
     {
       command: "node ../api/server.js",
