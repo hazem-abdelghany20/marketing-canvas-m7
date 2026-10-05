@@ -31,14 +31,18 @@ test("with reduced motion no animation is left running on a loop", async ({ page
   expect(await spinnerIterations(page)).toBe("1");
 });
 
-/** Clicks a camera control from inside the page and reads the camera on the next frame and once settled. */
+/**
+ * Clicks a camera control from inside the page and reads the camera two frames later, and once settled.
+ * Two, because some moves (Fit) are applied a frame after the click even when they are instant.
+ */
 async function firstFrameAfter(page: Page, label: string) {
   return page.evaluate(async (name) => {
     const viewport = document.querySelector<HTMLElement>(".react-flow__viewport")!;
     const button = document.querySelector<HTMLButtonElement>(`[role=toolbar] button[aria-label="${name}"]`)!;
     const before = viewport.style.transform;
     button.click();
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    for (let frame = 0; frame < 2; frame++)
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const first = viewport.style.transform;
     await new Promise((resolve) => setTimeout(resolve, 700));
     return { before, first, final: viewport.style.transform };
@@ -46,7 +50,7 @@ async function firstFrameAfter(page: Page, label: string) {
 }
 
 for (const control of ["Fit to screen", "Zoom in", "Zoom out"]) {
-  test(`${control}: with motion allowed the camera is still travelling on the first frame (the control for the next test)`, async ({
+  test(`${control}: with motion allowed the camera is still travelling two frames in (the control for the next test)`, async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -58,7 +62,7 @@ for (const control of ["Fit to screen", "Zoom in", "Zoom out"]) {
     expect(frames.first).not.toBe(frames.final);
   });
 
-  test(`${control}: with reduced motion the camera is already there on the first frame`, async ({ page }) => {
+  test(`${control}: with reduced motion the camera is already there two frames in`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await openCanvas(page);
 

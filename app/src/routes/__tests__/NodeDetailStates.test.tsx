@@ -129,6 +129,17 @@ describe("Remove connection confirmation, S4", () => {
     expect(document.activeElement).toBe(trigger());
   });
 
+  it("keeps focus in the panel when the removal is confirmed, instead of dropping it to the page", async () => {
+    network.on("DELETE /edges/ed_1", () => json(204));
+    const { panel } = await open("nd_str");
+    fireEvent.click(trigger());
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+
+    await waitFor(() => expect(network.callsTo("DELETE /edges/ed_1")).toHaveLength(1));
+    expect(panel.contains(document.activeElement)).toBe(true);
+  });
+
   it("returns focus to the remove control when Cancel is chosen", async () => {
     await open("nd_str");
     fireEvent.click(trigger());
@@ -201,5 +212,18 @@ describe("Node detail below 900px", () => {
 
     expect(uiStore.getState().connect).toMatchObject({ active: true, sourceId: "nd_str" });
     expect(router.state.location.pathname).toBe("/");
+  });
+});
+
+describe("Node detail empty states, S4", () => {
+  it("says what is missing, and how to add it, for a node with no description, files, connections or notes", async () => {
+    const { panel } = await open("nd_goal");
+
+    expect((within(panel).getByRole("textbox", { name: "Description" }) as HTMLTextAreaElement).placeholder).toBe(
+      COPY.noBody,
+    );
+    expect(within(panel).getByText(COPY.noFiles)).toBeTruthy();
+    expect(within(panel).getByRole("button", { name: "+ Attach" })).toBeTruthy();
+    expect(within(panel).getByText(COPY.noAnnotations)).toBeTruthy();
   });
 });

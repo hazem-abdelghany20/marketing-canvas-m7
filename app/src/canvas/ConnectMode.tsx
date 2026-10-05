@@ -8,8 +8,8 @@ import { uiStore, useUi } from "../ui/uiStore";
 import { CONNECT_COPY } from "./connect";
 
 /**
- * O3 — what connect mode shows over the canvas: a banner saying what to pick
- * next and how to leave, and the kind picker once both ends are chosen.
+ * O3 — the kind picker once both ends are chosen, and the housekeeping that keeps the mode
+ * honest when a node it was using is deleted. (Its banner is ConnectBanner, in the toolbar.)
  */
 export function ConnectMode() {
   const { active, sourceId, targetId } = useUi((s) => s.connect);
@@ -28,6 +28,18 @@ export function ConnectMode() {
   }, [active, sourceId, targetId, nodes]);
 
   if (!active) return null;
+  return sourceId && targetId && nodes[sourceId] && nodes[targetId] ? (
+    <EdgeKindPicker sourceId={sourceId} targetId={targetId} />
+  ) : null;
+}
+
+/**
+ * What connect mode says over the canvas: what to pick next and how to leave. It sits under the
+ * toolbar, in the toolbar's own column, so the two can never land on top of each other.
+ */
+export function ConnectBanner() {
+  const { active, sourceId, targetId } = useUi((s) => s.connect);
+  if (!active) return null;
   const hint = !sourceId
     ? "Pick the node to connect from"
     : !targetId
@@ -35,19 +47,14 @@ export function ConnectMode() {
       : "Choose what kind of connection this is";
 
   return (
-    <>
-      <div
-        role="status"
-        data-connect-banner
-        className="absolute left-1/2 top-3.5 z-30 flex -translate-x-1/2 items-center gap-2.5 rounded-full bg-primary px-4 py-[7px] text-[12.5px] text-inverse shadow-[0_8px_24px_-14px_rgba(0,0,0,.6)] max-[899px]:top-[64px]"
-      >
-        <span>{hint}</span>
-        <span className="font-mono text-[9.5px] tracking-[0.1em] opacity-65">ESC TO EXIT</span>
-      </div>
-      {sourceId && targetId && nodes[sourceId] && nodes[targetId] ? (
-        <EdgeKindPicker sourceId={sourceId} targetId={targetId} />
-      ) : null}
-    </>
+    <div
+      role="status"
+      data-connect-banner
+      className="flex items-center gap-2.5 rounded-full bg-primary px-4 py-[7px] text-[12.5px] text-inverse shadow-[0_8px_24px_-14px_rgba(0,0,0,.6)]"
+    >
+      <span>{hint}</span>
+      <span className="font-mono text-[9.5px] tracking-[0.1em] opacity-65">ESC TO EXIT</span>
+    </div>
   );
 }
 

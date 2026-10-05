@@ -36,6 +36,8 @@ export default function SignUp() {
   function edit(field: keyof SignUpValues, value: string) {
     setValues((v) => ({ ...v, [field]: value }));
     setErrors((e) => ({ ...e, [field]: undefined }));
+    // Correcting the form answers a form-level error too; it should not linger above fresh edits.
+    setFormError(null);
   }
 
   async function submit(event?: FormEvent) {
@@ -57,9 +59,11 @@ export default function SignUp() {
       setStatus("success");
       setTimeout(() => navigate(returnPath(location.search), { replace: true }), SUCCESS_BEAT_MS);
     } catch (error) {
-      setFormError(formErrorFor(error as ApiError, "signup"));
-      // Every value is kept except the passwords.
-      setValues((v) => ({ ...v, password: "", confirmPassword: "" }));
+      const failure = formErrorFor(error as ApiError, "signup");
+      setFormError(failure);
+      // An address that is taken is a reason to start the passwords over; any other failure
+      // keeps everything, or Retry would have nothing to send.
+      if (failure.kind === "email-taken") setValues((v) => ({ ...v, password: "", confirmPassword: "" }));
       setStatus("idle");
     }
   }

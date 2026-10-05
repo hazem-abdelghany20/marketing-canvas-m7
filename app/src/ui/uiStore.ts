@@ -74,6 +74,7 @@ function writeRailCollapsed(collapsed: boolean) {
 
 export const FLASH_MS = 1200;
 const DEFAULT_TOAST_MS = 5000;
+const ACTION_TOAST_MS = 10_000;
 
 export interface UiState {
   selectedIds: string[];
@@ -193,7 +194,9 @@ export const uiStore = createStore<UiState>()((set) => ({
   endArrangement: () => set({ arrangement: null }),
 
   toast(input) {
-    const toast: Toast = { tone: "info", durationMs: DEFAULT_TOAST_MS, ...input, id: nextToastId++ };
+    // A toast with something to press stays long enough to be reached and pressed, unless it says otherwise.
+    const durationMs = input.durationMs ?? (input.actionLabel ? ACTION_TOAST_MS : DEFAULT_TOAST_MS);
+    const toast: Toast = { tone: "info", ...input, durationMs, id: nextToastId++ };
     // One message per wording: a repeated failure refreshes its toast instead of stacking.
     set((s) => ({ toasts: [...s.toasts.filter((t) => t.message !== toast.message), toast].slice(-4) }));
     return toast.id;

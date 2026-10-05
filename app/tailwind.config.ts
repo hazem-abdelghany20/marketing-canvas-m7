@@ -49,6 +49,7 @@ const config: Config = {
       },
       outlineColor: {
         focus: "var(--focus-ring)",
+        inverse: "var(--fg-inverse)",
       },
       // Motion from design/marketing-canvas.dc.html. tokens.css flattens every
       // animation under prefers-reduced-motion, so none of these need guarding.

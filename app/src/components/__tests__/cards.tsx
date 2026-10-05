@@ -40,7 +40,7 @@ export function renderCards(
   } = {},
   children?: ReactNode,
 ) {
-  const actions: CanvasActions = { open: vi.fn(), nudge: vi.fn() };
+  const actions: CanvasActions = { open: vi.fn(), nudge: vi.fn(), reveal: vi.fn() };
   const flowNodes = toFlowNodes(
     byId(nodes),
     byId(edges),

@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useStore } from "zustand";
 import { isTypingTarget } from "../canvas/useWorkspaceShortcuts";
 import { Button } from "../components/Button";
+import { ErrorState } from "../components/ErrorState";
 import { AnnotationList } from "../components/detail/AnnotationList";
 import { BodyEditor } from "../components/detail/BodyEditor";
 import { ConnectionList } from "../components/detail/ConnectionList";
@@ -25,7 +26,31 @@ export default function NodeDetail() {
   const navigate = useNavigate();
   const status = useStore(appStore, (s) => s.boardStatus);
   const node = useStore(appStore, (s) => s.nodes[id]);
+  const location = useLocation();
+  const aside = useRef<HTMLElement>(null);
+  const focusTitle = (location.state as { focusTitle?: boolean } | null)?.focusTitle === true;
   const close = () => navigate("/");
+
+  // Opening the panel moves focus into it (a fresh node's title claims it instead), so the next Tab
+  // is on its contents rather than behind every card; closing gives focus back to the node's card.
+  useEffect(() => {
+    if (!focusTitle) aside.current?.focus({ preventScroll: true });
+  }, [id, focusTitle]);
+  const latestId = useRef(id);
+  latestId.current = id;
+  useEffect(
+    () => () => {
+      requestAnimationFrame(() => {
+        // Only when nothing else has taken focus in the meantime.
+        if (document.activeElement && document.activeElement !== document.body) return;
+        const target =
+          document.querySelector<HTMLElement>(`[data-node-card="${CSS.escape(latestId.current)}"]`) ??
+          document.getElementById("toolbar-add");
+        target?.focus({ preventScroll: true });
+      });
+    },
+    [],
+  );
 
   // A node seen in this panel and then gone was deleted while open: close and say so.
   // One that was never there is a bad link, and gets its own not-found state instead.
@@ -55,6 +80,8 @@ export default function NodeDetail() {
 
   return (
     <aside
+      ref={aside}
+      tabIndex={-1}
       aria-label="Node detail"
       data-node-detail={id}
       className="absolute inset-y-0 right-0 z-40 flex w-[480px] max-w-full animate-mc-rise flex-col border-l border-subtle bg-panel shadow-[0_0_60px_-20px_rgba(0,0,0,.45)] max-[899px]:w-full max-[899px]:border-l-0"
@@ -64,7 +91,18 @@ export default function NodeDetail() {
       ) : status === "ready" ? (
         <NotFound onClose={close} />
       ) : status === "error" ? (
-        <PanelMessage title="We couldn't load this node." body="Check your connection, then reload." onClose={close} />
+        <div className="p-[26px]">
+          <ErrorState
+            title={COPY.nodeLoadFailed}
+            message={COPY.nodeLoadFailedBody}
+            actionLabel="Reload"
+            onAction={() => void appStore.getState().loadBoard()}
+          >
+            <Button onClick={close} className="px-3 py-1.5 text-sm font-medium">
+              Back to canvas
+            </Button>
+          </ErrorState>
+        </div>
       ) : (
         <Skeleton />
       )}
@@ -120,15 +158,20 @@ function NodePanel({ node, onClose }: { node: CanvasNode; onClose: () => void })
 }
 
 function SaveState({ status }: { status: SaveStatus }) {
+  // The label stays mounted while it fades, so "Saved" eases out instead of vanishing.
+  const last = useRef("");
   const label = status === "saving" ? "Saving…" : status === "saved" ? "Saved" : "";
+  if (label) last.current = label;
   return (
     <p
       role="status"
       aria-live="polite"
       data-save-state={status}
-      className="m-0 h-3.5 font-mono text-[9.5px] tracking-[0.1em] text-muted transition-opacity"
+      className={`m-0 h-3.5 font-mono text-[9.5px] tracking-[0.1em] text-muted transition-opacity duration-300 ${
+        label ? "opacity-100" : "opacity-0"
+      }`}
     >
-      {label}
+      {label || last.current}
     </p>
   );
 }

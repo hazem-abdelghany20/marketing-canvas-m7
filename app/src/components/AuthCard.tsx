@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { FormError } from "../auth/session";
+import { ToastViewport } from "./Toast";
 
 interface AuthCardProps {
   heading: string;
@@ -48,6 +49,8 @@ function AuthGround({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas bg-[radial-gradient(var(--grid-dot)_1px,transparent_1px)] bg-[length:26px_26px] p-4">
       {children}
+      {/* The session-expired message arrives here, from the screen that just lost its session. */}
+      <ToastViewport />
     </div>
   );
 }

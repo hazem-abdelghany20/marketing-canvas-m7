@@ -6,7 +6,14 @@ export const COPY = {
   // S3 — Workspace
   saveFailed: "Couldn't save that change. Check your connection and try again.",
   undoFailed: "Couldn't undo that. Check your connection and try again.",
+  undoing: "Undoing\u2026",
   loading: "Waiting for the board.",
+  boardFailed: "The board didn't load. Reload it to try again.",
+  boardLoadFailed: "We couldn't load your board. Check your connection, then reload.",
+  boardUnreadable: "Your board's data came back in a form we couldn't read. Reload to try again.",
+  nodeLoadFailed: "We couldn't load this node.",
+  nodeLoadFailedBody: "Check your connection, then reload.",
+  sessionExpired: "Your session expired. Sign in again.",
   nothingToFit: "Nothing to fit yet.",
   nothingToArrange: "Nothing to arrange yet.",
   nothingToUndo: "Nothing to undo yet.",
@@ -14,6 +21,7 @@ export const COPY = {
   minZoom: "Already zoomed out as far as it goes (25%).",
 
   // O6 — Chat rail
+  chatLoading: "Loading the conversation",
   chatEmptyPrompt: "Ask about your canvas, or ask me to draft something.",
   chatReplyFailed: "That reply didn't finish. Try again.",
   chatWriteFirst: "Write a message first.",

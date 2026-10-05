@@ -1,8 +1,9 @@
 import { useStore as useFlowStore, useViewport as useFlowViewport } from "@xyflow/react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 import { deleteNodes } from "../canvas/actions";
+import { isTypingTarget } from "../canvas/useWorkspaceShortcuts";
 import { plural } from "../lib/format";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
@@ -47,7 +48,9 @@ export function placePeek(
 
   const maxTop = Math.max(PEEK_GAP, bounds.height - peek.height - PEEK_GAP);
   const top = Math.min(maxTop, Math.max(PEEK_GAP, anchor.top));
-  return { left: side === "right" ? right : left, top, side };
+  // Held inside the canvas even when neither side has room, so its buttons can always be reached.
+  const clamp = (x: number) => Math.max(PEEK_GAP, Math.min(x, bounds.width - peek.width - PEEK_GAP));
+  return { left: clamp(side === "right" ? right : left), top, side };
 }
 
 /** O4 — a floating card beside the one selected node. */
@@ -89,6 +92,18 @@ function PeekCard({
   );
   const ref = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(PEEK_HEIGHT_GUESS);
+
+  // Escape puts the peek away, and with it the selection that showed it. Other overlays that
+  // own Escape (search, a menu, the sheet) have already claimed it, or are open over this.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented || isTypingTarget(event.target)) return;
+      if (uiStore.getState().searchOpen) return;
+      uiStore.getState().select([]);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   useLayoutEffect(() => {
     const measured = ref.current?.offsetHeight;

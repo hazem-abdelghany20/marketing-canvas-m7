@@ -5,6 +5,8 @@ import {
   ReactFlow,
   type EdgeTypes,
   type NodeChange,
+  useReactFlow,
+  useStoreApi,
   type OnNodeDrag,
 } from "@xyflow/react";
 import "@xyflow/react/dist/base.css";
@@ -12,7 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 import { EdgeLine, toFlowEdges, type LineEdge } from "../components/EdgeLine";
-import type { CardNode, PendingNode } from "../components/NodeCard";
+import { CARD_HEIGHT, CARD_WIDTH, type CardNode, type PendingNode } from "../components/NodeCard";
 import { appStore } from "../store";
 import { omit } from "../store/records";
 import type { Viewport } from "../types";
@@ -20,6 +22,8 @@ import { uiStore } from "../ui/uiStore";
 import { moveNode, nudgeNode } from "./actions";
 import { CanvasActionsContext, type CanvasActions } from "./canvasActions";
 import { connectByDrag, pickNode } from "./connect";
+import { rectInView } from "./ensureInView";
+import { panToNode } from "./panToNode";
 import { PendingLine } from "./ConnectMode";
 import { nodeTypes, toFlowNodes, toPendingNodes } from "./nodeTypes";
 import { useArrangeTween } from "./useArrangeTween";
@@ -77,21 +81,52 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
         nodes,
         edges,
         annotations,
-        { selectedIds: selectedSet, dragging, highlightedId: openId, connectSourceId, flashIds: flashSet, citedIds: citedSet },
+        {
+          selectedIds: selectedSet,
+          dragging,
+          highlightedId: openId,
+          connectSourceId,
+          flashIds: flashSet,
+          citedIds: citedSet,
+        },
         { files, objectUrls },
       ),
       ...toPendingNodes(pending),
     ],
-    [nodes, edges, annotations, selectedSet, dragging, openId, connectSourceId, flashSet, citedSet, files, objectUrls, pending],
+    [
+      nodes,
+      edges,
+      annotations,
+      selectedSet,
+      dragging,
+      openId,
+      connectSourceId,
+      flashSet,
+      citedSet,
+      files,
+      objectUrls,
+      pending,
+    ],
   );
   const flowEdges = useMemo<LineEdge[]>(() => toFlowEdges(edges, nodes, selectedSet), [edges, nodes, selectedSet]);
 
+  const flow = useReactFlow();
+  const flowStore = useStoreApi();
   const actions = useMemo<CanvasActions>(
     () => ({
       open: (id) => navigate(`/node/${encodeURIComponent(id)}`),
       nudge: nudgeNode,
+      reveal(id) {
+        const node = appStore.getState().nodes[id];
+        if (!node) return;
+        const { width, height, transform } = flowStore.getState();
+        const rect = { x: node.x, y: node.y, width: CARD_WIDTH, height: CARD_HEIGHT };
+        if (!rectInView(rect, { x: transform[0], y: transform[1], zoom: transform[2] }, { width, height })) {
+          void panToNode(flow, node);
+        }
+      },
     }),
-    [navigate],
+    [navigate, flow, flowStore],
   );
 
   const onNodesChange = useCallback((changes: NodeChange<FlowNode>[]) => {
@@ -149,7 +184,9 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
           if (state.isValid || !state.fromNode) return;
           const point = "changedTouches" in event ? event.changedTouches[0] : event;
           if (!point) return;
-          const over = document.elementFromPoint(point.clientX, point.clientY)?.closest<HTMLElement>("[data-node-card]");
+          const over = document
+            .elementFromPoint(point.clientX, point.clientY)
+            ?.closest<HTMLElement>("[data-node-card]");
           const targetId = over?.dataset.nodeCard;
           if (targetId) connectByDrag(state.fromNode.id, targetId);
         }}

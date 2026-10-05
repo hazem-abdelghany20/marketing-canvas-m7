@@ -2,9 +2,10 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { FileImage, FileText, Link2, MessageSquareText, Paperclip, Quote } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useCanvasActions } from "../canvas/canvasActions";
+import { pickNode } from "../canvas/connect";
 import { formatBytes, plural } from "../lib/format";
 import type { CanvasNode, FileRef } from "../types";
-import type { PendingImport } from "../ui/uiStore";
+import { uiStore, type PendingImport } from "../ui/uiStore";
 import { TYPE_BG, TypeChip, typeLabel } from "./TypeChip";
 
 /**
@@ -42,6 +43,15 @@ export interface PendingData extends Record<string, unknown> {
 
 export type PendingNode = Node<PendingData, "pending">;
 
+/** Whether focus arrived by keyboard (:focus-visible); where the browser can't say, it did not. */
+function isKeyboardFocus(el: HTMLElement): boolean {
+  try {
+    return el.matches(":focus-visible");
+  } catch {
+    return false;
+  }
+}
+
 const NUDGES: Record<string, [number, number]> = {
   ArrowUp: [0, -NUDGE_PX],
   ArrowDown: [0, NUDGE_PX],
@@ -64,9 +74,22 @@ export function NodeCard({ id, data, selected }: NodeProps<CardNode>) {
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.target !== event.currentTarget) return;
+    // In connect mode a key press on a card is a pick, exactly as a click is.
+    if ((event.key === "Enter" || event.key === " ") && uiStore.getState().connect.active) {
+      event.preventDefault();
+      pickNode(id);
+      return;
+    }
     if (event.key === "Enter") {
       event.preventDefault();
       actions.open(id);
+      return;
+    }
+    // Space is the button's other key: it selects the card, which shows its quick-peek, and again deselects.
+    if (event.key === " ") {
+      event.preventDefault();
+      const picked = uiStore.getState().selectedIds;
+      uiStore.getState().select(picked.length === 1 && picked[0] === id ? [] : [id]);
       return;
     }
     const nudge = NUDGES[event.key];
@@ -89,6 +112,11 @@ export function NodeCard({ id, data, selected }: NodeProps<CardNode>) {
       data-type={node.type}
       data-cited={cited || undefined}
       onKeyDown={onKeyDown}
+      onFocus={(event) => {
+        if (event.target !== event.currentTarget) return;
+        // Only a keyboard arriving here moves the camera; a click that focused the card must not.
+        if (isKeyboardFocus(event.currentTarget)) actions.reveal(id);
+      }}
       className="group relative h-full w-full rounded-[9px]"
     >
       {cited ? (

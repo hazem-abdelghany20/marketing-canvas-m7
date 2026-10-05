@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createBrowserRouter, Navigate, RouterProvider, type RouteObject } from "react-router-dom";
+import { handleSessionExpired } from "./auth/expired";
 import { redirectIfSignedIn, requireSession } from "./auth/session";
 import { AuthSkeleton } from "./components/AuthCard";
 import SignIn from "./routes/SignIn";
@@ -31,7 +32,9 @@ export default function App() {
   const [router] = useState(() => createBrowserRouter(routes));
 
   useEffect(() => {
-    setSessionExpiredHandler(() => void router.navigate("/signin", { replace: true }));
+    setSessionExpiredHandler(() =>
+      handleSessionExpired((to, options) => void router.navigate(to, options), router.state.location.pathname),
+    );
   }, [router]);
 
   return <RouterProvider router={router} />;

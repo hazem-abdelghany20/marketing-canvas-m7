@@ -25,6 +25,8 @@ export default function SignIn() {
   function edit(field: keyof LoginInput, value: string) {
     setValues((v) => ({ ...v, [field]: value }));
     setErrors((e) => ({ ...e, [field]: undefined }));
+    // Correcting the form answers a form-level error too; it should not linger above fresh edits.
+    setFormError(null);
   }
 
   async function submit(event?: FormEvent) {

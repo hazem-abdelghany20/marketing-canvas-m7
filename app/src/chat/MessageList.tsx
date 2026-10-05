@@ -16,6 +16,7 @@ const FOLLOW_SLACK = 80;
 export function MessageList() {
   const messages = useStore(appStore, (s) => s.chatMessages);
   const streaming = useStore(appStore, (s) => s.chatStreaming);
+  const boardStatus = useStore(appStore, (s) => s.boardStatus);
   const goTo = useGoToNode();
   const apply = useApplyProposal();
   const scroller = useRef<HTMLDivElement>(null);
@@ -32,7 +33,10 @@ export function MessageList() {
     if (following.current) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
-  if (messages.length === 0) return <EmptyChat />;
+  if (messages.length === 0) {
+    // While the board loads the rail holds its place with a skeleton, so nothing shifts when it lands.
+    return boardStatus === "idle" || boardStatus === "loading" ? <ChatSkeleton /> : <EmptyChat />;
+  }
 
   return (
     <div
@@ -97,6 +101,26 @@ function EmptyChat() {
           ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function ChatSkeleton() {
+  const bar = "animate-pulse rounded-sm bg-[color-mix(in_srgb,var(--border-subtle)_70%,transparent)]";
+  return (
+    <div
+      role="status"
+      aria-label={COPY.chatLoading}
+      aria-busy="true"
+      className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4"
+    >
+      {[0, 1, 2].map((i) => (
+        <div key={i} data-chat-placeholder className="flex flex-col gap-2">
+          <span className={`${bar} h-3 w-20`} />
+          <span className={`${bar} h-3.5 w-full`} />
+          <span className={`${bar} h-3.5 ${i === 1 ? "w-2/3" : "w-4/5"}`} />
+        </div>
+      ))}
     </div>
   );
 }

@@ -27,13 +27,14 @@ export function useGoToNode() {
   return useCallback(
     (node: CanvasNode, { zoom, minZoom = 0, focusCard = false }: GoToOptions = {}) => {
       uiStore.getState().select([node.id]);
-      const covered = panelOpen && !isNarrow() ? PANEL_WIDTH : 0;
-      void panToNode(flow, node, { zoom: zoom ?? Math.max(flow.getZoom(), minZoom), coveredRight: covered });
+      // Focus first, so a card that reveals itself on focus is overruled by the pan below, not the other way round.
       if (focusCard) {
         document
           .querySelector<HTMLElement>(`[data-node-card="${CSS.escape(node.id)}"]`)
           ?.focus({ preventScroll: true });
       }
+      const covered = panelOpen && !isNarrow() ? PANEL_WIDTH : 0;
+      void panToNode(flow, node, { zoom: zoom ?? Math.max(flow.getZoom(), minZoom), coveredRight: covered });
     },
     [flow, panelOpen],
   );

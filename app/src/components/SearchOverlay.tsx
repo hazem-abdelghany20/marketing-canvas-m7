@@ -52,6 +52,10 @@ export function SearchOverlay({ onClose, onGo, onCreateNote }: SearchOverlayProp
   const current = results[Math.min(active, results.length - 1)];
 
   useEffect(() => input.current?.focus(), []);
+  // The highlighted result stays in view as the arrows move through a long list.
+  useEffect(() => {
+    if (current) document.getElementById(`${listId}-${current.id}`)?.scrollIntoView?.({ block: "nearest" });
+  }, [current, listId]);
   useEffect(() => setActive(0), [query]);
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -73,6 +77,29 @@ export function SearchOverlay({ onClose, onGo, onCreateNote }: SearchOverlayProp
 
   const optionId = (node: CanvasNode) => `${listId}-${node.id}`;
 
+  /** The dialog is modal: Tab walks its controls and wraps, never out to the page behind the scrim. */
+  function keepTabInside(event: KeyboardEvent<HTMLElement>) {
+    // Escape closes it from any control in it, not only from the input.
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("input, button"));
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (!first || !last) return;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex justify-center bg-[color-mix(in_srgb,var(--fg-primary)_28%,transparent)] px-4 pt-[14vh]"
@@ -84,6 +111,7 @@ export function SearchOverlay({ onClose, onGo, onCreateNote }: SearchOverlayProp
         role="dialog"
         aria-modal="true"
         aria-label="Search nodes"
+        onKeyDown={keepTabInside}
         className="h-fit w-[min(520px,100%)] animate-mc-pop overflow-hidden rounded-lg border border-subtle bg-panel shadow-[0_30px_70px_-30px_rgba(0,0,0,.6)]"
       >
         <div className="flex items-center gap-2.5 border-b border-subtle px-4">
@@ -123,7 +151,9 @@ export function SearchOverlay({ onClose, onGo, onCreateNote }: SearchOverlayProp
                     onMouseEnter={() => setActive(results.indexOf(node))}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => onGo(node)}
-                    className={`flex cursor-pointer items-center gap-2.5 rounded-sm px-[11px] py-2 ${node === current ? "bg-elevated" : ""}`}
+                    className={`flex cursor-pointer items-center gap-2.5 rounded-sm px-[11px] py-2 ${
+                      node === current ? "bg-elevated outline outline-2 -outline-offset-2 outline-focus" : ""
+                    }`}
                   >
                     <span aria-hidden="true" className={`size-[7px] flex-none rounded-full ${TYPE_BG[node.type]}`} />
                     <span className="min-w-0 flex-1">

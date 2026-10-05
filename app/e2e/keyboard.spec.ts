@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { card, demoSession, openCanvas, setViewport, type Session } from "./support";
+import { card, demoSession, freshSession, openCanvas, setViewport, type Session } from "./support";
 
 const panel = (page: Page) => page.getByRole("complementary", { name: "Node detail" });
 const peek = (page: Page) => page.getByRole("dialog", { name: /^Quick look/ });
@@ -151,4 +151,42 @@ test("every stop of the first screenful shows a focus ring of at least 2px", asy
   }
 
   expect(failures).toEqual([]);
+});
+
+test("searching for a node that starts off screen still lands at the search zoom, centred, not at the old zoom", async ({
+  page,
+}) => {
+  await setViewport(s, { x: 0, y: 0, zoom: 1 });
+  await openCanvas(page);
+  const area = (await page.locator("[data-canvas-state=ready]").boundingBox())!;
+  expect((await card(page, "nd_not_reach").boundingBox())!.y).toBeGreaterThan(area.y + area.height);
+
+  await page.keyboard.press("ControlOrMeta+f");
+  await page.getByRole("combobox", { name: "Search nodes by title or body" }).fill("IG reach down");
+  await page.keyboard.press("Enter");
+
+  const camera = async () => {
+    const t = await page.locator(".react-flow__viewport").evaluate((el) => (el as HTMLElement).style.transform);
+    return Number(t.match(/scale\(([-\d.]+)\)/)![1]);
+  };
+  await expect.poll(camera).toBe(1.25);
+  const box = (await card(page, "nd_not_reach").boundingBox())!;
+  expect(Math.abs(box.x + box.width / 2 - (area.x + area.width / 2))).toBeLessThan(6);
+  expect(Math.abs(box.y + box.height / 2 - (area.y + area.height / 2))).toBeLessThan(6);
+});
+
+test("a disabled control reached by Tab says why, at full strength and inside the window", async ({ page }) => {
+  await freshSession(page); // an empty board, so Fit and Auto-arrange are disabled
+  await openCanvas(page);
+
+  await tabUntil(page, (el) => el.getAttribute("aria-label") === "Fit to screen");
+
+  const tip = page.locator("[data-reason-tip]");
+  await expect(tip).toHaveText("Nothing to fit yet.");
+  const box = (await tip.boundingBox())!;
+  const view = page.viewportSize()!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(view.width);
+  expect(box.y + box.height).toBeLessThanOrEqual(view.height);
+  expect(await tip.evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
 });

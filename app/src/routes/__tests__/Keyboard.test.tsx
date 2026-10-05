@@ -166,6 +166,15 @@ describe("the search dialog", () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it("closes on Escape from any control in it, the Create button included", async () => {
+    const { create } = await openSearchWithNoMatch();
+    create.focus();
+
+    fireEvent.keyDown(create, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog", { name: "Search nodes" })).toBeNull();
+  });
+
   it("wraps Shift+Tab from the first control to the last", async () => {
     const { input, create } = await openSearchWithNoMatch();
     input.focus();
@@ -174,5 +183,55 @@ describe("the search dialog", () => {
 
     expect(consumed).toBe(true);
     expect(document.activeElement).toBe(create);
+  });
+});
+
+describe("quick-peek, O4", () => {
+  it("dismisses itself, and the selection, without a word when its node is no longer in the store", async () => {
+    await openBoard();
+    act(() => uiStore.getState().select(["nd_b"]));
+    expect(peek()).not.toBeNull();
+
+    act(() => {
+      const { nd_b: _gone, ...rest } = appStore.getState().nodes;
+      appStore.setState({ nodes: rest });
+    });
+
+    await waitFor(() => expect(peek()).toBeNull());
+    expect(uiStore.getState().selectedIds).toEqual([]);
+    expect(uiStore.getState().toasts).toHaveLength(0);
+  });
+});
+
+describe("why a control is disabled, for the keyboard", () => {
+  const empty = () => {
+    network.on("GET /nodes", () => json(200, []));
+  };
+
+  it("is drawn beside a disabled control that keyboard focus lands on, and goes when focus leaves", async () => {
+    empty();
+    renderAt("/");
+    await screen.findByText("Nothing on the canvas yet.");
+    const arrange = screen.getByRole("button", { name: "Auto-arrange" });
+
+    fireEvent.keyDown(window, { key: "Tab" });
+    act(() => arrange.focus());
+
+    const tip = document.querySelector("[data-reason-tip]");
+    expect(tip?.textContent).toBe("Nothing to arrange yet.");
+    act(() => arrange.blur());
+    expect(document.querySelector("[data-reason-tip]")).toBeNull();
+  });
+
+  it("is left to the native title when the focus came from a click", async () => {
+    empty();
+    renderAt("/");
+    await screen.findByText("Nothing on the canvas yet.");
+    const arrange = screen.getByRole("button", { name: "Auto-arrange" });
+
+    fireEvent.pointerDown(arrange);
+    act(() => arrange.focus());
+
+    expect(document.querySelector("[data-reason-tip]")).toBeNull();
   });
 });

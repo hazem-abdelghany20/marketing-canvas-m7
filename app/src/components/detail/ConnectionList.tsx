@@ -1,4 +1,5 @@
 import { useReactFlow } from "@xyflow/react";
+import { useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 import { reportSaveFailure, undoLast } from "../../canvas/actions";
 import { startConnect } from "../../canvas/connect";
@@ -26,6 +27,7 @@ export function ConnectionList({ nodeId }: { nodeId: string }) {
   const nodes = useStore(appStore, (s) => s.nodes);
   const connecting = useUi((s) => s.connect.active);
   const flow = useReactFlow();
+  const navigate = useNavigate();
   const groups = groupConnections(edges, nodeId);
 
   const sections: Array<{ label: string; edges: Edge[] }> = [
@@ -58,7 +60,10 @@ export function ConnectionList({ nodeId }: { nodeId: string }) {
       .catch(() => reportSaveFailure(() => remove(edge, otherTitle)));
   }
 
-  const connect = () => startConnect(nodeId);
+  // Below 900px the panel is a full-screen sheet over the canvas; connect mode needs the nodes visible.
+  const connect = () => {
+    if (startConnect(nodeId) && isNarrow()) navigate("/");
+  };
 
   return (
     <Section
