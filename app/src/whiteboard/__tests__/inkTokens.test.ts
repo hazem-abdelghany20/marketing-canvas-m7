@@ -39,6 +39,40 @@ describe("the ink palette", () => {
   });
 });
 
+const stickyIn = (body: string) =>
+  Object.fromEntries([...body.matchAll(/--(sticky-[a-z0-9]+):\s*(#[0-9a-fA-F]{6})\s*;/g)].map((m) => [m[1]!, m[2]!]));
+
+describe("the sticky palette", () => {
+  const WANT = ["sticky-1", "sticky-2", "sticky-3", "sticky-4", "sticky-5", "sticky-fg"];
+  const light = stickyIn(block(":root {"));
+  const darkByMedia = stickyIn(block(':root:not([data-theme="light"]) {'));
+  const darkByAttribute = stickyIn(block('[data-theme="dark"] {'));
+
+  it("is five card colours and the one ink that is written on them, in the light theme", () => {
+    expect(Object.keys(light)).toEqual(WANT);
+  });
+
+  it("is the same in the dark theme, behind the media query and behind the attribute alike", () => {
+    expect(Object.keys(darkByMedia)).toEqual(WANT);
+    expect(darkByAttribute).toEqual(darkByMedia);
+  });
+
+  it("keeps the text on a sticky readable on every card colour, in both themes", () => {
+    const luminance = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number];
+      const channel = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+    };
+    const contrast = (a: string, b: string) => {
+      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    for (const palette of [light, darkByMedia]) {
+      for (const card of WANT.slice(0, 5)) expect(contrast(palette["sticky-fg"]!, palette[card]!)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
 describe("components", () => {
   const dir = new URL("../", import.meta.url);
   const sources = readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f));
