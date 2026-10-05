@@ -23,7 +23,9 @@ export function apiError(status: number, code: string, message = `${code} happen
  * A fetch stub that answers each call with the next responder and records what
  * was sent. Responders may be a Response, an Error to reject with, or a function.
  */
-export function stubFetch(...responders: Array<Response | Error | ((call: RecordedCall) => Response | Promise<Response>)>) {
+export function stubFetch(
+  ...responders: Array<Response | Error | ((call: RecordedCall) => Response | Promise<Response>)>
+) {
   const calls: RecordedCall[] = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const headers: Record<string, string> = {};
@@ -43,4 +45,39 @@ export function stubFetch(...responders: Array<Response | Error | ((call: Record
     return typeof next === "function" ? next(call) : next.clone();
   });
   return { fetch: fetchMock as unknown as typeof fetch, calls };
+}
+
+// ------------------------------------------------------------- server-sent events
+
+export const sseFrame = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+
+function eventStream(start: (controller: ReadableStreamDefaultController<Uint8Array>) => void) {
+  return new Response(new ReadableStream<Uint8Array>({ start }), {
+    status: 200,
+    headers: { "Content-Type": "text/event-stream" },
+  });
+}
+
+/** A finished event stream, delivered in one go. */
+export function sseResponse(frames: string[]): Response {
+  const encoder = new TextEncoder();
+  return eventStream((controller) => {
+    for (const frame of frames) controller.enqueue(encoder.encode(frame));
+    controller.close();
+  });
+}
+
+/**
+ * An event stream the test feeds by hand, so it can look at the app between one
+ * token and the next. `push` takes the same (event, data) pairs the server sends.
+ */
+export function controlledSse() {
+  const encoder = new TextEncoder();
+  let controller!: ReadableStreamDefaultController<Uint8Array>;
+  const response = eventStream((c) => void (controller = c));
+  return {
+    response,
+    push: (event: string, data: unknown) => controller.enqueue(encoder.encode(sseFrame(event, data))),
+    close: () => controller.close(),
+  };
 }
