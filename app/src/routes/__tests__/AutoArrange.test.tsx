@@ -8,6 +8,13 @@ import { COPY } from "../../ui/copy";
 import { uiStore } from "../../ui/uiStore";
 import { apiError, deferred, emptyBoard, json, network, renderAt, resetApp, serveEmptyBoard, user } from "./harness";
 
+// The real glide is 300ms, and on a loaded machine it can be over before a test has looked at it.
+// Stretching it keeps "still gliding" checks about the glide, not about how busy the machine is.
+vi.mock("../../canvas/useArrangeTween", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../canvas/useArrangeTween")>()),
+  ARRANGE_MS: 1500,
+}));
+
 const T = "2026-09-02T00:00:00.000Z";
 const node = (id: string, type: CanvasNode["type"], title: string, x: number, y: number): CanvasNode => ({
   id,
