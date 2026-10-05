@@ -7,7 +7,9 @@
 - `../../api/README.md` § Nodes, § Edges
 
 ## Scope
-`src/components/ChatMessage.tsx` (proposal action), `src/chat/applyProposal.ts`.
+`src/components/ChatMessage.tsx` (proposal action), `src/chat/applyProposal.ts`,
+`src/chat/useApplyProposal.ts` (where it lands, and the camera), `src/canvas/ensureInView.ts`, and the
+`chatApplied` / `proposalTitles` state in `src/store/chat.ts`.
 
 ## Acceptance
 - Given a response carrying a `create-node` proposal, when the add action is used, then a node with the proposed type and title is created and is inside the visible viewport.
@@ -21,4 +23,4 @@
 Reuse the store actions from tickets 006 and 008 — no parallel creation path.
 
 ## Verify
-`npx vitest run src/chat/applyProposal && npx playwright test e2e/chat-proposals.spec.ts`
+`npx vitest run src/chat/__tests__/applyProposal src/chat/__tests__/ChatProposals src/canvas/__tests__/ensureInView src/store/__tests__/chat && npx playwright test e2e/chat-proposals.spec.ts`

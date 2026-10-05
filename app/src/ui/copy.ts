@@ -21,6 +21,14 @@ export const COPY = {
   chatPlaceholder: "Ask, or say \u201cdraft a\u2026\u201d",
   chatHint: "Enter to send \u00b7 Shift+Enter for a new line",
   chatHintBusy: "Replying\u2026",
+  proposalNode: "Proposed node",
+  proposalConnection: "Proposed connection",
+  proposalAdd: "Add to canvas",
+  proposalAdding: "Adding\u2026",
+  proposalAddingReason: "Adding to the canvas\u2026",
+  proposalAdded: "Added",
+  proposalAddedReason: "Already on the canvas. Undo to take it back.",
+  proposalFailed: "Couldn't add that to the canvas. Check your connection and try again.",
 
   // O1 — Add-node menu
   addNodeFailed: "Couldn't add the node. Check your connection and try again.",
@@ -56,3 +64,9 @@ export const CHAT_EXAMPLES = [
   { mode: "Librarian", text: "What serves the Ramadan push?" },
   { mode: "Operator", text: "Connect the linen shoot hero to the Ramadan push" },
 ] as const;
+
+export const proposalAdded = (title: string) => `Added \u201c${title}\u201d to the canvas.`;
+
+/** A connection can't be made because one of its nodes has been deleted since the reply. */
+export const proposalNodeGone = (title: string | undefined) =>
+  `Couldn't add that connection: ${title ? `\u201c${title}\u201d` : "one of its nodes"} is no longer on the canvas. Ask again for a fresh suggestion.`;

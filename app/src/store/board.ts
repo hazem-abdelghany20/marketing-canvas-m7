@@ -31,7 +31,7 @@ const EMPTY: Pick<
   AppState,
   | "board" | "boardStatus" | "boardError" | "viewportSaveError"
   | "nodes" | "edges" | "annotations" | "files" | "objectUrls" | "strokes" | "marks" | "pins"
-  | "chatMessages" | "chatStreaming" | "undoStack"
+  | "chatMessages" | "chatStreaming" | "chatApplied" | "undoStack"
 > = {
   board: null,
   boardStatus: "idle",
@@ -47,6 +47,7 @@ const EMPTY: Pick<
   pins: {},
   chatMessages: [],
   chatStreaming: false,
+  chatApplied: {},
   undoStack: [],
 };
 

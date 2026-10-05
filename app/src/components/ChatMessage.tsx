@@ -1,7 +1,11 @@
+import { Check } from "lucide-react";
+import { useId } from "react";
 import { useStore } from "zustand";
 import { Markdown } from "../chat/markdown";
 import { appStore } from "../store";
+import { isProposalApplied } from "../store/chat";
 import { COPY } from "../ui/copy";
+import { useUi } from "../ui/uiStore";
 import type { CanvasNode, ChatMessage as Message } from "../types";
 import { Button } from "./Button";
 import { TYPE_BG } from "./TypeChip";
@@ -13,6 +17,8 @@ interface ChatMessageProps {
   onRetry: (id: string) => void;
   /** A citation chip was used: go to that node. */
   onCite: (node: CanvasNode) => void;
+  /** Add to canvas was used. Resolves once the proposal has been applied, or refused, or has failed. */
+  onApply: (message: Message) => Promise<void>;
 }
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -22,7 +28,7 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-di
  * it is complete: its words arrive in a plain region, and a separate, visually hidden
  * status region receives the finished text in one go.
  */
-export function ChatMessage({ message, busy, onRetry, onCite }: ChatMessageProps) {
+export function ChatMessage({ message, busy, onRetry, onCite, onApply }: ChatMessageProps) {
   const mine = message.role === "user";
   const streaming = message.status === "streaming";
   const waiting = streaming && message.content === "";
@@ -90,6 +96,8 @@ export function ChatMessage({ message, busy, onRetry, onCite }: ChatMessageProps
 
       {message.status === "done" ? <Citations ids={message.citedNodeIds} onCite={onCite} /> : null}
 
+      {message.status === "done" && message.proposal ? <ProposalCard message={message} onApply={onApply} /> : null}
+
       {message.status === "error" ? (
         <div className="mt-2 flex items-center gap-2.5">
           <span role="alert" className="text-[12.5px] text-danger">
@@ -132,5 +140,56 @@ function Citations({ ids, onCite }: { ids: string[]; onCite: (node: CanvasNode) 
         </li>
       ))}
     </ul>
+  );
+}
+
+/** A reply's suggestion, with the one action that turns it into something on the canvas. */
+function ProposalCard({ message, onApply }: { message: Message; onApply: (message: Message) => Promise<void> }) {
+  const nodes = useStore(appStore, (s) => s.nodes);
+  const applied = useStore(appStore, (s) => isProposalApplied(s, message.id));
+  const applying = useUi((s) => s.applyingProposals.includes(message.id));
+  const labelId = useId();
+  const proposal = message.proposal!;
+
+  const titleOf = (id: string | undefined) =>
+    (id && (nodes[id]?.title.trim() || message.proposalTitles?.[id])) || "Untitled";
+  const isNode = proposal.kind === "create-node";
+  const label = isNode
+    ? proposal.payload.title?.trim() || "Untitled"
+    : `${titleOf(proposal.payload.fromId)} \u2192 ${titleOf(proposal.payload.toId)}`;
+  const preview = isNode ? proposal.payload.body?.trim() : "";
+
+  return (
+    <div data-chat-proposal className="mt-2.5 rounded-md border border-dashed border-strong bg-rail px-3 py-[11px]">
+      <div className="mb-[5px] font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted">
+        {isNode ? COPY.proposalNode : COPY.proposalConnection}
+      </div>
+      <div id={labelId} className="text-[13.5px] font-semibold leading-snug text-primary">
+        {label}
+      </div>
+      {preview ? (
+        <div className="mt-[5px] line-clamp-4 whitespace-pre-wrap text-[12.5px] text-muted">{preview}</div>
+      ) : null}
+      {applied ? (
+        // Disabled, but not dimmed: "Added" is a confirmation, and has to stay readable.
+        <Button className="mt-2.5 !opacity-100" aria-describedby={labelId} disabledReason={COPY.proposalAddedReason}>
+          <Check size={13} aria-hidden="true" />
+          {COPY.proposalAdded}
+        </Button>
+      ) : applying ? (
+        <Button
+          variant="primary"
+          className="mt-2.5"
+          aria-describedby={labelId}
+          disabledReason={COPY.proposalAddingReason}
+        >
+          {COPY.proposalAdding}
+        </Button>
+      ) : (
+        <Button variant="primary" className="mt-2.5" aria-describedby={labelId} onClick={() => void onApply(message)}>
+          {COPY.proposalAdd}
+        </Button>
+      )}
+    </div>
   );
 }

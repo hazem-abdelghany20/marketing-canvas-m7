@@ -7,6 +7,7 @@ import { appStore } from "../store";
 import { CHAT_EXAMPLES, COPY } from "../ui/copy";
 import { uiStore } from "../ui/uiStore";
 import { focusChatOpenButton } from "./focus";
+import { useApplyProposal } from "./useApplyProposal";
 
 /** Within this many pixels of the bottom counts as "following along". */
 const FOLLOW_SLACK = 80;
@@ -16,6 +17,7 @@ export function MessageList() {
   const messages = useStore(appStore, (s) => s.chatMessages);
   const streaming = useStore(appStore, (s) => s.chatStreaming);
   const goTo = useGoToNode();
+  const apply = useApplyProposal();
   const scroller = useRef<HTMLDivElement>(null);
   const following = useRef(true);
   const count = useRef(0);
@@ -51,6 +53,7 @@ export function MessageList() {
             key={message.id}
             message={message}
             busy={streaming}
+            onApply={apply}
             // Focus stays on the chip: the person is reading the conversation, not working the canvas.
             onCite={(node) => {
               // Below 900px the sheet covers the canvas; the pan is no use to anyone behind it.

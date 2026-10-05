@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { NARROW_QUERY } from "../../lib/useMediaQuery";
 import {
   deferred,
   emptyBoard,
@@ -52,7 +53,11 @@ beforeEach(() => {
   network.on("DELETE /nodes/nd_new1", () => json(204));
   network.on("DELETE /edges/ed_new2", () => json(204));
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  // @ts-expect-error jsdom ships no matchMedia; the stub is removed to match.
+  delete window.matchMedia;
+});
 
 const generated: Proposal = {
   kind: "create-node",
@@ -145,6 +150,66 @@ describe("Add to canvas", () => {
     gate.resolve(json(201, { ...nodes[0]!, id: "nd_slow", title: "Reel: linen care" }));
     await waitFor(() => expect(addButton().textContent).toContain("Added"));
     expect(posts("POST /nodes")).toHaveLength(1);
+  });
+
+  it("still says Adding… if the rail is closed and opened while the request is out", async () => {
+    const gate = deferred<Response>();
+    network.on("POST /nodes", () => gate.promise);
+    await openWith(says(generated));
+    fireEvent.click(screen.getByRole("button", { name: "Add to canvas" }));
+    await waitFor(() => expect(addButton().textContent).toContain("Adding"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse assistant" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open assistant" }));
+
+    expect(addButton().textContent).toContain("Adding");
+    gate.resolve(json(201, { ...nodes[0]!, id: "nd_slow", title: "Reel: linen care" }));
+    await waitFor(() => expect(addButton().textContent).toContain("Added"));
+  });
+
+  it("closes the sheet that covers the canvas once something has been added below 900px, so it can be seen", async () => {
+    window.matchMedia = ((query: string) => ({
+      matches: query === NARROW_QUERY,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    renderAt("/");
+    await waitFor(() => expect(appStore.getState().boardStatus).toBe("ready"));
+    fireEvent.click(await screen.findByRole("button", { name: "Open assistant" }));
+    act(() => appStore.setState({ chatMessages: says(generated) }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Add to canvas" }));
+
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Message" })).toBeNull());
+    expect(Object.values(appStore.getState().nodes).some((n) => n.title === "Reel: linen care")).toBe(true);
+  });
+
+  it("keeps the sheet open when the add fails, so the message and the action stay in view", async () => {
+    window.matchMedia = ((query: string) => ({
+      matches: query === NARROW_QUERY,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    network.on("POST /nodes", () => apiError(503, "forced_failure", "Down."));
+    renderAt("/");
+    await waitFor(() => expect(appStore.getState().boardStatus).toBe("ready"));
+    fireEvent.click(await screen.findByRole("button", { name: "Open assistant" }));
+    act(() => appStore.setState({ chatMessages: says(generated) }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Add to canvas" }));
+
+    await screen.findByRole("alert");
+    expect(screen.getByRole("textbox", { name: "Message" })).toBeTruthy();
   });
 
   it("goes back to Add to canvas when the node is undone, from the toast", async () => {

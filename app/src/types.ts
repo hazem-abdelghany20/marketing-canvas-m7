@@ -127,6 +127,11 @@ export interface ChatMessage {
   createdAt: string;
   /** How the server chose to answer, reported on `start`; set on assistant messages only. */
   mode?: ResolvedChatMode;
+  /**
+   * For a connection proposal: the titles of the two nodes it names, as they were when the
+   * reply arrived. A node deleted later can then still be called by name.
+   */
+  proposalTitles?: Record<string, string>;
 }
 
 // ------------------------------------------------------------ request bodies

@@ -17,15 +17,15 @@ export interface Bounds {
  * panel), so the box is framed in what is left. Instant under reduced motion. The box
  * is given rather than read off the cards, so it can be framed before they are drawn there.
  */
-export function useFitToBounds(): (bounds: Bounds, coveredRight?: number) => void {
+export function useFitToBounds(): (bounds: Bounds, coveredRight?: number, maxZoom?: number) => void {
   const flow = useReactFlow();
   const store = useStoreApi();
   return useCallback(
-    (bounds, coveredRight = 0) => {
+    (bounds, coveredRight = 0, maxZoom = FIT_MAX_ZOOM) => {
       const { width, height } = store.getState();
       const visible = width - coveredRight;
       if (visible <= 0 || !height) return;
-      const viewport = getViewportForBounds(bounds, visible, height, MIN_ZOOM, FIT_MAX_ZOOM, FIT_PADDING);
+      const viewport = getViewportForBounds(bounds, visible, height, MIN_ZOOM, maxZoom, FIT_PADDING);
       void flow.setViewport(viewport, { duration: motionMs(ARRANGE_MS) });
     },
     [flow, store],

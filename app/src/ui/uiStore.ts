@@ -93,6 +93,8 @@ export interface UiState {
   chatSheetOpen: boolean;
   /** What is typed in the composer, so it survives collapsing the rail. */
   chatDraft: string;
+  /** Replies whose proposal is being added to the canvas right now. */
+  applyingProposals: string[];
   /** Set by "From chat": the composer takes focus as soon as it is on screen, once. */
   composerFocusPending: boolean;
 
@@ -106,6 +108,7 @@ export interface UiState {
   addPending: (pending: PendingImport) => void;
   removePending: (id: string) => void;
   setCited: (ids: string[]) => void;
+  setProposalApplying: (messageId: string, applying: boolean) => void;
   setRailCollapsed: (collapsed: boolean) => void;
   setChatSheetOpen: (open: boolean) => void;
   setChatDraft: (text: string) => void;
@@ -135,6 +138,7 @@ const INITIAL = {
   toasts: [] as Toast[],
   arrangement: null as Arrangement | null,
   citedIds: [] as string[],
+  applyingProposals: [] as string[],
   chatSheetOpen: false,
   chatDraft: "",
   composerFocusPending: false,
@@ -161,6 +165,12 @@ export const uiStore = createStore<UiState>()((set) => ({
   removePending: (id) => set((s) => ({ pendingImports: s.pendingImports.filter((p) => p.id !== id) })),
 
   setCited: (ids) => set({ citedIds: ids }),
+  setProposalApplying: (messageId, applying) =>
+    set((s) => ({
+      applyingProposals: applying
+        ? [...s.applyingProposals.filter((id) => id !== messageId), messageId]
+        : s.applyingProposals.filter((id) => id !== messageId),
+    })),
   setRailCollapsed(collapsed) {
     writeRailCollapsed(collapsed);
     set({ railCollapsed: collapsed });

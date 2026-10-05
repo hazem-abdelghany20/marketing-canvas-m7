@@ -1,10 +1,19 @@
-import type { ChatMessage } from "../types";
-import type { SliceCreator } from "./state";
+import type { ChatDone, ChatMessage } from "../types";
+import type { AppState, SliceCreator } from "./state";
+
+/** What a proposal created, so the reply can tell whether it is still on the canvas. */
+export interface AppliedRef {
+  kind: "node" | "edge";
+  id: string;
+}
 
 /** Chat lives only in the tab; the API does not persist it. */
 export interface ChatSlice {
   chatMessages: ChatMessage[];
   chatStreaming: boolean;
+  /** Replies whose proposal has been added to the canvas, by message id. */
+  chatApplied: Record<string, AppliedRef>;
+  markProposalApplied: (messageId: string, ref: AppliedRef) => void;
   /**
    * Adds your message and an empty reply, then streams the reply in. Never rejects:
    * a reply that breaks is marked as failed, with your message kept. Blank text, and
@@ -15,8 +24,29 @@ export interface ChatSlice {
   retryChat: (replyId: string) => Promise<void>;
 }
 
+/**
+ * A proposal counts as applied only while what it created is still there, so undoing it (or
+ * deleting the node) frees the action to be used again.
+ */
+export function isProposalApplied(state: AppState, messageId: string): boolean {
+  const ref = state.chatApplied[messageId];
+  if (!ref) return false;
+  return ref.kind === "node" ? ref.id in state.nodes : ref.id in state.edges;
+}
+
 let nextId = 1;
 const newId = () => `msg_${nextId++}`;
+
+/** The titles of the two nodes a connection proposal names, while they are still on the canvas. */
+function proposalTitles(proposal: ChatDone["proposal"], nodes: AppState["nodes"]): Record<string, string> | undefined {
+  if (proposal?.kind !== "create-edge") return undefined;
+  const titles: Record<string, string> = {};
+  for (const id of [proposal.payload.fromId, proposal.payload.toId]) {
+    const node = id ? nodes[id] : undefined;
+    if (id && node) titles[id] = node.title.trim() || "Untitled";
+  }
+  return titles;
+}
 
 export const createChatSlice: SliceCreator<ChatSlice> = (ctx) => (set, get) => {
   /** Streams the answer to `question` into the reply `replyId`, and settles it. */
@@ -34,11 +64,13 @@ export const createChatSlice: SliceCreator<ChatSlice> = (ctx) => (set, get) => {
           onToken: (token) => update((m) => ({ ...m, content: m.content + token })),
         },
       );
+      const titles = proposalTitles(done.proposal, get().nodes);
       update((m) => ({
         ...m,
         status: "done",
         citedNodeIds: done.citedNodeIds,
         ...(done.proposal ? { proposal: done.proposal } : {}),
+        ...(titles ? { proposalTitles: titles } : {}),
       }));
     } catch {
       update((m) => ({ ...m, status: "error" }));
@@ -50,6 +82,8 @@ export const createChatSlice: SliceCreator<ChatSlice> = (ctx) => (set, get) => {
   return {
     chatMessages: [],
     chatStreaming: false,
+    chatApplied: {},
+    markProposalApplied: (messageId, ref) => set((s) => ({ chatApplied: { ...s.chatApplied, [messageId]: ref } })),
 
     async sendChat(text) {
       const question = text.trim();
