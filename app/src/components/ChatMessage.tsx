@@ -88,6 +88,15 @@ export function ChatMessage({ message, busy, onRetry, onCite, onApply }: ChatMes
         </div>
       ) : null}
 
+      {mine && message.image ? (
+        <img
+          src={message.image}
+          alt="Your board, as sent"
+          data-chat-image
+          className="mt-2 max-h-44 w-full rounded-md border border-subtle bg-canvas object-contain"
+        />
+      ) : null}
+
       {mine ? null : (
         <div role="status" aria-label="Assistant reply" className="sr-only">
           {message.status === "done" ? <Markdown text={message.content} /> : null}

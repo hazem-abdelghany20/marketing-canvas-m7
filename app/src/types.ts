@@ -129,6 +129,8 @@ export interface ChatMessage {
   mode?: ResolvedChatMode;
   /** What the question asked for, on user messages: a mode that was chosen, so a retry asks the same way. Absent for Auto. */
   requestedMode?: Exclude<ChatMode, "auto">;
+  /** On a user message that sent the board for reading: the picture sent (a data URL), shown in the bubble and sent again on retry. */
+  image?: string;
   /**
    * For a connection proposal: the titles of the two nodes it names, as they were when the
    * reply arrived. A node deleted later can then still be called by name.
@@ -174,6 +176,8 @@ export interface ChatInput {
   message: string;
   /** Omit for `auto`; the server picks. */
   mode?: ChatMode;
+  /** A picture of the marked-up board, to be read. The server answers about the marks the board holds. */
+  board?: { image: string };
 }
 
 // ------------------------------------------------------------ responses

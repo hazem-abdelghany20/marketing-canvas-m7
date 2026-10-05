@@ -304,6 +304,171 @@ function buildChatResponse(message, nodes, edges, requested = 'auto') {
   }
 }
 
+// ----------------------------------------------------- mock board read (send to assistant)
+
+// Cards are 236 by 140 on the board (the client's CARD_WIDTH and CARD_HEIGHT).
+const CARD_W = 236
+const CARD_H = 140
+// Ink or a note this close to a card counts as being on it.
+const NEAR = 48
+const NOTE_REACH = 96
+
+/** How far a point is from a card's rectangle; 0 inside it. */
+function distToCard(px, py, n) {
+  const dx = Math.max(n.x - px, 0, px - (n.x + CARD_W))
+  const dy = Math.max(n.y - py, 0, py - (n.y + CARD_H))
+  return Math.hypot(dx, dy)
+}
+
+/** How far a rectangle is from a card; 0 when they touch or overlap. */
+function rectToCard(r, n) {
+  const dx = Math.max(n.x - (r.x + r.w), 0, r.x - (n.x + CARD_W))
+  const dy = Math.max(n.y - (r.y + r.h), 0, r.y - (n.y + CARD_H))
+  return Math.hypot(dx, dy)
+}
+
+const pairs = (points) => {
+  const out = []
+  for (let i = 0; i + 1 < points.length; i += 2) out.push([points[i], points[i + 1]])
+  return out
+}
+
+const quote = (text, max = 110) => {
+  const flat = String(text).replace(/\s+/g, ' ').trim()
+  return flat.length > max ? `${flat.slice(0, max - 1).trimEnd()}…` : flat
+}
+
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+const titled = (n) => `**“${n.title.trim() || 'Untitled'}”** (${n.type})`
+
+/** The node a stroke is drawn on, if any: the card its centre is on, or most of its points are beside. */
+function nodeUnderStroke(stroke, nodes) {
+  const pts = pairs(stroke.points)
+  const xs = pts.map(([x]) => x)
+  const ys = pts.map(([, y]) => y)
+  const centre = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]
+  let best = null
+  for (const node of nodes) {
+    const beside = pts.filter(([x, y]) => distToCard(x, y, node) <= NEAR).length / pts.length
+    const centred = distToCard(centre[0], centre[1], node) <= NEAR
+    if (!centred && beside < 0.6) continue
+    const score = beside + (centred ? 1 : 0)
+    if (!best || score > best.score) best = { node, score }
+  }
+  return best?.node ?? null
+}
+
+/** What a stroke is, from its shape: a ring, a line under something, or a mark. */
+function strokeVerb(stroke) {
+  if (stroke.tool === 'highlighter') return 'highlighted'
+  const pts = pairs(stroke.points)
+  const xs = pts.map(([x]) => x)
+  const ys = pts.map(([, y]) => y)
+  const w = Math.max(...xs) - Math.min(...xs)
+  const h = Math.max(...ys) - Math.min(...ys)
+  const [fx, fy] = pts[0]
+  const [lx, ly] = pts[pts.length - 1]
+  const closed = pts.length >= 4 && Math.hypot(fx - lx, fy - ly) <= 0.35 * Math.hypot(w, h)
+  if (closed && w > 24 && h > 24) return 'circled'
+  if (w > 60 && h < w * 0.25) return 'underlined'
+  return 'marked up'
+}
+
+/** The card nearest a rectangle, within reach. Equally near, the one whose middle is closer to it. */
+function nearestNode(rect, nodes, reach) {
+  const cx = rect.x + rect.w / 2
+  const cy = rect.y + rect.h / 2
+  let best = null
+  for (const node of nodes) {
+    const d = rectToCard(rect, node)
+    if (d > reach) continue
+    const middle = Math.hypot(cx - (node.x + CARD_W / 2), cy - (node.y + CARD_H / 2))
+    if (!best || d < best.d || (d === best.d && middle < best.middle)) best = { node, d, middle }
+  }
+  return best?.node ?? null
+}
+
+/**
+ * The mock "reading" of a marked-up board. The client sends a picture, but nothing here looks at it: this reads
+ * the strokes, marks and pins the board actually holds, works out which node each sits on or beside, and says
+ * so in their own words. It is specific on purpose — a reply that gestured at "your annotations" would be worth
+ * nothing — and it is only ever as clever as geometry and string quoting: no model.
+ */
+function buildBoardRead(user) {
+  const nodes = nodesOf(user)
+  const strokes = strokesOf(user)
+  const marks = marksOf(user).filter((m) => m.body.trim())
+  const pins = pinsOf(user).map((p) => shapePin(p))
+
+  if (!strokes.length && !marks.length && !pins.length) {
+    return {
+      mode: 'reasoner',
+      text:
+        "I can see the board, but there's no markup on it yet — nothing circled, no notes, no comments. " +
+        'Draw on it or drop a note and send it again; I read the marks, not the pixels.',
+      citedNodeIds: [],
+      proposal: null,
+    }
+  }
+
+  const cited = []
+  const cite = (node) => {
+    if (node && !cited.includes(node.id)) cited.push(node.id)
+  }
+
+  const inkLines = []
+  let free = 0
+  for (const stroke of strokes) {
+    const node = nodeUnderStroke(stroke, nodes)
+    if (!node) {
+      free++
+      continue
+    }
+    cite(node)
+    inkLines.push(`- You ${strokeVerb(stroke)} ${titled(node)}.`)
+  }
+  if (free) {
+    inkLines.push(
+      `- ${plural(free, 'stroke')} ${free === 1 ? 'sits' : 'sit'} on open canvas, on no node — if that is something that does not exist yet, say what it is and I will add it.`,
+    )
+  }
+
+  const noteLines = marks.map((mark) => {
+    const rect = { x: mark.x, y: mark.y, w: mark.variant === 'sticky' ? 200 : 240, h: 60 }
+    const node = nearestNode(rect, nodes, NOTE_REACH)
+    cite(node)
+    const what = mark.variant === 'sticky' ? 'sticky' : 'board text'
+    const where = node ? `beside ${titled(node)}` : 'on open canvas'
+    return `- Your ${what} ${where} reads “${quote(mark.body)}” — I am taking that as the instruction, not decoration.`
+  })
+
+  const open = pins.filter((p) => !p.resolved)
+  const threadLines = pins.map((pin) => {
+    const node = nearestNode({ x: pin.x, y: pin.y, w: 0, h: 0 }, nodes, NOTE_REACH)
+    cite(node)
+    const where = node ? `beside ${titled(node)}` : 'on open canvas'
+    const [first, ...replies] = pin.comments
+    const said = first
+      ? `${first.author.name}: “${quote(first.body)}”` +
+        replies.map((r) => ` — ${r.author.name} replied: “${quote(r.body)}”`).join('')
+      : 'nobody has written in it yet'
+    return pin.resolved
+      ? `- Resolved thread ${where} — ${said} — I am treating that as settled.`
+      : `- Open thread ${where} — ${said} — still waiting on an answer.`
+  })
+
+  const parts = [
+    `I read the markup on your board: ${plural(strokes.length, 'stroke')}, ${plural(marks.length, 'note')} and ` +
+      `${plural(pins.length, 'comment thread')}${pins.length ? ` (${open.length} still open)` : ''}.`,
+  ]
+  if (inkLines.length) parts.push(`**Ink**\n${inkLines.join('\n')}`)
+  if (noteLines.length) parts.push(`**Notes**\n${noteLines.join('\n')}`)
+  if (threadLines.length) parts.push(`**Comments**\n${threadLines.join('\n')}`)
+  if (cited.length) parts.push('I have highlighted every node named above.')
+
+  return { mode: 'reasoner', text: parts.join('\n\n'), citedNodeIds: cited.slice(0, 8), proposal: null }
+}
+
 // ------------------------------------------------------------------- handlers
 
 const routes = []
@@ -815,13 +980,30 @@ route('DELETE', '/comments/:id', async (ctx) => {
 
 // --- chat (server-sent events) ----------------------------------------------
 
+/** A board sent for reading is `{ image }`, a data URL of the picture. The mock never looks at the pixels. */
+function requireBoardImage(board) {
+  const ok =
+    board !== null &&
+    typeof board === 'object' &&
+    typeof board.image === 'string' &&
+    /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(board.image)
+  if (!ok) {
+    throw bad('invalid_field', 'board must be { image: "data:image/png;base64,…" } — a picture of the board.', 'board')
+  }
+  return board
+}
+
 route('POST', '/chat', async (ctx) => {
   const message = requireString(ctx.body, 'message', { label: 'Message' })
   const requested = ctx.body.mode === undefined ? 'auto' : ctx.body.mode
   if (!CHAT_MODES.includes(requested)) {
     throw bad('invalid_mode', `mode must be one of: ${CHAT_MODES.join(', ')}.`, 'mode')
   }
-  const response = buildChatResponse(message, nodesOf(ctx.user), edgesOf(ctx.user), requested)
+  const board = ctx.body.board === undefined ? null : requireBoardImage(ctx.body.board)
+  // A marked-up board is read, whatever mode was asked for: it is the board's own marks that are being asked about.
+  const response = board
+    ? buildBoardRead(ctx.user)
+    : buildChatResponse(message, nodesOf(ctx.user), edgesOf(ctx.user), requested)
   const shouldFail = /__fail\b/.test(message)
 
   const res = ctx.res

@@ -374,6 +374,29 @@ requested explicitly:
 | `librarian` | anything else | text + `citedNodeIds` to highlight on the canvas |
 | `reasoner` | `mode: "reasoner"` only — never auto-detected | a structural audit of the board + `citedNodeIds` for every node it names. Never a proposal. |
 
+### Sending the marked-up board
+
+```json
+{ "message": "Read my markup on the board.", "board": { "image": "data:image/png;base64,…" } }
+```
+
+`board` is optional. Send it and the reply is a **reading of the markup**: the stream is the same four
+events, `start` reports `mode: "reasoner"`, and `done` carries `citedNodeIds` for every node the reading
+names and `proposal: null`. `mode` is ignored when `board` is present.
+
+The picture must be a `data:image/png|jpeg|webp;base64,` URL; anything else is `422 invalid_field` with
+`field: "board"`, raised before the stream opens. **The mock never looks at the pixels.** It reads the
+strokes, marks and pins the board actually holds and says what it finds in their own words:
+
+- ink is matched to the node it is drawn on (the card under its centre, or most of its points beside one)
+  and described by its shape — *circled*, *highlighted*, *underlined*, *marked up* — or called ink on open
+  canvas when it is on no node;
+- each sticky or piece of board text with writing in it is quoted, with the node it sits beside;
+- each comment thread is quoted by author, with replies, and told apart as open or resolved.
+
+A board with no ink, no written note and no thread is answered with "no markup yet" and cites nothing. The
+body limit still applies (`413 body_too_large` over 2MB), so the client sends a picture drawn at 1x.
+
 **Proposals** are suggestions, not writes. Nothing is created until you call `POST /nodes` or
 `POST /edges` yourself with the payload.
 

@@ -76,7 +76,8 @@ test.describe("the Comment tool", () => {
     await composer(page).fill("Hook lands late.");
     await composer(page).press("Enter");
 
-    await expect.poll(async () => (await apiPins(s)).length).toBe(1);
+    // The pin is made first and the comment follows it: wait for the comment, not just the pin.
+    await expect.poll(async () => (await apiPins(s))[0]?.comments.length ?? 0).toBe(1);
     const [saved] = await apiPins(s);
     expect(saved!.x).toBeCloseTo(300, 0);
     expect(saved!.y).toBeCloseTo(250, 0);

@@ -6,6 +6,7 @@ import {
   MessageCirclePlus,
   MousePointer2,
   Pencil,
+  ScanEye,
   StickyNote,
   Trash2,
   Type,
@@ -17,6 +18,7 @@ import { appStore } from "../store";
 import { COPY } from "../ui/copy";
 import { useUi } from "../ui/uiStore";
 import { boardHasContent, saveBoardPng } from "./exportPng";
+import { boardHasMarkup, sendBoardToChat } from "./sendBoardToChat";
 import { TOOLS, availability, type Tool } from "./toolMode";
 import { pickTool } from "./useToolShortcuts";
 
@@ -59,8 +61,21 @@ export function Dock({ onClearInk }: DockProps) {
   const hasInk = useStore(appStore, (s) => Object.keys(s.strokes).length > 0);
   const hasContent = useStore(appStore, boardHasContent);
   const exporting = useUi((s) => s.exporting);
+  const hasMarkup = useStore(appStore, boardHasMarkup);
+  const replying = useStore(appStore, (s) => s.chatStreaming);
+  const preparing = useUi((s) => s.preparingBoard);
   const ctx = { boardReady, connecting, hasInk };
   // Waiting beats empty beats busy: the reason that cannot be fixed by waiting is not hidden by one that can.
+  // The same order: waiting, then what no waiting will fix (nothing to read), then what will pass.
+  const sendReason = !boardReady
+    ? COPY.loading
+    : !hasMarkup
+      ? COPY.drawFirst
+      : replying
+        ? COPY.waitForReply
+        : preparing
+          ? COPY.preparingBoard
+          : null;
   const saveReason = !boardReady ? COPY.loading : !hasContent ? COPY.nothingToSave : exporting ? COPY.savingImage : null;
 
   return (
@@ -91,6 +106,17 @@ export function Dock({ onClearInk }: DockProps) {
         );
       })}
       <span aria-hidden="true" className="my-1 h-px w-5 bg-[var(--border-subtle)]" />
+      <Button
+        variant="ghost"
+        aria-label="Send board to the assistant"
+        aria-busy={preparing || undefined}
+        title={COPY.sendBoard}
+        disabledReason={sendReason}
+        onClick={() => void sendBoardToChat()}
+        className="!size-8 !rounded-md !p-0 text-muted"
+      >
+        {preparing ? <LoaderCircle size={15} aria-hidden="true" className="animate-spin" /> : <ScanEye size={15} aria-hidden="true" />}
+      </Button>
       <Button
         variant="ghost"
         aria-label="Save as PNG"

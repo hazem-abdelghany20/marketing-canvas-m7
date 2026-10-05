@@ -5,7 +5,8 @@ import { demoSession, openCanvas } from "./support";
 const canvasArea = (page: Page) => page.locator("[data-canvas-state=ready]");
 const rail = (page: Page) => page.getByRole("complementary", { name: "Assistant" });
 const composer = (page: Page) => page.getByRole("textbox", { name: "Message" });
-const sendButton = (page: Page) => page.getByRole("button", { name: "Send" });
+// Exact: the dock has a "Send board to the assistant" control too.
+const sendButton = (page: Page) => page.getByRole("button", { name: "Send", exact: true });
 // Direct children only: a reply's own markdown lists have list items too.
 const messages = (page: Page) => page.getByRole("list", { name: "Conversation" }).locator(":scope > li");
 

@@ -146,6 +146,8 @@ export interface UiState {
   openPinId: string | null;
   /** The board is being drawn into a PNG right now. */
   exporting: boolean;
+  /** The board is being drawn to be sent to the assistant right now. */
+  preparingBoard: boolean;
 
   select: (ids: string[]) => void;
   setConnect: (connect: Partial<ConnectState>) => void;
@@ -175,6 +177,9 @@ export interface UiState {
   setClearInkOpen: (open: boolean) => void;
   openPin: (id: string | null) => void;
   setExporting: (exporting: boolean) => void;
+  setPreparingBoard: (preparing: boolean) => void;
+  /** Shows the rail (the sheet when narrow, the column otherwise) without moving focus into it. */
+  revealChat: () => void;
   startArrangement: (from: Arrangement["from"], durationMs: number) => void;
   endArrangement: () => void;
   toast: (toast: ToastInput) => number;
@@ -203,6 +208,7 @@ const INITIAL = {
   clearInkOpen: false,
   openPinId: null as string | null,
   exporting: false,
+  preparingBoard: false,
 };
 
 let nextToastId = 1;
@@ -259,6 +265,15 @@ export const uiStore = createStore<UiState>()((set) => ({
   setClearInkOpen: (open) => set({ clearInkOpen: open }),
   openPin: (id) => set({ openPinId: id }),
   setExporting: (exporting) => set({ exporting }),
+  setPreparingBoard: (preparingBoard) => set({ preparingBoard }),
+  revealChat() {
+    if (isNarrow()) {
+      set({ chatSheetOpen: true });
+    } else {
+      writeRailCollapsed(false);
+      set({ railCollapsed: false });
+    }
+  },
   setTool: (tool) =>
     set((s) => (tool === "select" || s.selectedIds.length === 0 ? { tool } : { tool, selectedIds: [] })),
 

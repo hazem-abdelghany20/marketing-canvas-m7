@@ -59,6 +59,10 @@ export const COPY = {
 
   // O7 — Whiteboard dock
   nothingToErase: "Nothing to erase yet.",
+  sendBoard: "Send the board to the assistant \u2014 it reads your marks",
+  drawFirst: "Draw or add a note first.",
+  preparingBoard: "Preparing the board\u2026",
+  sendBoardFailed: "Couldn't prepare the board to send. Try again.",
   nothingToSave: "Nothing to save yet.",
   savingImage: "Saving the image\u2026",
   saveImage: "Save the board as a PNG",

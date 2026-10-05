@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { controlledSse, sseFrame, sseResponse } from "../../api/__tests__/helpers";
@@ -226,8 +227,11 @@ describe("when it fails", () => {
     expect(within(mine).getByRole("img", { name: "Your board, as sent" })).toBeTruthy();
     expect(within(mine).getByText("Read my markup on the board.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
-    expect((screen.getByRole("textbox", { name: "Message" }) as HTMLTextAreaElement).readOnly).toBe(false);
-    expect(screen.getByRole("button", { name: "Send" }).getAttribute("aria-disabled")).not.toBe("true");
+    const box = screen.getByRole("textbox", { name: "Message" }) as HTMLTextAreaElement;
+    expect(box.readOnly).toBe(false);
+    // Free to ask again: with something typed, Send is ready (it only waits for words, not for the failed reply).
+    fireEvent.change(box, { target: { value: "and now?" } });
+    expect(screen.getByRole("button", { name: "Send" }).getAttribute("aria-disabled")).toBeNull();
   });
 
   it("sends the same picture on Retry, without drawing the board a second time", async () => {
@@ -268,7 +272,8 @@ describe("when it fails", () => {
 
 describe("what it is built on", () => {
   it("uses the rasteriser of ticket 020 and has none of its own", () => {
-    const source = readFileSync(new URL("../sendBoardToChat.ts", import.meta.url), "utf8");
+    // (Under jsdom import.meta.url is not a file URL, so the path is made from the project root, where vitest runs.)
+    const source = readFileSync(resolve(process.cwd(), "src/whiteboard/sendBoardToChat.ts"), "utf8");
 
     expect(source).toMatch(/from\s+["']\.\/exportPng["']/);
     expect(source).not.toMatch(/getContext|createElement\(\s*["']canvas["']\)|toDataURL|toBlob/);
