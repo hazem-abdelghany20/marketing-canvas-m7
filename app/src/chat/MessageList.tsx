@@ -1,9 +1,12 @@
 import { useLayoutEffect, useRef } from "react";
 import { useStore } from "zustand";
+import { useGoToNode } from "../canvas/useGoToNode";
 import { ChatMessage } from "../components/ChatMessage";
+import { isNarrow } from "../lib/useMediaQuery";
 import { appStore } from "../store";
 import { CHAT_EXAMPLES, COPY } from "../ui/copy";
 import { uiStore } from "../ui/uiStore";
+import { focusChatOpenButton } from "./focus";
 
 /** Within this many pixels of the bottom counts as "following along". */
 const FOLLOW_SLACK = 80;
@@ -12,6 +15,7 @@ const FOLLOW_SLACK = 80;
 export function MessageList() {
   const messages = useStore(appStore, (s) => s.chatMessages);
   const streaming = useStore(appStore, (s) => s.chatStreaming);
+  const goTo = useGoToNode();
   const scroller = useRef<HTMLDivElement>(null);
   const following = useRef(true);
   const count = useRef(0);
@@ -47,6 +51,15 @@ export function MessageList() {
             key={message.id}
             message={message}
             busy={streaming}
+            // Focus stays on the chip: the person is reading the conversation, not working the canvas.
+            onCite={(node) => {
+              // Below 900px the sheet covers the canvas; the pan is no use to anyone behind it.
+              if (isNarrow() && uiStore.getState().chatSheetOpen) {
+                uiStore.getState().setChatSheetOpen(false);
+                focusChatOpenButton();
+              }
+              goTo(node, { minZoom: 0.75 });
+            }}
             onRetry={(id) => {
               // The Retry button is replaced by the streaming reply; focus goes to the composer, not the page.
               uiStore.getState().prefillChatFocus();

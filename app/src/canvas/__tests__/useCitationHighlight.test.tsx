@@ -125,6 +125,29 @@ describe("useCitationHighlight", () => {
     expect(cited()).toEqual([]);
   });
 
+  it("is not cleared by selecting nothing when nothing was selected", () => {
+    renderHook(() => useCitationHighlight());
+    set([asked(), reply("done", ["a"])]);
+
+    select([]);
+
+    expect(cited()).toEqual(["a"]);
+  });
+
+  it("clears when an older failed reply is retried, and marks that reply's citations when it completes", () => {
+    renderHook(() => useCitationHighlight());
+    const old = { ...reply("error"), id: "old" };
+    const newer = reply("done", ["a"]);
+    set([asked(), old, asked(), newer]);
+    expect(cited()).toEqual(["a"]);
+
+    set([asked(), { ...old, status: "streaming" }, asked(), newer]);
+    expect(cited()).toEqual([]);
+
+    set([asked(), { ...old, status: "done", citedNodeIds: ["b"] }, asked(), newer]);
+    expect(cited()).toEqual(["b"]);
+  });
+
   it("swaps in the next reply's citations", () => {
     renderHook(() => useCitationHighlight());
     const q = asked();

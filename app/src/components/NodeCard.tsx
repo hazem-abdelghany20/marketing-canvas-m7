@@ -1,5 +1,5 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
-import { FileImage, FileText, Link2, MessageSquareText, Paperclip } from "lucide-react";
+import { FileImage, FileText, Link2, MessageSquareText, Paperclip, Quote } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useCanvasActions } from "../canvas/canvasActions";
 import { formatBytes, plural } from "../lib/format";
@@ -27,6 +27,8 @@ export interface CardData extends Record<string, unknown> {
   connectSource?: boolean;
   /** Just connected: flashes once. */
   flashing?: boolean;
+  /** Cited by the assistant's latest reply. */
+  cited?: boolean;
   /** Asset nodes: the first attached file, and its bytes if this tab still has them. */
   file?: FileRef | null;
   objectUrl?: string | null;
@@ -57,7 +59,7 @@ const HANDLES = [
 /** One node on the canvas: type chip, title, two-line excerpt, count badges. */
 export function NodeCard({ id, data, selected }: NodeProps<CardNode>) {
   const actions = useCanvasActions();
-  const { node, fileCount, annotationCount, edgeCount, highlighted, connectSource, flashing } = data;
+  const { node, fileCount, annotationCount, edgeCount, highlighted, connectSource, flashing, cited } = data;
   const title = node.title.trim() || "Untitled";
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -81,13 +83,31 @@ export function NodeCard({ id, data, selected }: NodeProps<CardNode>) {
     <div
       role="button"
       tabIndex={0}
-      aria-label={`${title}, ${typeLabel(node.type)}`}
+      aria-label={`${title}, ${typeLabel(node.type)}${cited ? ", cited in chat" : ""}`}
       aria-pressed={selected ? true : undefined}
       data-node-card={id}
       data-type={node.type}
+      data-cited={cited || undefined}
       onKeyDown={onKeyDown}
       className="group relative h-full w-full rounded-[9px]"
     >
+      {cited ? (
+        <>
+          {/* Dashed, where selection is solid, and named: a cited card is told apart without colour. */}
+          <span
+            aria-hidden="true"
+            data-cited-ring
+            className={`pointer-events-none absolute rounded-xl border-2 border-dashed border-accent ${selected || highlighted || connectSource ? "-inset-2" : "-inset-1"}`}
+          />
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-2.5 right-3 z-10 inline-flex items-center gap-1 rounded-full border border-accent bg-elevated px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.1em] text-accent"
+          >
+            <Quote size={9} aria-hidden="true" />
+            Cited
+          </span>
+        </>
+      ) : null}
       {ringed ? (
         <span
           aria-hidden="true"

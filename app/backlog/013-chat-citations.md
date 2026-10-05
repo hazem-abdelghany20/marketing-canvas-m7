@@ -6,7 +6,8 @@
 
 ## Scope
 `src/components/ChatMessage.tsx` (citation chips), `src/canvas/useCitationHighlight.ts`,
-`src/components/NodeCard.tsx` (cited state only).
+`src/components/NodeCard.tsx` (cited state only), `src/canvas/useGoToNode.ts` (select and pan, shared
+with search) and the `citedIds` state in `src/ui/uiStore.ts`.
 
 ## Acceptance
 - Given an assistant response carrying cited node ids, when it completes, then those nodes render visually distinct from unselected nodes on the canvas.
@@ -20,4 +21,4 @@ Do not change the mock responses or store shape from ticket 012.
 The cited state must be distinguishable without relying on color alone.
 
 ## Verify
-`npx vitest run src/canvas/useCitationHighlight && npx playwright test e2e/chat-citations.spec.ts`
+`npx vitest run src/canvas/__tests__/useCitationHighlight src/components/__tests__/NodeCardCited src/chat/__tests__/ChatCitations && npx playwright test e2e/chat-citations.spec.ts`

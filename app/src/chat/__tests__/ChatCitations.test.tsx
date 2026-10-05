@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { controlledSse, sseFrame, sseResponse } from "../../api/__tests__/helpers";
+import { NARROW_QUERY } from "../../lib/useMediaQuery";
 import { emptyBoard, json, network, renderAt, resetApp, user } from "../../routes/__tests__/harness";
 import { appStore } from "../../store";
 import { omit } from "../../store/records";
@@ -133,6 +134,30 @@ describe("citation chips", () => {
     expect(uiStore.getState().selectedIds).toEqual(["nd_c"]);
     await waitFor(() => expect(camera()).not.toBe(before));
     expect(document.activeElement).toBe(chip);
+  });
+});
+
+describe("citation chips on a narrow screen", () => {
+  it("close the sheet that covers the canvas, so the pan can be seen", async () => {
+    window.matchMedia = ((query: string) => ({
+      matches: query === NARROW_QUERY,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    renderAt("/");
+    await waitFor(() => expect(appStore.getState().boardStatus).toBe("ready"));
+    fireEvent.click(await screen.findByRole("button", { name: "Open assistant" }));
+    show(replyCiting(["nd_a"]));
+
+    fireEvent.click(screen.getByRole("button", { name: "Vayn Ramadan push" }));
+
+    expect(uiStore.getState().selectedIds).toEqual(["nd_a"]);
+    expect(screen.queryByRole("textbox", { name: "Message" })).toBeNull();
   });
 });
 

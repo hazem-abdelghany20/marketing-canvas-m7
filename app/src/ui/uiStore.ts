@@ -85,6 +85,8 @@ export interface UiState {
   toasts: Toast[];
   /** Null at rest, and always under prefers-reduced-motion: the move is then instant. */
   arrangement: Arrangement | null;
+  /** Nodes the assistant's latest reply cited; marked on the canvas until the selection moves elsewhere. */
+  citedIds: string[];
   /** The chat rail's column is collapsed to a strip (wide screens). Persisted for the tab. */
   railCollapsed: boolean;
   /** The chat rail's overlay sheet is open (below 900px). Not persisted. */
@@ -103,6 +105,7 @@ export interface UiState {
   flash: (ids: string[]) => void;
   addPending: (pending: PendingImport) => void;
   removePending: (id: string) => void;
+  setCited: (ids: string[]) => void;
   setRailCollapsed: (collapsed: boolean) => void;
   setChatSheetOpen: (open: boolean) => void;
   setChatDraft: (text: string) => void;
@@ -131,6 +134,7 @@ const INITIAL = {
   pendingImports: [] as PendingImport[],
   toasts: [] as Toast[],
   arrangement: null as Arrangement | null,
+  citedIds: [] as string[],
   chatSheetOpen: false,
   chatDraft: "",
   composerFocusPending: false,
@@ -156,6 +160,7 @@ export const uiStore = createStore<UiState>()((set) => ({
   addPending: (pending) => set((s) => ({ pendingImports: [...s.pendingImports, pending] })),
   removePending: (id) => set((s) => ({ pendingImports: s.pendingImports.filter((p) => p.id !== id) })),
 
+  setCited: (ids) => set({ citedIds: ids }),
   setRailCollapsed(collapsed) {
     writeRailCollapsed(collapsed);
     set({ railCollapsed: collapsed });

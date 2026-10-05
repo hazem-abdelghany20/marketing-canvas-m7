@@ -8,8 +8,9 @@ import { ChatRail } from "../chat/ChatRail";
 import { Canvas } from "../canvas/Canvas";
 import { CONNECT_COPY, exitConnect, startConnect } from "../canvas/connect";
 import { ConnectMode } from "../canvas/ConnectMode";
-import { panToNode } from "../canvas/panToNode";
+import { useCitationHighlight } from "../canvas/useCitationHighlight";
 import { useFitToBounds } from "../canvas/useFitToBounds";
+import { useGoToNode } from "../canvas/useGoToNode";
 import { useViewport } from "../canvas/useViewport";
 import { useViewportCenter } from "../canvas/viewportCenter";
 import { useWorkspaceShortcuts } from "../canvas/useWorkspaceShortcuts";
@@ -61,6 +62,7 @@ function WorkspaceScreen() {
   const { initialViewport, onViewportChange } = useViewport();
   const viewportCenter = useViewportCenter();
   const fitToBounds = useFitToBounds();
+  useCitationHighlight();
 
   useEffect(() => {
     uiStore.getState().reset();
@@ -148,15 +150,13 @@ function WorkspaceScreen() {
     uiStore.getState().setSearchOpen(false);
     searchReturn.current?.focus();
   }, []);
+  const goTo = useGoToNode();
   const goToNode = useCallback(
     (node: CanvasNode) => {
       uiStore.getState().setSearchOpen(false);
-      uiStore.getState().select([node.id]);
-      const covered = panelOpen && !isNarrow() ? PANEL_WIDTH : 0;
-      void panToNode(flow, node, { zoom: SEARCH_FOCUS_ZOOM, coveredRight: covered });
-      document.querySelector<HTMLElement>(`[data-node-card="${CSS.escape(node.id)}"]`)?.focus({ preventScroll: true });
+      goTo(node, { zoom: SEARCH_FOCUS_ZOOM, focusCard: true });
     },
-    [flow, panelOpen],
+    [goTo],
   );
   const createFromSearch = useCallback(
     (title: string) => {

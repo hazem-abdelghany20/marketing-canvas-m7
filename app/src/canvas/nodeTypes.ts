@@ -27,6 +27,8 @@ export interface CardFlags {
   highlightedId?: string | null;
   connectSourceId?: string | null;
   flashIds?: ReadonlySet<string>;
+  /** Cited by the assistant's latest reply. */
+  citedIds?: ReadonlySet<string>;
 }
 
 /** Counts per node, computed once per render rather than once per card. */
@@ -69,6 +71,7 @@ export function toFlowNodes(
         highlighted: flags.highlightedId === node.id,
         connectSource: flags.connectSourceId === node.id,
         flashing: flags.flashIds?.has(node.id) ?? false,
+        cited: flags.citedIds?.has(node.id) ?? false,
         file: fileId ? (lookup.files[fileId] ?? null) : null,
         objectUrl: fileId ? (lookup.objectUrls[fileId] ?? null) : null,
       },

@@ -1,13 +1,18 @@
+import { useStore } from "zustand";
 import { Markdown } from "../chat/markdown";
+import { appStore } from "../store";
 import { COPY } from "../ui/copy";
-import type { ChatMessage as Message } from "../types";
+import type { CanvasNode, ChatMessage as Message } from "../types";
 import { Button } from "./Button";
+import { TYPE_BG } from "./TypeChip";
 
 interface ChatMessageProps {
   message: Message;
   /** Another reply is streaming, so asking again has to wait. */
   busy: boolean;
   onRetry: (id: string) => void;
+  /** A citation chip was used: go to that node. */
+  onCite: (node: CanvasNode) => void;
 }
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -17,7 +22,7 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-di
  * it is complete: its words arrive in a plain region, and a separate, visually hidden
  * status region receives the finished text in one go.
  */
-export function ChatMessage({ message, busy, onRetry }: ChatMessageProps) {
+export function ChatMessage({ message, busy, onRetry, onCite }: ChatMessageProps) {
   const mine = message.role === "user";
   const streaming = message.status === "streaming";
   const waiting = streaming && message.content === "";
@@ -83,6 +88,8 @@ export function ChatMessage({ message, busy, onRetry }: ChatMessageProps) {
         </div>
       )}
 
+      {message.status === "done" ? <Citations ids={message.citedNodeIds} onCite={onCite} /> : null}
+
       {message.status === "error" ? (
         <div className="mt-2 flex items-center gap-2.5">
           <span role="alert" className="text-[12.5px] text-danger">
@@ -98,5 +105,32 @@ export function ChatMessage({ message, busy, onRetry }: ChatMessageProps) {
         </div>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * A chip for each node the reply cited, named by the node's title. A node that has been
+ * deleted since has no chip; the others are unaffected.
+ */
+function Citations({ ids, onCite }: { ids: string[]; onCite: (node: CanvasNode) => void }) {
+  const nodes = useStore(appStore, (s) => s.nodes);
+  const cited = ids.flatMap((id) => (nodes[id] ? [nodes[id]] : []));
+  if (cited.length === 0) return null;
+
+  return (
+    <ul role="list" aria-label="Cited nodes" className="m-0 mt-[9px] flex list-none flex-wrap gap-1.5 p-0">
+      {cited.map((node) => (
+        <li key={node.id} className="max-w-full">
+          <button
+            type="button"
+            onClick={() => onCite(node)}
+            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-subtle bg-elevated px-2.5 py-1 text-[11.5px] text-primary"
+          >
+            <span aria-hidden="true" className={`size-1.5 flex-none rounded-full ${TYPE_BG[node.type]}`} />
+            <span className="truncate">{node.title.trim() || "Untitled"}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -54,6 +54,7 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
   const selectedIds = useStore(uiStore, (s) => s.selectedIds);
   const connect = useStore(uiStore, (s) => s.connect);
   const flashIds = useStore(uiStore, (s) => s.flashIds);
+  const citedIds = useStore(uiStore, (s) => s.citedIds);
   const openId = useMatch("/node/:id")?.params.id ?? null;
   const [dragged, setDragging] = useState<Record<string, Point>>({});
   // A card being dragged follows the pointer; one gliding to a new layout follows the glide.
@@ -68,6 +69,7 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const flashSet = useMemo(() => new Set(flashIds), [flashIds]);
+  const citedSet = useMemo(() => new Set(citedIds), [citedIds]);
   const connectSourceId = connect.active ? connect.sourceId : null;
   const flowNodes = useMemo<FlowNode[]>(
     () => [
@@ -75,12 +77,12 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
         nodes,
         edges,
         annotations,
-        { selectedIds: selectedSet, dragging, highlightedId: openId, connectSourceId, flashIds: flashSet },
+        { selectedIds: selectedSet, dragging, highlightedId: openId, connectSourceId, flashIds: flashSet, citedIds: citedSet },
         { files, objectUrls },
       ),
       ...toPendingNodes(pending),
     ],
-    [nodes, edges, annotations, selectedSet, dragging, openId, connectSourceId, flashSet, files, objectUrls, pending],
+    [nodes, edges, annotations, selectedSet, dragging, openId, connectSourceId, flashSet, citedSet, files, objectUrls, pending],
   );
   const flowEdges = useMemo<LineEdge[]>(() => toFlowEdges(edges, nodes, selectedSet), [edges, nodes, selectedSet]);
 

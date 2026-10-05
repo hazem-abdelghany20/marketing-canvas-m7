@@ -4,12 +4,8 @@ import { Button } from "../components/Button";
 import { useNarrow } from "../lib/useMediaQuery";
 import { uiStore, useUi } from "../ui/uiStore";
 import { Composer } from "./Composer";
+import { CHAT_OPEN_ID, focusChatOpenButton } from "./focus";
 import { MessageList } from "./MessageList";
-
-const OPEN_ID = "chat-open";
-
-/** Focus follows the control that replaced the one you used, instead of falling to the page. */
-const focusOpenButton = () => requestAnimationFrame(() => document.getElementById(OPEN_ID)?.focus());
 
 /**
  * O6 — the assistant. A 360px column beside the canvas that folds down to a 48px strip,
@@ -27,7 +23,7 @@ export function ChatRail() {
           aria-hidden="true"
           onClick={() => {
             uiStore.getState().setChatSheetOpen(false);
-            focusOpenButton();
+            focusChatOpenButton();
           }}
           className="fixed inset-0 z-[69] bg-[color-mix(in_srgb,var(--fg-primary)_28%,transparent)]"
         />
@@ -35,7 +31,7 @@ export function ChatRail() {
       </>
     ) : (
       <Button
-        id={OPEN_ID}
+        id={CHAT_OPEN_ID}
         variant="primary"
         aria-label="Open assistant"
         title="Open the assistant"
@@ -60,7 +56,7 @@ function Strip() {
       className="flex h-full w-12 flex-none flex-col items-center border-r border-subtle bg-rail pt-3.5"
     >
       <Button
-        id={OPEN_ID}
+        id={CHAT_OPEN_ID}
         variant="secondary"
         aria-label="Open assistant"
         title="Open the assistant"
@@ -79,7 +75,7 @@ function Panel({ mode }: { mode: "column" | "sheet" }) {
   function dismiss() {
     if (sheet) uiStore.getState().setChatSheetOpen(false);
     else uiStore.getState().setRailCollapsed(true);
-    focusOpenButton();
+    focusChatOpenButton();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLElement>) {
