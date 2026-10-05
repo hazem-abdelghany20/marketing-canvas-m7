@@ -5,6 +5,7 @@ import { Button } from "../components/Button";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
 import { uiStore, useUi } from "../ui/uiStore";
+import { ModePicker } from "./ModePicker";
 
 /** The API refuses a message longer than this (api/README.md § Chat), so the box stops there. */
 export const MAX_MESSAGE = 5000;
@@ -31,7 +32,7 @@ export function Composer() {
   function send() {
     if (streaming || empty) return;
     uiStore.getState().setChatDraft("");
-    void appStore.getState().sendChat(draft);
+    void appStore.getState().sendChat(draft, uiStore.getState().chatMode);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -43,6 +44,7 @@ export function Composer() {
 
   return (
     <div className="flex-none border-t border-subtle p-3">
+      <ModePicker />
       <div
         className={`rounded-md border bg-elevated p-[11px] ${streaming ? "border-subtle opacity-60" : "border-strong"}`}
       >

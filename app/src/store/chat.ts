@@ -1,4 +1,4 @@
-import type { ChatDone, ChatMessage } from "../types";
+import type { ChatDone, ChatMessage, ChatMode } from "../types";
 import type { AppState, SliceCreator } from "./state";
 
 /** What a proposal created, so the reply can tell whether it is still on the canvas. */
@@ -17,9 +17,11 @@ export interface ChatSlice {
   /**
    * Adds your message and an empty reply, then streams the reply in. Never rejects:
    * a reply that breaks is marked as failed, with your message kept. Blank text, and
-   * anything sent while a reply is still streaming, is ignored.
+   * anything sent while a reply is still streaming, is ignored. `mode` is how to answer: Auto (or nothing)
+   * sends none and lets the server decide; the others are sent as chosen, and kept on your message so a
+   * retry asks the same way.
    */
-  sendChat: (text: string) => Promise<void>;
+  sendChat: (text: string, mode?: ChatMode) => Promise<void>;
   /** Asks again into a failed reply, in place: no second copy of the question. */
   retryChat: (replyId: string) => Promise<void>;
 }
@@ -50,7 +52,7 @@ function proposalTitles(proposal: ChatDone["proposal"], nodes: AppState["nodes"]
 
 export const createChatSlice: SliceCreator<ChatSlice> = (ctx) => (set, get) => {
   /** Streams the answer to `question` into the reply `replyId`, and settles it. */
-  async function streamInto(replyId: string, question: string) {
+  async function streamInto(replyId: string, question: string, mode?: ChatMessage["requestedMode"]) {
     // The board may be reset (sign-out) mid-stream; then the reply is gone and this must change nothing.
     const alive = () => get().chatMessages.some((m) => m.id === replyId);
     const update = (change: (message: ChatMessage) => ChatMessage) =>
@@ -58,7 +60,7 @@ export const createChatSlice: SliceCreator<ChatSlice> = (ctx) => (set, get) => {
 
     try {
       const done = await ctx.api.chat.stream(
-        { message: question },
+        { message: question, ...(mode ? { mode } : {}) },
         {
           onStart: ({ mode }) => update((m) => ({ ...m, mode })),
           onToken: (token) => update((m) => ({ ...m, content: m.content + token })),
@@ -85,10 +87,11 @@ export const createChatSlice: SliceCreator<ChatSlice> = (ctx) => (set, get) => {
     chatApplied: {},
     markProposalApplied: (messageId, ref) => set((s) => ({ chatApplied: { ...s.chatApplied, [messageId]: ref } })),
 
-    async sendChat(text) {
+    async sendChat(text, mode) {
       const question = text.trim();
       if (!question || get().chatStreaming) return;
       const createdAt = new Date().toISOString();
+      const requestedMode = mode && mode !== "auto" ? mode : undefined;
       const reply: ChatMessage = {
         id: newId(),
         role: "assistant",
@@ -104,9 +107,10 @@ export const createChatSlice: SliceCreator<ChatSlice> = (ctx) => (set, get) => {
         status: "done",
         citedNodeIds: [],
         createdAt,
+        ...(requestedMode ? { requestedMode } : {}),
       };
       set((s) => ({ chatStreaming: true, chatMessages: [...s.chatMessages, asked, reply] }));
-      await streamInto(reply.id, question);
+      await streamInto(reply.id, question, requestedMode);
     },
 
     async retryChat(replyId) {
@@ -123,7 +127,7 @@ export const createChatSlice: SliceCreator<ChatSlice> = (ctx) => (set, get) => {
             : m,
         ),
       }));
-      await streamInto(replyId, asked.content);
+      await streamInto(replyId, asked.content, asked.requestedMode);
     },
   };
 };

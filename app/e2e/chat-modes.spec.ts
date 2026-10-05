@@ -18,7 +18,8 @@ test.describe("the chat mode picker, against the real API", () => {
     const group = rail(page).getByRole("radiogroup", { name: "Reply mode" });
     await expect(group.getByRole("radio")).toHaveText(["Auto", "Generator", "Librarian", "Reasoner"]);
     await expect(mode(page, "Auto")).toHaveAttribute("aria-checked", "true");
-    await expect(rail(page).getByText(/operator/i)).toHaveCount(0);
+    // (The empty rail's example prompts name Operator as an example of what Auto can do; the picker has no such choice.)
+    await expect(group.getByText(/operator/i)).toHaveCount(0);
   });
 
   test("Auto sends no mode, and the server's own choice is shown on the reply", async ({ page }) => {

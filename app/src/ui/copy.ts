@@ -90,7 +90,7 @@ export const COPY = {
 /**
  * Three starting points, one for each way the server answers on its own: it drafts a node,
  * it names the nodes it is reading from, or it proposes a connection between two it recognises.
- * (Its fourth way, the Reasoner, has to be asked for, which arrives with the mode picker.)
+ * (Its fourth way, the Reasoner, has to be asked for: it is in the composer's mode picker, not an example.)
  */
 export const CHAT_EXAMPLES = [
   { mode: "Generator", text: "Draft a reel script about linen care" },

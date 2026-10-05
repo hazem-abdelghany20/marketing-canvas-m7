@@ -127,6 +127,8 @@ export interface ChatMessage {
   createdAt: string;
   /** How the server chose to answer, reported on `start`; set on assistant messages only. */
   mode?: ResolvedChatMode;
+  /** What the question asked for, on user messages: a mode that was chosen, so a retry asks the same way. Absent for Auto. */
+  requestedMode?: Exclude<ChatMode, "auto">;
   /**
    * For a connection proposal: the titles of the two nodes it names, as they were when the
    * reply arrived. A node deleted later can then still be called by name.

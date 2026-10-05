@@ -1,6 +1,7 @@
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
 import { isNarrow } from "../lib/useMediaQuery";
+import type { ChatMode } from "../types";
 import type { InkColorId } from "../whiteboard/inkPalette";
 import type { Tool } from "../whiteboard/toolMode";
 
@@ -81,6 +82,33 @@ export interface InkPrefs {
   size: number;
 }
 
+/**
+ * The reply mode chosen in the composer is kept for the tab's session, so collapsing the rail or reloading
+ * keeps it. Like the rail's collapse it is a preference of the screen, so it is sessionStorage and not
+ * localStorage. Anything stored that is not one of the four (Operator included, which can never be
+ * requested) reads as Auto.
+ */
+const CHAT_MODE_KEY = "mc-chat-mode";
+const CHAT_MODES: readonly ChatMode[] = ["auto", "generator", "librarian", "reasoner"];
+
+function readChatMode(): ChatMode {
+  try {
+    const stored = globalThis.sessionStorage?.getItem(CHAT_MODE_KEY);
+    return CHAT_MODES.find((mode) => mode === stored) ?? "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+function writeChatMode(mode: ChatMode) {
+  try {
+    if (mode === "auto") globalThis.sessionStorage?.removeItem(CHAT_MODE_KEY);
+    else globalThis.sessionStorage?.setItem(CHAT_MODE_KEY, mode);
+  } catch {
+    /* storage unavailable: the choice lasts until the page does */
+  }
+}
+
 export const FLASH_MS = 1200;
 const DEFAULT_TOAST_MS = 5000;
 const ACTION_TOAST_MS = 10_000;
@@ -103,6 +131,8 @@ export interface UiState {
   chatSheetOpen: boolean;
   /** What is typed in the composer, so it survives collapsing the rail. */
   chatDraft: string;
+  /** How the next message is to be answered. Persisted for the tab's session. */
+  chatMode: ChatMode;
   /** Replies whose proposal is being added to the canvas right now. */
   applyingProposals: string[];
   /** Set by "From chat": the composer takes focus as soon as it is on screen, once. */
@@ -131,6 +161,7 @@ export interface UiState {
   setRailCollapsed: (collapsed: boolean) => void;
   setChatSheetOpen: (open: boolean) => void;
   setChatDraft: (text: string) => void;
+  setChatMode: (mode: ChatMode) => void;
   /** Puts text in the composer without sending it, and focuses the composer. */
   prefillChat: (text: string) => void;
   /** Asks for focus in the composer, leaving its text alone. */
@@ -179,6 +210,7 @@ let nextToastId = 1;
 export const uiStore = createStore<UiState>()((set) => ({
   ...INITIAL,
   railCollapsed: readRailCollapsed(),
+  chatMode: readChatMode(),
 
   select: (ids) => set({ selectedIds: ids }),
   setConnect: (connect) => set((s) => ({ connect: { ...s.connect, ...connect } })),
@@ -207,6 +239,10 @@ export const uiStore = createStore<UiState>()((set) => ({
   },
   setChatSheetOpen: (open) => set({ chatSheetOpen: open }),
   setChatDraft: (text) => set({ chatDraft: text }),
+  setChatMode(mode) {
+    writeChatMode(mode);
+    set({ chatMode: mode });
+  },
   prefillChat: (text) => set({ chatDraft: text, composerFocusPending: true }),
   prefillChatFocus: () => set({ composerFocusPending: true }),
   openChat() {
@@ -239,7 +275,7 @@ export const uiStore = createStore<UiState>()((set) => ({
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
-  reset: () => set({ ...INITIAL, railCollapsed: readRailCollapsed() }),
+  reset: () => set({ ...INITIAL, railCollapsed: readRailCollapsed(), chatMode: readChatMode() }),
 }));
 
 export function useUi<T>(selector: (state: UiState) => T): T {
