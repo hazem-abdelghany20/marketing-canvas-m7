@@ -114,6 +114,8 @@ export interface UiState {
   clearInkOpen: boolean;
   /** The pin whose thread is open, if any. */
   openPinId: string | null;
+  /** The board is being drawn into a PNG right now. */
+  exporting: boolean;
 
   select: (ids: string[]) => void;
   setConnect: (connect: Partial<ConnectState>) => void;
@@ -141,6 +143,7 @@ export interface UiState {
   setInk: (patch: Partial<InkPrefs>) => void;
   setClearInkOpen: (open: boolean) => void;
   openPin: (id: string | null) => void;
+  setExporting: (exporting: boolean) => void;
   startArrangement: (from: Arrangement["from"], durationMs: number) => void;
   endArrangement: () => void;
   toast: (toast: ToastInput) => number;
@@ -168,6 +171,7 @@ const INITIAL = {
   ink: { color: "ink-1", size: 3 } as InkPrefs,
   clearInkOpen: false,
   openPinId: null as string | null,
+  exporting: false,
 };
 
 let nextToastId = 1;
@@ -218,6 +222,7 @@ export const uiStore = createStore<UiState>()((set) => ({
   setInk: (patch) => set((s) => ({ ink: { ...s.ink, ...patch } })),
   setClearInkOpen: (open) => set({ clearInkOpen: open }),
   openPin: (id) => set({ openPinId: id }),
+  setExporting: (exporting) => set({ exporting }),
   setTool: (tool) =>
     set((s) => (tool === "select" || s.selectedIds.length === 0 ? { tool } : { tool, selectedIds: [] })),
 

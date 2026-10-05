@@ -59,6 +59,10 @@ export const COPY = {
 
   // O7 — Whiteboard dock
   nothingToErase: "Nothing to erase yet.",
+  nothingToSave: "Nothing to save yet.",
+  savingImage: "Saving the image\u2026",
+  saveImage: "Save the board as a PNG",
+  saveImageFailed: "Couldn't save the image. Try again.",
   inkSaveFailed: "Couldn't save that mark. Check your connection and try again.",
   clearInkFailed: "Couldn't clear the ink. Check your connection and try again.",
   noteSaveFailed: "Couldn't save that note. Check your connection and try again.",

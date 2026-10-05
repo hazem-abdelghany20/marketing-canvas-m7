@@ -1,6 +1,8 @@
 import {
   Eraser,
+  Download,
   Highlighter,
+  LoaderCircle,
   MessageCirclePlus,
   MousePointer2,
   Pencil,
@@ -12,7 +14,9 @@ import {
 import { useStore } from "zustand";
 import { Button } from "../components/Button";
 import { appStore } from "../store";
+import { COPY } from "../ui/copy";
 import { useUi } from "../ui/uiStore";
+import { boardHasContent, saveBoardPng } from "./exportPng";
 import { TOOLS, availability, type Tool } from "./toolMode";
 import { pickTool } from "./useToolShortcuts";
 
@@ -53,7 +57,11 @@ export function Dock({ onClearInk }: DockProps) {
   const connecting = useUi((s) => s.connect.active);
   const boardReady = useStore(appStore, (s) => s.boardStatus === "ready");
   const hasInk = useStore(appStore, (s) => Object.keys(s.strokes).length > 0);
+  const hasContent = useStore(appStore, boardHasContent);
+  const exporting = useUi((s) => s.exporting);
   const ctx = { boardReady, connecting, hasInk };
+  // Waiting beats empty beats busy: the reason that cannot be fixed by waiting is not hidden by one that can.
+  const saveReason = !boardReady ? COPY.loading : !hasContent ? COPY.nothingToSave : exporting ? COPY.savingImage : null;
 
   return (
     <div
@@ -82,19 +90,28 @@ export function Dock({ onClearInk }: DockProps) {
           </Button>
         );
       })}
+      <span aria-hidden="true" className="my-1 h-px w-5 bg-[var(--border-subtle)]" />
+      <Button
+        variant="ghost"
+        aria-label="Save as PNG"
+        aria-busy={exporting || undefined}
+        title={COPY.saveImage}
+        disabledReason={saveReason}
+        onClick={() => void saveBoardPng()}
+        className="!size-8 !rounded-md !p-0 text-muted"
+      >
+        {exporting ? <LoaderCircle size={15} aria-hidden="true" className="animate-spin" /> : <Download size={15} aria-hidden="true" />}
+      </Button>
       {hasInk && onClearInk ? (
-        <>
-          <span aria-hidden="true" className="my-1 h-px w-5 bg-[var(--border-subtle)]" />
-          <Button
-            variant="ghost"
-            aria-label="Clear ink"
-            title="Clear all ink"
-            onClick={onClearInk}
-            className="!size-8 !rounded-md !p-0 text-muted"
-          >
-            <Trash2 size={15} aria-hidden="true" />
-          </Button>
-        </>
+        <Button
+          variant="ghost"
+          aria-label="Clear ink"
+          title="Clear all ink"
+          onClick={onClearInk}
+          className="!size-8 !rounded-md !p-0 text-muted"
+        >
+          <Trash2 size={15} aria-hidden="true" />
+        </Button>
       ) : null}
     </div>
   );

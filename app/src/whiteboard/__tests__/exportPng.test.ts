@@ -41,7 +41,7 @@ const LIGHT: Record<string, string> = {
   "--node-content": "#5c7f8a", "--node-asset": "#7d6b8f", "--node-note": "#8a7f6d",
   "--sticky-1": "#f0d78d", "--sticky-fg": "#252118", "--ink-2": "#3d6b6f", "--ink-1": "#a14a3a",
 };
-const DARK = { ...LIGHT, "--bg-canvas": "#1b1916", "--bg-elevated": "#2a2621", "--fg-primary": "#f0ebe2", "--ink-2": "#6fa8a6" };
+const DARK: Record<string, string> = { ...LIGHT, "--bg-canvas": "#1b1916", "--bg-elevated": "#2a2621", "--fg-primary": "#f0ebe2", "--ink-2": "#6fa8a6" };
 const palette = readPalette((name) => LIGHT[name] ?? "");
 
 describe("wrapText", () => {
@@ -100,7 +100,9 @@ describe("sceneBounds", () => {
 
     const bounds = sceneBounds({ ...EMPTY, marks: [sticky] }, measure)!;
 
-    expect(bounds).toMatchObject({ x: 500, y: 400, width: layout.width, height: layout.height });
+    expect(bounds).toMatchObject({ x: 500, y: 400, width: layout.width });
+    // A sum of line heights is not exact in floating point.
+    expect(bounds.height).toBeCloseTo(layout.height, 6);
   });
 
   it("is the union of everything on the board", () => {
