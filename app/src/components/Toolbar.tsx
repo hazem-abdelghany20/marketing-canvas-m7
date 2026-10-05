@@ -3,7 +3,7 @@ import { Maximize, Minus, Plus, Undo2 } from "lucide-react";
 import { forwardRef, type ReactNode } from "react";
 import { useStore } from "zustand";
 import { undoLast } from "../canvas/actions";
-import { MAX_ZOOM, MIN_ZOOM } from "../canvas/useViewport";
+import { FIT_MAX_ZOOM, FIT_PADDING, MAX_ZOOM, MIN_ZOOM } from "../canvas/useViewport";
 import { motionMs } from "../lib/motion";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
@@ -59,7 +59,7 @@ export function Toolbar({ ready, addMenuOpen, onAdd, besidePanel, children }: To
         aria-label="Fit to screen"
         title="Zoom to fit every node"
         disabledReason={waiting ?? empty}
-        onClick={() => void flow.fitView({ padding: 0.2, maxZoom: 1.5, duration: motionMs(300) })}
+        onClick={() => void flow.fitView({ padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: motionMs(300) })}
       />
       <ToolButton
         icon={<Minus size={14} aria-hidden="true" />}

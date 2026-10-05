@@ -22,6 +22,7 @@ import { CanvasActionsContext, type CanvasActions } from "./canvasActions";
 import { connectByDrag, pickNode } from "./connect";
 import { PendingLine } from "./ConnectMode";
 import { nodeTypes, toFlowNodes, toPendingNodes } from "./nodeTypes";
+import { useArrangeTween } from "./useArrangeTween";
 import { MAX_ZOOM, MIN_ZOOM } from "./useViewport";
 
 /** Spacing of the dot grid, shared with the loading placeholder so the two match. */
@@ -54,7 +55,10 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
   const connect = useStore(uiStore, (s) => s.connect);
   const flashIds = useStore(uiStore, (s) => s.flashIds);
   const openId = useMatch("/node/:id")?.params.id ?? null;
-  const [dragging, setDragging] = useState<Record<string, Point>>({});
+  const [dragged, setDragging] = useState<Record<string, Point>>({});
+  // A card being dragged follows the pointer; one gliding to a new layout follows the glide.
+  const gliding = useArrangeTween();
+  const dragging = useMemo(() => ({ ...gliding, ...dragged }), [gliding, dragged]);
 
   // A selection that points at a node deleted elsewhere clears itself, silently.
   useEffect(() => {
@@ -104,6 +108,9 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
     if (Object.keys(moved).length > 0) setDragging((d) => ({ ...d, ...moved }));
   }, []);
 
+  // Grabbing a card ends any glide still running: what the hand does wins.
+  const onNodeDragStart = useCallback(() => uiStore.getState().endArrangement(), []);
+
   const onNodeDragStop = useCallback<OnNodeDrag<FlowNode>>((_event, _node, dragged) => {
     const stored = appStore.getState().nodes;
     for (const { id, position } of dragged) {
@@ -124,6 +131,7 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
+        onNodeDragStart={onNodeDragStart}
         onNodeDragStop={onNodeDragStop}
         onNodeClick={(_event, node) => {
           if (connect.active && node.type === "card") pickNode(node.id);

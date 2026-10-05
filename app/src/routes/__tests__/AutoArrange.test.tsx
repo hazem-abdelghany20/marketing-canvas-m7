@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nudgeNode } from "../../canvas/actions";
 import { appStore } from "../../store";
 import type { CanvasNode, Edge, NodePatch } from "../../types";
 import { COPY } from "../../ui/copy";
@@ -72,11 +73,18 @@ function stubReducedMotion(reduce: boolean) {
 }
 
 beforeEach(() => {
+  // jsdom has no layout, so React Flow's animated camera move computes NaN for its dot grid
+  // and React says so. That is jsdom, not the app; every other warning still shows.
+  const error = console.error;
+  vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+    if (!String(args[0]).includes("Received NaN")) error(...args);
+  });
   resetApp();
   uiStore.getState().reset();
   appStore.getState().signIn({ token: "tok", user });
 });
 afterEach(() => {
+  vi.restoreAllMocks();
   cleanup();
   // @ts-expect-error jsdom ships no matchMedia; the stub is removed to match.
   delete window.matchMedia;
@@ -254,6 +262,19 @@ describe("Auto-arrange motion", () => {
     expect(distance(target, ORIGINAL.nd_goal)).toBeGreaterThan(100);
     expect(distance(drawnAt("nd_goal"), ORIGINAL.nd_goal)).toBeLessThan(distance(drawnAt("nd_goal"), target) / 4);
     await waitFor(() => expect(drawnAt("nd_goal")).toEqual(target));
+    expect(drawnAt("nd_reel")).toEqual(stored("nd_reel"));
+  });
+
+  it("ends the glide the moment a card is moved by hand, so the hand wins", async () => {
+    stubReducedMotion(false);
+    serveBoard();
+    const { button } = await openBoard();
+    fireEvent.click(button);
+    expect(distance(drawnAt("nd_reel"), ORIGINAL.nd_reel)).toBeLessThan(1); // still gliding
+
+    nudgeNode("nd_goal", 8, 0);
+
+    await waitFor(() => expect(drawnAt("nd_goal")).toEqual(stored("nd_goal")));
     expect(drawnAt("nd_reel")).toEqual(stored("nd_reel"));
   });
 

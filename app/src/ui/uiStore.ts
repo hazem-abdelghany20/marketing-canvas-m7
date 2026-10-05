@@ -37,6 +37,16 @@ export interface ConnectState {
   targetId: string | null;
 }
 
+/**
+ * An Auto-arrange in flight: where each node that is moving started, and when. The
+ * store already holds the new positions; the canvas draws the glide between the two.
+ */
+export interface Arrangement {
+  from: Record<string, { x: number; y: number }>;
+  startedAt: number;
+  durationMs: number;
+}
+
 export const FLASH_MS = 1200;
 const DEFAULT_TOAST_MS = 5000;
 
@@ -48,6 +58,8 @@ export interface UiState {
   flashIds: string[];
   pendingImports: PendingImport[];
   toasts: Toast[];
+  /** Null at rest, and always under prefers-reduced-motion: the move is then instant. */
+  arrangement: Arrangement | null;
 
   select: (ids: string[]) => void;
   setConnect: (connect: Partial<ConnectState>) => void;
@@ -58,6 +70,8 @@ export interface UiState {
   flash: (ids: string[]) => void;
   addPending: (pending: PendingImport) => void;
   removePending: (id: string) => void;
+  startArrangement: (from: Arrangement["from"], durationMs: number) => void;
+  endArrangement: () => void;
   toast: (toast: ToastInput) => number;
   dismissToast: (id: number) => void;
   reset: () => void;
@@ -73,6 +87,7 @@ const INITIAL = {
   flashIds: [] as string[],
   pendingImports: [] as PendingImport[],
   toasts: [] as Toast[],
+  arrangement: null as Arrangement | null,
 };
 
 let nextToastId = 1;
@@ -93,6 +108,9 @@ export const uiStore = createStore<UiState>()((set) => ({
 
   addPending: (pending) => set((s) => ({ pendingImports: [...s.pendingImports, pending] })),
   removePending: (id) => set((s) => ({ pendingImports: s.pendingImports.filter((p) => p.id !== id) })),
+
+  startArrangement: (from, durationMs) => set({ arrangement: { from, durationMs, startedAt: performance.now() } }),
+  endArrangement: () => set({ arrangement: null }),
 
   toast(input) {
     const toast: Toast = { tone: "info", durationMs: DEFAULT_TOAST_MS, ...input, id: nextToastId++ };

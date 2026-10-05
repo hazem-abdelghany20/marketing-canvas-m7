@@ -4,6 +4,12 @@ import { mutate, notFound } from "./mutation";
 import { omit, reinsert, type ById } from "./records";
 import type { AppStore, SliceCreator, StoreContext } from "./state";
 
+/** One node's share of a batch: the fields to change on it. */
+export interface NodeUpdate {
+  id: string;
+  patch: NodePatch;
+}
+
 export interface NodesSlice {
   nodes: ById<CanvasNode>;
   /**
@@ -12,6 +18,13 @@ export interface NodesSlice {
    */
   createNode: (input: NodeInput) => Promise<CanvasNode>;
   updateNode: (id: string, patch: NodePatch) => Promise<CanvasNode>;
+  /**
+   * Several nodes at once, as ONE undo step. Each goes through the same optimistic
+   * update as `updateNode`. All or nothing: if any save fails, the ones that did
+   * save are put back and the failure is rethrown, so no half-finished batch is
+   * left behind and no history entry is added.
+   */
+  updateNodes: (updates: NodeUpdate[], label?: string) => Promise<CanvasNode[]>;
   /** The API cascades to the node's edges and annotations; so does the cache. */
   deleteNode: (id: string) => Promise<void>;
 }
@@ -20,6 +33,7 @@ export const createNodesSlice: SliceCreator<NodesSlice> = (ctx) => (_set, _get, 
   nodes: {},
   createNode: (input) => createNode(ctx, store, input),
   updateNode: (id, patch) => updateNode(ctx, store, id, patch, true),
+  updateNodes: (updates, label) => updateNodes(ctx, store, updates, label),
   deleteNode: (id) => deleteNode(ctx, store, id, true),
 });
 
@@ -48,16 +62,69 @@ async function updateNode(ctx: StoreContext, store: AppStore, id: string, patch:
   });
 
   if (track) {
-    // Only the fields this edit touched go back.
-    const inverse = Object.fromEntries(
-      Object.keys(patch).map((key) => [key, before[key as keyof NodePatch]]),
-    ) as NodePatch;
+    const inverse = inverseOf(before, patch);
     record(store, {
       label: "Edit node",
       undo: async () => void (await updateNode(ctx, store, ctx.ids.resolve(id), inverse, false)),
     });
   }
   return result;
+}
+
+/** Only the fields an edit touched go back. */
+function inverseOf(before: CanvasNode, patch: NodePatch): NodePatch {
+  return Object.fromEntries(Object.keys(patch).map((key) => [key, before[key as keyof NodePatch]])) as NodePatch;
+}
+
+async function updateNodes(ctx: StoreContext, store: AppStore, updates: NodeUpdate[], label = "Edit nodes") {
+  if (updates.length === 0) return [];
+  const before = new Map<string, CanvasNode>();
+  for (const { id } of updates) {
+    const node = store.getState().nodes[id];
+    if (!node) throw notFound("node");
+    before.set(id, node);
+  }
+
+  // Puts the given nodes back, skipping any that have been deleted since.
+  const putBack = async (subset: NodeUpdate[]) =>
+    Promise.allSettled(
+      subset.map(({ id, patch }) => {
+        const current = ctx.ids.resolve(id);
+        if (!store.getState().nodes[current]) return Promise.resolve();
+        return updateNode(ctx, store, current, inverseOf(before.get(id)!, patch), false);
+      }),
+    );
+
+  // Every call applies its change before its first await, so the whole batch shows at once.
+  const results = await Promise.allSettled(updates.map(({ id, patch }) => updateNode(ctx, store, id, patch, false)));
+  const failure = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+  if (failure) {
+    const saved = updates.filter((_, i) => results[i]?.status === "fulfilled");
+    const reverts = await putBack(saved);
+    // A node that could not be put back is still moved on the server; keep it undoable.
+    const stuck = saved.filter((_, i) => reverts[i]?.status === "rejected");
+    if (stuck.length > 0) {
+      record(store, {
+        label,
+        undo: async () => {
+          const retried = await putBack(stuck);
+          const failed = retried.find((r): r is PromiseRejectedResult => r.status === "rejected");
+          if (failed) throw failed.reason;
+        },
+      });
+    }
+    throw failure.reason;
+  }
+
+  record(store, {
+    label,
+    undo: async () => {
+      const reverts = await putBack(updates);
+      const failed = reverts.find((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (failed) throw failed.reason;
+    },
+  });
+  return results.map((r) => (r as PromiseFulfilledResult<CanvasNode>).value);
 }
 
 async function deleteNode(ctx: StoreContext, store: AppStore, id: string, track: boolean) {

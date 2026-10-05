@@ -5,7 +5,10 @@
 - `docs/spec.md` § Data model, edge semantics
 
 ## Scope
-`src/canvas/autoArrange.ts`, `src/components/Toolbar.tsx` (the arrange control only).
+`src/canvas/autoArrange.ts`, the `Auto-arrange` control in the Toolbar's children slot
+(`src/routes/Workspace.tsx`, like Connect and Search), `src/canvas/actions.ts` (`arrangeBoard`),
+`src/store/nodes.ts` (`updateNodes`: one undo step for the whole batch) and `src/canvas/Canvas.tsx`
+(the 300ms glide, skipped under reduced motion).
 
 ## Acceptance
 - Given 12 nodes chained `content → campaign → strategy → goal`, when Auto-arrange runs, then goals render above strategies, strategies above campaigns, and campaigns above content.
@@ -20,4 +23,4 @@ Pure function from nodes+edges to positions — no layout dependency, no store a
 Auto-arrange is an action, never a mode: nothing may re-arrange without an explicit invocation.
 
 ## Verify
-`npx vitest run src/canvas/autoArrange && npx playwright test e2e/auto-arrange.spec.ts`
+`npx vitest run src/canvas/__tests__/autoArrange src/store/__tests__/updateNodes src/routes/__tests__/AutoArrange && npx playwright test e2e/auto-arrange.spec.ts`

@@ -5,6 +5,9 @@ import type { Viewport } from "../types";
 
 export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 2;
+/** How the Fit button, and Auto-arrange, frame the nodes: a fifth of padding, never closer than 1.5×. */
+export const FIT_PADDING = 0.2;
+export const FIT_MAX_ZOOM = 1.5;
 /** How long the camera must rest before its position is written to the store. */
 export const VIEWPORT_SETTLE_MS = 300;
 

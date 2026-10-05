@@ -1,8 +1,12 @@
 import { plural } from "../lib/format";
+import { motionMs } from "../lib/motion";
 import { appStore } from "../store";
 import type { CanvasNode } from "../types";
 import { COPY } from "../ui/copy";
 import { uiStore } from "../ui/uiStore";
+import { autoArrange, layoutBounds } from "./autoArrange";
+import type { Bounds } from "./useFitToBounds";
+import { ARRANGE_MS } from "./useArrangeTween";
 
 /**
  * Canvas commands that span the API cache and the UI: they mutate through the
@@ -25,8 +29,9 @@ export function undoLast(times = 1) {
   })();
 }
 
-/** Moves a node and stores where it landed. */
+/** Moves a node and stores where it landed. A move by hand always wins over a glide still running. */
 export function moveNode(id: string, x: number, y: number) {
+  uiStore.getState().endArrangement();
   appStore
     .getState()
     .updateNode(id, { x, y })
@@ -62,6 +67,42 @@ export async function deleteNodes(ids: string[]) {
     onAction: () => undoLast(deleted),
     durationMs: 8000,
   });
+}
+
+/**
+ * Auto-arrange: lays every node out by lineage, saves the ones that moved as a single
+ * undo step, and says so. `fit` brings the camera to the box the layout fills; it runs
+ * again on Retry. Does nothing on an empty board, and runs only when asked.
+ */
+export function arrangeBoard(fit: (bounds: Bounds) => void) {
+  const { nodes, edges, updateNodes } = appStore.getState();
+  const all = Object.values(nodes);
+  if (all.length === 0) return;
+
+  const layout = autoArrange(all, Object.values(edges));
+  fit(layoutBounds(layout));
+  const moving = all.filter((n) => layout[n.id]!.x !== n.x || layout[n.id]!.y !== n.y);
+  if (moving.length === 0) return;
+
+  // The glide starts from where the cards are now; under reduced motion there is none.
+  const duration = motionMs(ARRANGE_MS);
+  if (duration > 0)
+    uiStore.getState().startArrangement(Object.fromEntries(moving.map((n) => [n.id, { x: n.x, y: n.y }])), duration);
+
+  updateNodes(
+    moving.map((n) => ({ id: n.id, patch: { x: layout[n.id]!.x, y: layout[n.id]!.y } })),
+    "Arrange nodes",
+  )
+    .then(() =>
+      uiStore.getState().toast({
+        message: `Arranged ${plural(all.length, "node")}.`,
+        tone: "success",
+        actionLabel: "Undo",
+        onAction: () => undoLast(),
+        durationMs: 8000,
+      }),
+    )
+    .catch(() => reportSaveFailure(() => arrangeBoard(fit)));
 }
 
 export interface Point {

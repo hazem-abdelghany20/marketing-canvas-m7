@@ -1,13 +1,14 @@
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
-import { Search, Spline } from "lucide-react";
+import { Network, Search, Spline } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { Navigate, Outlet, useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
-import { createNote } from "../canvas/actions";
+import { arrangeBoard, createNote } from "../canvas/actions";
 import { Canvas } from "../canvas/Canvas";
 import { CONNECT_COPY, exitConnect, startConnect } from "../canvas/connect";
 import { ConnectMode } from "../canvas/ConnectMode";
 import { panToNode } from "../canvas/panToNode";
+import { useFitToBounds } from "../canvas/useFitToBounds";
 import { useViewport } from "../canvas/useViewport";
 import { useViewportCenter } from "../canvas/viewportCenter";
 import { useWorkspaceShortcuts } from "../canvas/useWorkspaceShortcuts";
@@ -23,6 +24,7 @@ import { Toolbar, ToolButton } from "../components/Toolbar";
 import { FILE_ACCEPT, importFiles, ROW_GAP } from "../files/importFiles";
 import type { CanvasNode } from "../types";
 import { appStore } from "../store";
+import { COPY } from "../ui/copy";
 import { uiStore, useUi } from "../ui/uiStore";
 
 /**
@@ -54,6 +56,7 @@ function WorkspaceScreen() {
   const fileInput = useRef<HTMLInputElement>(null);
   const { initialViewport, onViewportChange } = useViewport();
   const viewportCenter = useViewportCenter();
+  const fitToBounds = useFitToBounds();
 
   useEffect(() => {
     uiStore.getState().reset();
@@ -114,6 +117,12 @@ function WorkspaceScreen() {
     closeAddMenu(false);
     fileInput.current?.click();
   }, [closeAddMenu]);
+
+  // Auto-arrange is an action, never a mode: it runs here and nowhere else.
+  const arrange = useCallback(() => {
+    // The camera frames what the detail panel leaves uncovered.
+    arrangeBoard((bounds) => fitToBounds(bounds, panelOpen && window.innerWidth >= 900 ? PANEL_WIDTH : 0));
+  }, [fitToBounds, panelOpen]);
 
   const toggleConnect = useCallback(() => {
     if (uiStore.getState().connect.active) exitConnect();
@@ -239,6 +248,14 @@ function WorkspaceScreen() {
           title="Search nodes — ⌘F / Ctrl+F"
           disabledReason={!ready ? "Waiting for the board." : nodeCount === 0 ? "Nothing to search yet." : null}
           onClick={() => void openSearch()}
+        />
+        <ToolButton
+          label="Auto-arrange"
+          icon={<Network size={14} aria-hidden="true" />}
+          aria-label="Auto-arrange"
+          title="Auto-arrange — lay the nodes out by lineage"
+          disabledReason={!ready ? COPY.loading : nodeCount === 0 ? COPY.nothingToArrange : null}
+          onClick={arrange}
         />
       </Toolbar>
       {addMenuOpen && ready ? (

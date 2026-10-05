@@ -190,6 +190,52 @@ describe("updateNodes", () => {
     expect(store.getState().nodes.nd_goal).toMatchObject({ x: 0, y: 0 });
   });
 
+  it("keeps a node undoable when the save failed and putting it back failed too", async () => {
+    const nodes = serverNodes();
+    const echo = echoPatch(nodes);
+    let revertsRefused = true;
+    const { store } = await loadedStore({
+      ...seededRoutes(),
+      "PATCH /nodes/:id": async (call, p) => {
+        const body = call.body as NodePatch;
+        if (p.id === "nd_reel" && body.x === 30) return apiError(503, "forced_failure", "Down.");
+        // nd_goal's write lands, but writing it back is refused.
+        if (p.id === "nd_goal" && body.x === 0 && revertsRefused) return apiError(503, "forced_failure", "Down.");
+        return echo(call, p);
+      },
+    });
+
+    await store
+      .getState()
+      .updateNodes(MOVES)
+      .catch(() => {});
+    // Half done: nd_goal is moved on the server, and the user can see it.
+    expect(nodes.nd_goal).toMatchObject({ x: 10, y: 20 });
+    expect(store.getState().undoStack).toHaveLength(1);
+
+    revertsRefused = false;
+    await store.getState().undo();
+    expect(nodes.nd_goal).toMatchObject({ x: 0, y: 0 });
+    expect(store.getState().undoStack).toHaveLength(0);
+  });
+
+  it("undoes the nodes that are still there when one of them has been deleted since", async () => {
+    const nodes = serverNodes();
+    const { store } = await loadedStore({
+      ...seededRoutes(),
+      "PATCH /nodes/:id": echoPatch(nodes),
+      "DELETE /nodes/:id": (_c, p) => (delete nodes[p.id!], json(204)),
+    });
+    await store.getState().updateNodes(MOVES);
+    await store.getState().deleteNode("nd_reel"); // its own entry
+    store.setState((s) => ({ undoStack: s.undoStack.slice(0, -1) })); // the delete is not what we are undoing
+
+    await store.getState().undo();
+
+    expect(store.getState().nodes.nd_goal).toMatchObject({ x: 0, y: 0 });
+    expect(store.getState().undoStack).toHaveLength(0);
+  });
+
   it("refuses a batch that names a node it doesn't have, before sending anything", async () => {
     const { store, backend } = await loadedStore({ ...seededRoutes(), "PATCH /nodes/:id": echoPatch(serverNodes()) });
 

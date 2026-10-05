@@ -8,6 +8,7 @@ export const COPY = {
   undoFailed: "Couldn't undo that. Check your connection and try again.",
   loading: "Waiting for the board.",
   nothingToFit: "Nothing to fit yet.",
+  nothingToArrange: "Nothing to arrange yet.",
   nothingToUndo: "Nothing to undo yet.",
   maxZoom: "Already zoomed in as far as it goes (200%).",
   minZoom: "Already zoomed out as far as it goes (25%).",
