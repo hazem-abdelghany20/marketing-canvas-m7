@@ -45,7 +45,7 @@ for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
     await openCanvas(page);
 
-    await page.keyboard.press("c");
+    await page.keyboard.press("l");
     await expect(page.locator("[data-connect-banner]")).toBeVisible();
 
     expect(await within(page, "[data-connect-banner]")).toBe(true);

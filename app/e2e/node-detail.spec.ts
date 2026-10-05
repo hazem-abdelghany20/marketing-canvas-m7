@@ -71,7 +71,7 @@ test("an edge made in connect mode reads Serves from A and Served by from B", as
   await setViewport(s, { x: 0, y: 0, zoom: 1 });
   await openCanvas(page);
 
-  await page.keyboard.press("c");
+  await page.keyboard.press("l");
   await card(page, a.id).click();
   await card(page, b.id).click();
   await page

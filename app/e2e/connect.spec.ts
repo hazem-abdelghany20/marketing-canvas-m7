@@ -55,7 +55,7 @@ test("relates-to draws dashed, with no arrowhead", async ({ page, a, b }) => {
 test("a node clicked as its own target creates nothing and explains why", async ({ page, session, a, b }) => {
   void b;
   await openCanvas(page);
-  await page.keyboard.press("c");
+  await page.keyboard.press("l");
   await card(page, a.id).click();
   await card(page, a.id).click();
 
@@ -72,7 +72,7 @@ test("connecting an already connected pair creates nothing and says they are con
   await session.call("POST", "/edges", { fromId: a.id, toId: b.id, kind: "serves" });
   await openCanvas(page);
 
-  await page.keyboard.press("c");
+  await page.keyboard.press("l");
   await card(page, b.id).click();
   await card(page, a.id).click();
 
@@ -84,7 +84,7 @@ test("connecting an already connected pair creates nothing and says they are con
 test("Escape with a source picked exits the mode and creates nothing", async ({ page, session, a, b }) => {
   void b;
   await openCanvas(page);
-  await page.keyboard.press("c");
+  await page.keyboard.press("l");
   await card(page, a.id).click();
   await expect(page.locator("[data-connect-banner]")).toContainText("Now pick the node it connects to");
 
@@ -99,7 +99,7 @@ test("with one node, connect mode does not activate and says connections need tw
   await s.createNode({ title: "Alone", x: 200, y: 200 });
   await openCanvas(page);
 
-  await page.keyboard.press("c");
+  await page.keyboard.press("l");
 
   await expect(page.getByRole("alert")).toContainText("Add another node first — connections need two.");
   await expect(page.locator("[data-connect-banner]")).toHaveCount(0);
@@ -132,7 +132,7 @@ test("while connect mode is on, dragging files over the canvas shows no drop tar
   void a;
   void b;
   await openCanvas(page);
-  await page.keyboard.press("c");
+  await page.keyboard.press("l");
   await expect(page.locator("[data-connect-banner]")).toBeVisible();
 
   const dataTransfer = await page.evaluateHandle(() => {

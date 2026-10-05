@@ -49,7 +49,7 @@ test("two nodes can be connected from the keyboard alone, kind picker included",
   await openCanvas(page);
   const before = (await s.edges()).length;
   await tabUntil(page, (el) => (el as HTMLElement).dataset.nodeCard === "nd_not_reach");
-  await page.keyboard.press("c");
+  await page.keyboard.press("l");
   await expect(page.locator("[data-connect-banner]")).toContainText("Pick the node to connect from");
 
   await page.keyboard.press("Enter"); // the focused card is the source
