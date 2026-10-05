@@ -27,12 +27,14 @@ export function renderCards(
     edges = [],
     annotations = [],
     selected = [],
+    cited = [],
     files = [],
     objectUrls = {},
   }: {
     edges?: Edge[];
     annotations?: Annotation[];
     selected?: string[];
+    cited?: string[];
     files?: FileRef[];
     objectUrls?: Record<string, string>;
   } = {},
@@ -43,7 +45,7 @@ export function renderCards(
     byId(nodes),
     byId(edges),
     byId(annotations),
-    { selectedIds: new Set(selected), dragging: {} },
+    { selectedIds: new Set(selected), citedIds: new Set(cited), dragging: {} },
     { files: byId(files), objectUrls },
   );
   const utils = render(
