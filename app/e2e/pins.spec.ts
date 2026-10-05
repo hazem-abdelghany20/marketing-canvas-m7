@@ -7,6 +7,8 @@ const area = (page: Page) => page.locator("[data-canvas-state=ready]");
 const apiPins = (s: { call<T>(m: "GET", p: string): Promise<T> }) => s.call<Pin[]>("GET", "/pins");
 const pin = (page: Page, id: string) => page.locator(`[data-pin-id="${id}"]`);
 const thread = (page: Page) => page.getByRole("dialog", { name: "Comment thread" });
+const dockTool = (page: Page, name: string) =>
+  page.getByRole("group", { name: "Whiteboard tools" }).getByRole("button", { name, exact: true });
 const composer = (page: Page) => thread(page).getByRole("textbox", { name: "Comment" });
 const FAIL = '{"error":{"code":"forced_failure","message":"x"}}';
 
@@ -22,8 +24,10 @@ test.describe("the seeded pins", () => {
 
     await expect(page.locator("[data-pin-id]")).toHaveCount(2);
     await expect(pin(page, "pin_price")).toHaveAttribute("data-pin-resolved", "true");
-    expect(Number(await pin(page, "pin_price").evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
-    expect(Number(await pin(page, "pin_reel").evaluate((el) => getComputedStyle(el).opacity))).toBe(1);
+    const opacity = (id: string) => pin(page, id).evaluate((el) => Number(getComputedStyle(el).opacity));
+    // The pins ease in; once they have, the resolved one is the muted one.
+    await expect.poll(() => opacity("pin_reel")).toBe(1);
+    expect(await opacity("pin_price")).toBeLessThan(1);
 
     await pin(page, "pin_reel").click();
 
@@ -110,9 +114,9 @@ test.describe("the Comment tool", () => {
     expect(writes).toEqual([]);
     expect(await apiPins(s)).toHaveLength(0);
     // The first Escape closed the thread; the tool is still in hand until the second.
-    await expect(page.getByRole("button", { name: "Comment" })).toHaveAttribute("aria-pressed", "true");
+    await expect(dockTool(page, "Comment")).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("button", { name: "Select" })).toHaveAttribute("aria-pressed", "true");
+    await expect(dockTool(page, "Select")).toHaveAttribute("aria-pressed", "true");
   });
 });
 

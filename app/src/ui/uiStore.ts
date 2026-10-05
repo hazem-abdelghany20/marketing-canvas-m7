@@ -112,6 +112,8 @@ export interface UiState {
   ink: InkPrefs;
   /** The "Clear all ink?" confirmation is open. */
   clearInkOpen: boolean;
+  /** The pin whose thread is open, if any. */
+  openPinId: string | null;
 
   select: (ids: string[]) => void;
   setConnect: (connect: Partial<ConnectState>) => void;
@@ -138,6 +140,7 @@ export interface UiState {
   setTool: (tool: Tool) => void;
   setInk: (patch: Partial<InkPrefs>) => void;
   setClearInkOpen: (open: boolean) => void;
+  openPin: (id: string | null) => void;
   startArrangement: (from: Arrangement["from"], durationMs: number) => void;
   endArrangement: () => void;
   toast: (toast: ToastInput) => number;
@@ -164,6 +167,7 @@ const INITIAL = {
   tool: "select" as Tool,
   ink: { color: "ink-1", size: 3 } as InkPrefs,
   clearInkOpen: false,
+  openPinId: null as string | null,
 };
 
 let nextToastId = 1;
@@ -213,6 +217,7 @@ export const uiStore = createStore<UiState>()((set) => ({
   // A drawing tool makes the cards inert, so a selection (and the quick-peek on it) has nothing to point at.
   setInk: (patch) => set((s) => ({ ink: { ...s.ink, ...patch } })),
   setClearInkOpen: (open) => set({ clearInkOpen: open }),
+  openPin: (id) => set({ openPinId: id }),
   setTool: (tool) =>
     set((s) => (tool === "select" || s.selectedIds.length === 0 ? { tool } : { tool, selectedIds: [] })),
 

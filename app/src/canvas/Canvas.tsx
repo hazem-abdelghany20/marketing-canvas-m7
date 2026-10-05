@@ -21,6 +21,7 @@ import type { Viewport } from "../types";
 import { uiStore } from "../ui/uiStore";
 import { InkLayer } from "../whiteboard/InkLayer";
 import { MarkLayer } from "../whiteboard/MarkLayer";
+import { PinLayer } from "../whiteboard/PinLayer";
 import { moveNode, nudgeNode } from "./actions";
 import { CanvasActionsContext, type CanvasActions } from "./canvasActions";
 import { connectByDrag, pickNode } from "./connect";
@@ -224,6 +225,7 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
         <PendingLine />
         <MarkLayer />
         <InkLayer />
+        <PinLayer />
       </ReactFlow>
     </CanvasActionsContext.Provider>
   );
