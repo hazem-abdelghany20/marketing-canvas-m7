@@ -20,7 +20,7 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 export interface ShortcutHandlers {
   /** N — open the add-node menu. */
   onAdd: () => void;
-  /** C — enter connect mode, or leave it. */
+  /** L — enter connect mode, or leave it. (C belongs to the whiteboard's Comment tool.) */
   onConnect: () => void;
   /** Cmd/Ctrl+F — open search. Returns false when there is nothing to search, so the browser's find runs instead. */
   onSearch: () => boolean;
@@ -64,7 +64,7 @@ export function useWorkspaceShortcuts(enabled: boolean, handlers: ShortcutHandle
         latest.current.onAdd();
         return;
       }
-      if (key === "c") {
+      if (key === "l") {
         event.preventDefault();
         latest.current.onConnect();
         return;

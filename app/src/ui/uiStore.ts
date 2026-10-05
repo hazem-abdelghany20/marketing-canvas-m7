@@ -1,6 +1,7 @@
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
 import { isNarrow } from "../lib/useMediaQuery";
+import type { Tool } from "../whiteboard/toolMode";
 
 /**
  * Client-only state: what is selected, which overlay is open, what the toasts
@@ -98,6 +99,8 @@ export interface UiState {
   applyingProposals: string[];
   /** Set by "From chat": the composer takes focus as soon as it is on screen, once. */
   composerFocusPending: boolean;
+  /** The whiteboard tool in hand. Client-only; Select is the resting state. */
+  tool: Tool;
 
   select: (ids: string[]) => void;
   setConnect: (connect: Partial<ConnectState>) => void;
@@ -120,6 +123,8 @@ export interface UiState {
   /** Shows the rail (opening the sheet when narrow, expanding the column otherwise) and focuses the composer. */
   openChat: () => void;
   consumeComposerFocus: () => void;
+  /** Raw setter: whether the tool may be used is decided by `reduceTool`, before this is called. */
+  setTool: (tool: Tool) => void;
   startArrangement: (from: Arrangement["from"], durationMs: number) => void;
   endArrangement: () => void;
   toast: (toast: ToastInput) => number;
@@ -143,6 +148,7 @@ const INITIAL = {
   chatSheetOpen: false,
   chatDraft: "",
   composerFocusPending: false,
+  tool: "select" as Tool,
 };
 
 let nextToastId = 1;
@@ -189,6 +195,9 @@ export const uiStore = createStore<UiState>()((set) => ({
     }
   },
   consumeComposerFocus: () => set({ composerFocusPending: false }),
+  // A drawing tool makes the cards inert, so a selection (and the quick-peek on it) has nothing to point at.
+  setTool: (tool) =>
+    set((s) => (tool === "select" || s.selectedIds.length === 0 ? { tool } : { tool, selectedIds: [] })),
 
   startArrangement: (from, durationMs) => set({ arrangement: { from, durationMs, startedAt: performance.now() } }),
   endArrangement: () => set({ arrangement: null }),

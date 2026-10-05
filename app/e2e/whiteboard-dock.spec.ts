@@ -47,12 +47,13 @@ test.describe("the whiteboard dock", () => {
     await expect(tool(page, "Select")).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("the seeded demo board has ink, so the Eraser works and Clear ink is offered", async ({ page }) => {
+  test("the seeded demo board has ink, so the Eraser can be picked", async ({ page }) => {
     await demoSession(page);
     await openCanvas(page);
 
     await expect(tool(page, "Eraser")).not.toHaveAttribute("aria-disabled", "true");
-    await expect(page.getByRole("button", { name: "Clear ink" })).toBeVisible();
+    await page.keyboard.press("e");
+    await expect(tool(page, "Eraser")).toHaveAttribute("aria-pressed", "true");
   });
 
   test("every tool waits, saying so, while the board is loading", async ({ page }) => {

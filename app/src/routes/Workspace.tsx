@@ -33,6 +33,9 @@ import type { CanvasNode } from "../types";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
 import { uiStore, useUi } from "../ui/uiStore";
+import { Dock } from "../whiteboard/Dock";
+import { ToolHint } from "../whiteboard/ToolHint";
+import { useToolShortcuts } from "../whiteboard/useToolShortcuts";
 
 /**
  * S3 — the workspace. The canvas fills it; overlays float over it, and the node
@@ -183,6 +186,9 @@ function WorkspaceScreen() {
     onSearch: openSearch,
   });
 
+  // The dock's keys (V P H E S T C, Esc). Like the others, they stand down while the sheet covers the canvas.
+  useToolShortcuts(ready && !(narrow && sheetOpen));
+
   // A session that ended while a node was open signs in again and comes back to it.
   if (!token) return <Navigate to={signInTarget(location.pathname)} replace />;
 
@@ -211,9 +217,9 @@ function WorkspaceScreen() {
             aria-label="Connect"
             aria-pressed={connecting}
             variant={connecting ? "active" : "secondary"}
-            title={connecting ? "Leave connect mode — Esc" : "Connect two nodes — C"}
+            title={connecting ? "Leave connect mode — Esc" : "Connect two nodes — L"}
             disabledReason={waiting ?? (nodeCount < 2 ? CONNECT_COPY.needsTwo : null)}
-            // Trying anyway gets the same explanation as the C key.
+            // Trying anyway gets the same explanation as the L key.
             onDisabledClick={() => ready && startConnect()}
             onClick={toggleConnect}
           />
@@ -235,6 +241,9 @@ function WorkspaceScreen() {
             onClick={arrange}
           />
         </Toolbar>
+
+        <Dock />
+        <ToolHint />
 
         {/* The panels below are inside the drop zone, so a file dropped on one of them still lands. */}
         <FileDropZone enabled={ready && !connecting} onFiles={onDropFiles}>

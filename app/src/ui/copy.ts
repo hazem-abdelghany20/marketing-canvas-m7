@@ -57,6 +57,9 @@ export const COPY = {
   finishConnecting: "Finish connecting first.",
   emptyAnnotation: "Write something first.",
 
+  // O7 — Whiteboard dock
+  nothingToErase: "Nothing to erase yet.",
+
   // O4 — Quick-peek
   noDescription: "No description yet",
   connectNeedsAnother: "Add another node to connect to.",
