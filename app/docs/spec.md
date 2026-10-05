@@ -413,6 +413,23 @@ Comment (C)     → click drops a pin at that point and opens its thread, compos
 Esc             → returns to Select from any tool.
 Tool hint       → a pill naming the active tool and its Esc affordance, while not Select.
 ```
+The dock also holds three actions that are not tools:
+
+```
+Send to assistant → draws the board (nodes, edges, ink, marks) and sends it to chat as your message;
+                    the reply reads the marks and names the nodes they are on. Disabled while the
+                    board loads, with no ink and no written note ("Draw or add a note first."), and
+                    while a reply streams ("Wait for the current reply to finish.").
+Save as PNG       → the same picture at 2x (long edge capped at 8192), over the theme's canvas colour,
+                    downloaded as <board>-markup.png. The dock, rail, toolbar and overlays are not in
+                    it: it is drawn from the board's data, not photographed from the page. Disabled
+                    while loading and on a board with nothing on it ("Nothing to save yet.").
+Clear ink         → confirmed first ("Clear all ink?"), then one request. Absent when there is no ink.
+```
+
+Layering, bottom to top: highlighter ink, marks, edges and cards, pen ink, comment pins. Pins are
+not in the PNG: they are a conversation about the board, not part of it.
+
 Connect is on **L**, not C: C belongs to the Comment tool, and `design/marketing-canvas.dc.html` puts
 Connect on L. A drawing tool is put away when connect mode begins, and the tools that draw, write or
 pin are disabled while it is on.

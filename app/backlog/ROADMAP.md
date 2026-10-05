@@ -1,6 +1,7 @@
 # Roadmap — what is built, what is next
 
-Tickets 001–010 are done (005–010 live on branch `005-010-node-card-to-search`).
+Tickets 001–015 are done (005–010 live on `005-010-node-card-to-search`, 011–015 on
+`011-015-arrange-chat-states`), and 016–022 on `016-022-whiteboard-layer`.
 Each ticket below has its own file in this folder; this page is the map.
 
 ## Layout — 011
@@ -20,7 +21,7 @@ Each ticket below has its own file in this folder; this page is the map.
 - **015 States and accessibility:** every loading/empty/error state from the state matrix, a
   keyboard-only pass, an axe scan. No features. Do it after the others in this batch.
 
-## Whiteboard layer — 016–022 (not in the next batch)
+## Whiteboard layer — 016–022 (built, on `016-022-whiteboard-layer`)
 - **016** dock + tool shortcuts · **017** ink · **018** stickies and text · **019** comment
   pins · **020** save PNG · **021** chat modes + Reasoner · **022** send board to assistant.
 
