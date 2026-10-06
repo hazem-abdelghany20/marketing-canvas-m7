@@ -80,6 +80,14 @@ describe("the Chat screen", () => {
     expect(screen.getByRole("button", { name: "Send" })).toBeTruthy();
   });
 
+  it("starts below the notch: the page draws to the screen's edge, so the header keeps clear of it", async () => {
+    await openChat();
+
+    const header = screen.getByRole("heading", { name: "Assistant" }).closest("header")!;
+
+    expect(header.className).toMatch(/safe-area-inset-top/);
+  });
+
   it("keeps the reply modes where the conversation is, once, and not again in the composer", async () => {
     await openChat();
 

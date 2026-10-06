@@ -110,7 +110,12 @@ export function ChatPanel({ mode }: { mode: ChatPanelMode }) {
             : "h-full w-[360px] flex-none",
       ].join(" ")}
     >
-      <header className="flex flex-none items-center justify-between border-b border-subtle px-4 py-3.5">
+      <header
+        className={`flex flex-none items-center justify-between border-b border-subtle px-4 ${
+          // The page draws to the screen's edge on a phone: its first line starts below the notch.
+          screen ? "pb-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]" : "py-3.5"
+        }`}
+      >
         <h2 className="m-0 flex items-center gap-2 font-mono text-[10.5px] font-normal uppercase tracking-[0.13em] text-muted">
           <span aria-hidden="true" className="size-[9px] rounded-full bg-node-goal" />
           <span aria-hidden="true" className="-ml-1.5 size-[9px] rounded-full bg-node-strategy" />

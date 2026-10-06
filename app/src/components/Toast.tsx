@@ -19,8 +19,10 @@ export function ToastViewport({ contained = false }: { contained?: boolean }) {
   const toasts = useUi((s) => s.toasts);
   const phone = usePhone();
   const board = useUi((s) => s.phoneTab === "board");
-  // On a phone the canvas ends where the tab bar begins, and on the Board the dock is along the bottom of it.
-  const position = phone ? (board ? "bottom-[76px]" : "bottom-3") : "bottom-[18px]";
+  const inking = useUi((s) => s.tool === "pen" || s.tool === "highlighter");
+  // On a phone the canvas ends where the tab bar begins; on the Board the dock is along the bottom of it, and the ink options
+  // stand above the dock while a pen is in hand: a toast clears whichever there is.
+  const position = phone ? (board ? (inking ? "bottom-[168px]" : "bottom-[76px]") : "bottom-3") : "bottom-[18px]";
   return (
     <div
       data-toast-viewport

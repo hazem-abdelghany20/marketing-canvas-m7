@@ -33,6 +33,19 @@ describe("where toasts stand in the phone layout", () => {
     expect(viewport().className).toMatch(/bottom-\[76px\]/);
   });
 
+  it("sit above the ink options too, while a pen or a highlighter is in hand, so a toast never covers the colours", () => {
+    stubViewport(375);
+    render(<ToastViewport contained />);
+    act(() => uiStore.getState().setPhoneTab("board"));
+
+    for (const tool of ["pen", "highlighter"] as const) {
+      act(() => uiStore.getState().setTool(tool));
+      expect(viewport().className, tool).toMatch(/bottom-\[168px\]/);
+    }
+    act(() => uiStore.getState().setTool("select"));
+    expect(viewport().className).toMatch(/bottom-\[76px\]/);
+  });
+
   it("are where they were on a tablet and on a desktop: above the assistant's button, or the corner", () => {
     stubViewport(700);
     render(<ToastViewport contained />);

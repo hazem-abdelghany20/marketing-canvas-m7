@@ -22,6 +22,13 @@ const COUNT_OF: Record<NodeType, [string, string]> = {
   note: ["note", "notes"],
 };
 
+/** What the row's list is called: the layer it holds, in the plural ("Strategies"), or "Served by" for a row of several. */
+function listName(row: TraceRow): string {
+  if (!row.type) return "Served by";
+  const plural = COUNT_OF[row.type][1];
+  return plural.charAt(0).toUpperCase() + plural.slice(1);
+}
+
 /** "7 under it" for a goal; "1 campaign", "2 pieces of content", "3 serving it" for the rest; nothing if nothing serves it. */
 function servingText(card: TraceCard): string | null {
   if (card.node.type === "goal" && card.under > 0) return `${card.under} under it`;
@@ -186,6 +193,7 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
       <ul
         ref={track}
         role="list"
+        aria-label={listName(row)}
         onScroll={onScroll}
         onKeyDown={onKeyDown}
         className="m-0 flex snap-x snap-mandatory list-none gap-2.5 overflow-x-auto scroll-px-4 px-4 pb-0.5 [overscroll-behavior-x:contain] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
