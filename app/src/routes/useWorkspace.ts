@@ -14,6 +14,7 @@ import { CARD_HEIGHT, CARD_WIDTH } from "../components/NodeCard";
 import { PANEL_WIDTH } from "../components/detail/ConnectionList";
 import { importFiles, ROW_GAP } from "../files/importFiles";
 import { isNarrow, useNarrow } from "../lib/useMediaQuery";
+import { ADD_TAB_ID } from "../phone/TabBar";
 import { appStore } from "../store";
 import type { CanvasNode } from "../types";
 import { COPY } from "../ui/copy";
@@ -65,7 +66,10 @@ export function useWorkspace() {
   const closeAddMenu = useCallback((restoreFocus = true) => {
     uiStore.getState().setAddMenuOpen(false);
     if (!restoreFocus) return;
-    const target = returnFocus.current?.isConnected ? returnFocus.current : document.getElementById("toolbar-add");
+    // Back to what had focus; failing that, to the control that opens the menu: the toolbar's, or the phone's Add tab.
+    const target = returnFocus.current?.isConnected
+      ? returnFocus.current
+      : (document.getElementById("toolbar-add") ?? document.getElementById(ADD_TAB_ID));
     target?.focus();
   }, []);
 

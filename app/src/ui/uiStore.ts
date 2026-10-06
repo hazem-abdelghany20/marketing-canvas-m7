@@ -1,6 +1,6 @@
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
-import { isNarrow } from "../lib/useMediaQuery";
+import { isNarrow, isPhone } from "../lib/useMediaQuery";
 import type { ChatMode } from "../types";
 import type { InkColorId } from "../whiteboard/inkPalette";
 import type { Tool } from "../whiteboard/toolMode";
@@ -12,6 +12,9 @@ import type { Tool } from "../whiteboard/toolMode";
  */
 
 export type ToastTone = "info" | "success" | "warn" | "danger";
+
+/** The screens of the phone layout. Add is not one: it opens a sheet over whichever is shown. */
+export type PhoneTab = "trace" | "board" | "chat" | "find";
 
 export interface Toast {
   id: number;
@@ -144,6 +147,8 @@ export interface UiState {
   clearInkOpen: boolean;
   /** The pin whose thread is open, if any. */
   openPinId: string | null;
+  /** The screen the phone layout shows (below 640px). Client-only, and not kept across a reload. */
+  phoneTab: PhoneTab;
   /** The board is being drawn into a PNG right now. */
   exporting: boolean;
   /** The board is being drawn to be sent to the assistant right now. */
@@ -175,6 +180,7 @@ export interface UiState {
   setTool: (tool: Tool) => void;
   setInk: (patch: Partial<InkPrefs>) => void;
   setClearInkOpen: (open: boolean) => void;
+  setPhoneTab: (tab: PhoneTab) => void;
   openPin: (id: string | null) => void;
   setExporting: (exporting: boolean) => void;
   setPreparingBoard: (preparing: boolean) => void;
@@ -207,6 +213,7 @@ const INITIAL = {
   ink: { color: "ink-1", size: 3 } as InkPrefs,
   clearInkOpen: false,
   openPinId: null as string | null,
+  phoneTab: "trace" as PhoneTab,
   exporting: false,
   preparingBoard: false,
 };
@@ -252,7 +259,10 @@ export const uiStore = createStore<UiState>()((set) => ({
   prefillChat: (text) => set({ chatDraft: text, composerFocusPending: true }),
   prefillChatFocus: () => set({ composerFocusPending: true }),
   openChat() {
-    if (isNarrow()) {
+    if (isPhone()) {
+      // The assistant is a screen on a phone, not a sheet over one.
+      set({ phoneTab: "chat", composerFocusPending: true });
+    } else if (isNarrow()) {
       set({ chatSheetOpen: true, composerFocusPending: true });
     } else {
       writeRailCollapsed(false);
@@ -263,11 +273,14 @@ export const uiStore = createStore<UiState>()((set) => ({
   // A drawing tool makes the cards inert, so a selection (and the quick-peek on it) has nothing to point at.
   setInk: (patch) => set((s) => ({ ink: { ...s.ink, ...patch } })),
   setClearInkOpen: (open) => set({ clearInkOpen: open }),
+  setPhoneTab: (tab) => set({ phoneTab: tab }),
   openPin: (id) => set({ openPinId: id }),
   setExporting: (exporting) => set({ exporting }),
   setPreparingBoard: (preparingBoard) => set({ preparingBoard }),
   revealChat() {
-    if (isNarrow()) {
+    if (isPhone()) {
+      set({ phoneTab: "chat" });
+    } else if (isNarrow()) {
       set({ chatSheetOpen: true });
     } else {
       writeRailCollapsed(false);

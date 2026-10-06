@@ -27,7 +27,7 @@ export function ChatRail() {
           }}
           className="fixed inset-0 z-[69] bg-[color-mix(in_srgb,var(--fg-primary)_28%,transparent)]"
         />
-        <Panel mode="sheet" />
+        <ChatPanel mode="sheet" />
       </>
     ) : (
       <Button
@@ -43,7 +43,7 @@ export function ChatRail() {
     );
   }
 
-  return collapsed ? <Strip /> : <Panel mode="column" />;
+  return collapsed ? <Strip /> : <ChatPanel mode="column" />;
 }
 
 function Strip() {
@@ -69,8 +69,15 @@ function Strip() {
   );
 }
 
-function Panel({ mode }: { mode: "column" | "sheet" }) {
+/**
+ * What the assistant is shown as: a column beside the canvas, a sheet over it (tablet widths), or, on a
+ * phone, a screen of its own with no way to close it: the tab bar is how you leave.
+ */
+export type ChatPanelMode = "column" | "sheet" | "screen";
+
+export function ChatPanel({ mode }: { mode: ChatPanelMode }) {
   const sheet = mode === "sheet";
+  const screen = mode === "screen";
 
   function dismiss() {
     if (sheet) uiStore.getState().setChatSheetOpen(false);
@@ -92,10 +99,13 @@ function Panel({ mode }: { mode: "column" | "sheet" }) {
       data-mode={mode}
       onKeyDown={onKeyDown}
       className={[
-        "flex flex-col border-r border-subtle bg-rail",
+        "flex flex-col bg-rail",
+        screen ? "h-full" : "border-r border-subtle",
         sheet
           ? "fixed inset-y-0 left-0 z-[70] w-[min(360px,88vw)] animate-mc-rise shadow-[0_0_60px_-18px_rgba(0,0,0,.5)]"
-          : "h-full w-[360px] flex-none",
+          : screen
+            ? ""
+            : "h-full w-[360px] flex-none",
       ].join(" ")}
     >
       <header className="flex flex-none items-center justify-between border-b border-subtle px-4 py-3.5">
@@ -104,15 +114,17 @@ function Panel({ mode }: { mode: "column" | "sheet" }) {
           <span aria-hidden="true" className="-ml-1.5 size-[9px] rounded-full bg-node-strategy" />
           Assistant
         </h2>
-        <Button
-          variant="ghost"
-          aria-label={sheet ? "Close assistant" : "Collapse assistant"}
-          title={sheet ? "Close the assistant — Esc" : "Collapse the assistant"}
-          onClick={dismiss}
-          className="!size-7 !p-0 text-muted"
-        >
-          {sheet ? <X size={15} aria-hidden="true" /> : <PanelLeftClose size={15} aria-hidden="true" />}
-        </Button>
+        {screen ? null : (
+          <Button
+            variant="ghost"
+            aria-label={sheet ? "Close assistant" : "Collapse assistant"}
+            title={sheet ? "Close the assistant — Esc" : "Collapse the assistant"}
+            onClick={dismiss}
+            className="!size-7 !p-0 text-muted"
+          >
+            {sheet ? <X size={15} aria-hidden="true" /> : <PanelLeftClose size={15} aria-hidden="true" />}
+          </Button>
+        )}
       </header>
       <MessageList />
       <Composer />

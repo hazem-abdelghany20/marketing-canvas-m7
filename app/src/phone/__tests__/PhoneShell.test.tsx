@@ -62,7 +62,9 @@ describe("the tab bar", () => {
   it("gives every tab a target at least 44px high, written into its classes", async () => {
     await openPhone();
 
-    for (const button of within(bar()).getAllByRole("button")) expect(button.className).toMatch(/min-h-\[?44/);
+    for (const button of within(bar()).getAllByRole("button")) {
+      expect(Number(/min-h-\[(\d+)px\]/.exec(button.className)?.[1])).toBeGreaterThanOrEqual(44);
+    }
   });
 });
 
@@ -94,7 +96,7 @@ describe("the screens", () => {
     expect(document.querySelectorAll("[data-node-card]").length).toBe(SEED_NODES.length);
   });
 
-  it("makes the hidden canvas inert, so Tab and a screen reader never find a card behind another screen", async () => {
+  it("makes the hidden canvas inert and see-through, so no card is found, or painted, behind another screen", async () => {
     await openPhone();
     await waitFor(() => expect(document.querySelector(".react-flow")).not.toBeNull());
 
@@ -102,11 +104,14 @@ describe("the screens", () => {
 
     expect(board.hasAttribute("inert")).toBe(true);
     expect(board.style.visibility).toBe("hidden");
+    // React Flow marks each node visibility: visible, which a child may do over a hidden parent; opacity it can't undo.
+    expect(board.style.opacity).toBe("0");
 
     fireEvent.click(tab("Board"));
 
     expect(board.hasAttribute("inert")).toBe(false);
     expect(board.style.visibility).toBe("visible");
+    expect(board.style.opacity).toBe("1");
   });
 
   it("shows the assistant on the Chat screen, not as a floating button or an overlay sheet", async () => {

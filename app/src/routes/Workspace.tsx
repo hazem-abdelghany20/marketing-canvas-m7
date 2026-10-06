@@ -12,6 +12,8 @@ import { SearchOverlay } from "../components/SearchOverlay";
 import { ToastViewport } from "../components/Toast";
 import { Toolbar, ToolButton } from "../components/Toolbar";
 import { FILE_ACCEPT } from "../files/importFiles";
+import { usePhone } from "../lib/useMediaQuery";
+import { PhoneWorkspace } from "../phone/PhoneWorkspace";
 import { COPY } from "../ui/copy";
 import { uiStore } from "../ui/uiStore";
 import { ClearInkDialog } from "../whiteboard/ClearInkDialog";
@@ -37,11 +39,13 @@ export default function Workspace() {
 function WorkspaceScreen() {
   const location = useLocation();
   const workspace = useWorkspace();
+  const phone = usePhone();
 
   // A session that ended while a node was open signs in again and comes back to it.
   if (!workspace.token) return <Navigate to={signInTarget(location.pathname)} replace />;
 
-  return <DesktopWorkspace w={workspace} />;
+  // Below 640px the workspace is four screens and a bar; from there up it is the canvas with panels over it.
+  return phone ? <PhoneWorkspace w={workspace} /> : <DesktopWorkspace w={workspace} />;
 }
 
 /** The wide layout: the rail beside the canvas, the toolbar and the dock floating over it. */

@@ -52,16 +52,37 @@ test("asks the browser for the whole screen, so the bar can clear the home indic
   expect(content).not.toMatch(/maximum-scale|user-scalable=no/); // pinch-zoom of the page stays the reader's
 });
 
+/** Whether the board's screen paints and answers, as a person would find it. */
+const boardShowing = (page: Page) =>
+  page.locator("[data-phone-screen=board]").evaluate((el) => ({
+    inert: (el as HTMLElement & { inert: boolean }).inert,
+    opacity: getComputedStyle(el).opacity,
+  }));
+
 test("shows one screen at a time: the canvas is out of sight until Board is chosen", async ({ page }) => {
   await openCanvas(page);
-  await expect(page.locator(".react-flow")).toBeHidden();
+  expect(await boardShowing(page)).toEqual({ inert: true, opacity: "0" });
 
   await tab(page, "Board").tap();
+  expect(await boardShowing(page)).toEqual({ inert: false, opacity: "1" });
   await expect(page.locator(".react-flow")).toBeVisible();
 
   await tab(page, "Chat").tap();
-  await expect(page.locator(".react-flow")).toBeHidden();
+  expect(await boardShowing(page)).toEqual({ inert: true, opacity: "0" });
   await expect(page.getByRole("textbox", { name: "Message" })).toBeVisible();
+});
+
+test("no card from the board is painted over another screen", async ({ page }) => {
+  await openCanvas(page);
+
+  // Cards keep visibility: visible of their own; what keeps them off the Trace screen is the board's opacity.
+  const painted = await page.evaluate(() =>
+    [...document.querySelectorAll("[data-node-card]")].some((card) => {
+      for (let el: Element | null = card; el; el = el.parentElement) if (getComputedStyle(el).opacity === "0") return false;
+      return card.getBoundingClientRect().width > 0 && !card.closest("[inert]");
+    }),
+  );
+  expect(painted).toBe(false);
 });
 
 test("keeps the board where it was while another tab is shown", async ({ page }) => {
