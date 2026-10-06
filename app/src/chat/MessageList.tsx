@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { useGoToNode } from "../canvas/useGoToNode";
 import { ChatMessage } from "../components/ChatMessage";
-import { isNarrow } from "../lib/useMediaQuery";
+import { isNarrow, isPhone } from "../lib/useMediaQuery";
 import { appStore } from "../store";
 import { CHAT_EXAMPLES, COPY } from "../ui/copy";
 import { uiStore } from "../ui/uiStore";
@@ -60,8 +60,11 @@ export function MessageList() {
             onApply={apply}
             // Focus stays on the chip: the person is reading the conversation, not working the canvas.
             onCite={(node) => {
-              // Below 900px the sheet covers the canvas; the pan is no use to anyone behind it.
-              if (isNarrow() && uiStore.getState().chatSheetOpen) {
+              if (isPhone()) {
+                // The assistant is a screen of its own on a phone: the node is on the Board.
+                uiStore.getState().setPhoneTab("board");
+              } else if (isNarrow() && uiStore.getState().chatSheetOpen) {
+                // Below 900px the sheet covers the canvas; the pan is no use to anyone behind it.
                 uiStore.getState().setChatSheetOpen(false);
                 focusChatOpenButton();
               }

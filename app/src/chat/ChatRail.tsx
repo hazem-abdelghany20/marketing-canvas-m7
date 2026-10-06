@@ -3,9 +3,11 @@ import type { KeyboardEvent } from "react";
 import { Button } from "../components/Button";
 import { useNarrow } from "../lib/useMediaQuery";
 import { uiStore, useUi } from "../ui/uiStore";
+import { BoardStrip } from "../phone/BoardStrip";
 import { Composer } from "./Composer";
 import { CHAT_OPEN_ID, focusChatOpenButton } from "./focus";
 import { MessageList } from "./MessageList";
+import { ModePicker } from "./ModePicker";
 
 /**
  * O6 — the assistant. A 360px column beside the canvas that folds down to a 48px strip,
@@ -126,8 +128,15 @@ export function ChatPanel({ mode }: { mode: ChatPanelMode }) {
           </Button>
         )}
       </header>
+      {/* On a phone the picture of the board and the reply modes sit above the conversation, and the composer is a row. */}
+      {screen ? <BoardStrip /> : null}
+      {screen ? (
+        <div className="flex-none px-3 pt-2.5">
+          <ModePicker />
+        </div>
+      ) : null}
       <MessageList />
-      <Composer />
+      <Composer compact={screen} />
     </aside>
   );
 }

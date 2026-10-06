@@ -77,11 +77,15 @@ describe("where it puts them", () => {
   });
 
   it("keeps the board's own arrangement: what is left of another on the board is left of it here, and what is above is above", () => {
-    const placed = scene(["nd_con_email", "nd_con_linenstyle", "nd_goal_vayn"]);
-    const at = (id: string) => placed.items.find((item) => item.node.id === id)!;
+    const side = scene(["nd_con_email", "nd_con_linenstyle"]).items;
+    const email = side.find((item) => item.node.id === "nd_con_email")!;
+    const reel = side.find((item) => item.node.id === "nd_con_linenstyle")!;
+    expect(email.x).toBeLessThan(reel.x);
 
-    expect(at("nd_con_email").x).toBeLessThan(at("nd_con_linenstyle").x);
-    expect(at("nd_goal_vayn").y).toBeLessThan(at("nd_con_linenstyle").y);
+    const column = scene(["nd_goal_md", "nd_con_2am"]).items;
+    const goal = column.find((item) => item.node.id === "nd_goal_md")!;
+    const reply = column.find((item) => item.node.id === "nd_con_2am")!;
+    expect(goal.y).toBeLessThan(reply.y);
   });
 
   it("puts a node with nothing to show beside it in the middle", () => {

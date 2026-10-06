@@ -1,24 +1,33 @@
-import { SendHorizontal } from "lucide-react";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { LoaderCircle, ScanEye, SendHorizontal } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent } from "react";
 import { useStore } from "zustand";
 import { Button } from "../components/Button";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
 import { uiStore, useUi } from "../ui/uiStore";
+import { explainWhy, useSendBoard } from "../whiteboard/useBoardActions";
 import { ModePicker } from "./ModePicker";
 
 /** The API refuses a message longer than this (api/README.md § Chat), so the box stops there. */
 export const MAX_MESSAGE = 5000;
 
+/** The compact field grows with what is written, to about four lines, and scrolls after that. */
+const MAX_FIELD_HEIGHT = 120;
+
 /**
  * The message box. Enter sends and Shift+Enter starts a new line. While a reply is
  * streaming it stays focusable (so focus is not thrown away mid-conversation) but
  * is read-only and says it is busy: nothing can be sent until the reply is done.
+ *
+ * On a phone it is `compact`: one row of a button that sends the board, a 16px field (so the browser does not zoom
+ * the page when it takes focus) that grows to a few lines, and Send. Shift+Enter is out of reach of a phone's keyboard, so
+ * Enter adds a line there and Send is how a message goes; the reply modes are shown by the screen, above the conversation.
  */
-export function Composer() {
+export function Composer({ compact = false }: { compact?: boolean }) {
   const draft = useUi((s) => s.chatDraft);
   const focusPending = useUi((s) => s.composerFocusPending);
   const streaming = useStore(appStore, (s) => s.chatStreaming);
+  const board = useSendBoard();
   const field = useRef<HTMLTextAreaElement>(null);
   const empty = draft.trim() === "";
 
@@ -29,6 +38,14 @@ export function Composer() {
     uiStore.getState().consumeComposerFocus();
   }, [focusPending]);
 
+  // The compact field is as tall as what is in it, up to a point.
+  useLayoutEffect(() => {
+    const el = field.current;
+    if (!compact || !el) return;
+    el.style.height = "auto";
+    if (el.scrollHeight > 0) el.style.height = `${Math.min(el.scrollHeight, MAX_FIELD_HEIGHT)}px`;
+  }, [draft, compact]);
+
   function send() {
     if (streaming || empty) return;
     uiStore.getState().setChatDraft("");
@@ -36,10 +53,62 @@ export function Composer() {
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (compact) return; // Enter is a new line here; Send sends
     // Enter while an input method is composing confirms the composition; it is not "send".
     if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing || event.keyCode === 229) return;
     event.preventDefault();
     send();
+  }
+
+  const sendReason = streaming ? COPY.waitForReply : empty ? COPY.chatWriteFirst : null;
+
+  if (compact) {
+    return (
+      <div className="flex flex-none items-end gap-2 border-t border-subtle bg-panel px-3 py-2.5">
+        <Button
+          variant="secondary"
+          aria-label="Send the board"
+          aria-busy={board.preparing || undefined}
+          title={COPY.sendBoard}
+          disabledReason={board.reason}
+          onDisabledClick={() => explainWhy(board.reason)}
+          onClick={board.send}
+          className="!size-11 flex-none !rounded-full !p-0 text-muted"
+        >
+          {board.preparing ? (
+            <LoaderCircle size={18} aria-hidden="true" className="animate-spin" />
+          ) : (
+            <ScanEye size={18} aria-hidden="true" />
+          )}
+        </Button>
+        <textarea
+          ref={field}
+          data-chat-composer
+          aria-label="Message"
+          aria-disabled={streaming || undefined}
+          readOnly={streaming}
+          rows={1}
+          maxLength={MAX_MESSAGE}
+          value={draft}
+          placeholder={COPY.chatPlaceholder}
+          onChange={(event) => uiStore.getState().setChatDraft(event.target.value)}
+          onKeyDown={onKeyDown}
+          className={`block min-h-11 min-w-0 flex-1 resize-none rounded-[22px] border bg-elevated px-3.5 py-[10px] text-base leading-6 text-primary placeholder:text-muted ${
+            streaming ? "border-subtle opacity-60" : "border-strong"
+          }`}
+        />
+        <Button
+          variant="primary"
+          aria-label="Send"
+          disabledReason={sendReason}
+          onDisabledClick={() => explainWhy(sendReason)}
+          onClick={send}
+          className="!size-11 flex-none !rounded-full !p-0"
+        >
+          <SendHorizontal size={18} aria-hidden="true" />
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -66,12 +135,7 @@ export function Composer() {
           <span className="min-w-0 truncate font-mono text-[9.5px] text-muted">
             {streaming ? COPY.chatHintBusy : COPY.chatHint}
           </span>
-          <Button
-            variant="primary"
-            className="flex-none"
-            disabledReason={streaming ? COPY.waitForReply : empty ? COPY.chatWriteFirst : null}
-            onClick={send}
-          >
+          <Button variant="primary" className="flex-none" disabledReason={sendReason} onClick={send}>
             <SendHorizontal size={13} aria-hidden="true" />
             Send
           </Button>
