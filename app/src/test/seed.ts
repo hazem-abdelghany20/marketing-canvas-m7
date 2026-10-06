@@ -7,7 +7,8 @@ import type { Annotation, CanvasNode, Edge, NodeType } from "../types";
  */
 const T = "2026-09-02T00:00:00.000Z";
 
-function node(id: string, type: NodeType, title: string, body = "", x = 0, y = 0): CanvasNode {
+/** A node, for a test that needs one the seed does not have. */
+export function node(id: string, type: NodeType, title: string, body = "", x = 0, y = 0): CanvasNode {
   return { id, type, title, body, fileIds: [], x, y, createdAt: T, updatedAt: T };
 }
 
@@ -30,8 +31,9 @@ export const SEED_NODES: CanvasNode[] = [
   node("nd_not_reach", "note", "IG reach down 30% since the algo change", "Starts Aug 12. Affects every account, not just ours.", 620, 900),
 ];
 
-const edge = (id: number, fromId: string, toId: string, kind: Edge["kind"] = "serves", label: string | null = null): Edge => ({
-  id: `edg_${id}`,
+/** An edge, for a test that needs one the seed does not have. `from` serves `to`, unless the kind says otherwise. */
+export const edge = (id: number | string, fromId: string, toId: string, kind: Edge["kind"] = "serves", label: string | null = null): Edge => ({
+  id: typeof id === "number" ? `edg_${id}` : id,
   fromId,
   toId,
   kind,
