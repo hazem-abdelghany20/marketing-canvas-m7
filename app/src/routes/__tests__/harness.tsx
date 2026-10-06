@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { routes } from "../../App";
 import { appStore } from "../../store";
 import { apiError, json, type RecordedCall } from "../../api/__tests__/helpers";
+import type { Annotation, CanvasNode, Edge } from "../../types";
 
 export { apiError, json };
 
@@ -61,6 +62,28 @@ export function serveEmptyBoard() {
   network.on("GET /board", () => json(200, emptyBoard));
   for (const p of ["/nodes", "/edges", "/files", "/strokes", "/marks", "/pins"]) {
     network.on(`GET ${p}`, () => json(200, []));
+  }
+}
+
+/**
+ * The requests a board load makes, answering with the nodes, edges and annotations given: a board with a shape.
+ * Nothing else is on it, and nothing here answers a write.
+ */
+export function serveBoard({
+  nodes = [],
+  edges = [],
+  annotations = [],
+}: {
+  nodes?: CanvasNode[];
+  edges?: Edge[];
+  annotations?: Annotation[];
+} = {}) {
+  network.on("GET /board", () => json(200, emptyBoard));
+  network.on("GET /nodes", () => json(200, nodes));
+  network.on("GET /edges", () => json(200, edges));
+  for (const p of ["/files", "/strokes", "/marks", "/pins"]) network.on(`GET ${p}`, () => json(200, []));
+  for (const n of nodes) {
+    network.on(`GET /nodes/${n.id}/annotations`, () => json(200, annotations.filter((a) => a.nodeId === n.id)));
   }
 }
 

@@ -18,7 +18,21 @@ export default defineConfig({
   },
   // The chat rail is a 360px column beside the canvas, so the window is 360px wider than Desktop
   // Chrome's 1280 and the canvas keeps the 1280x720 that older geometry specs were written against.
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1280 + 360, height: 720 } } }],
+  projects: [
+    {
+      name: "chromium",
+      // The phone layout has its own project, below.
+      testIgnore: /phone-.*\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280 + 360, height: 720 } },
+    },
+    {
+      // Below 640px the workspace is four screens and a bar (tickets 023-029): a touch screen, 390 wide,
+      // which a spec resizes across the sizes it cares about.
+      name: "phone",
+      testMatch: /phone-.*\.spec\.ts/,
+      use: { ...devices["Pixel 7"], viewport: { width: 390, height: 844 } },
+    },
+  ],
   webServer: [
     {
       command: "node ../api/server.js",
