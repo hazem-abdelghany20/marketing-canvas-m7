@@ -95,16 +95,14 @@ describe("a node's detail on a phone", () => {
     expect(appStore.getState().chatMessages).toHaveLength(0);
   });
 
-  it("makes every field in it 16px, so the browser does not zoom the page to a field", async () => {
+  it("makes the fields that were smaller than 16px 16px, so the browser does not zoom the page to a field", async () => {
     const { panel } = await openNode();
 
-    for (const field of [
-      within(panel).getByRole("textbox", { name: "Title" }),
-      within(panel).getByRole("textbox", { name: "Description" }),
-      within(panel).getByRole("textbox", { name: "New annotation" }),
-    ]) {
-      expect(field.className, field.getAttribute("aria-label") ?? "").toMatch(/\bmax-\[639px\]:text-base\b/);
+    // The title is 21px already; the description and the new note were 13px.
+    for (const name of ["Description", "New annotation"]) {
+      expect(within(panel).getByRole("textbox", { name }).className, name).toMatch(/\bmax-\[639px\]:text-base\b/);
     }
+    expect(within(panel).getByRole("textbox", { name: "Title" }).className).toMatch(/text-\[21px\]/);
   });
 });
 

@@ -40,6 +40,7 @@ export const COPY = {
 
   // O1 — Add-node menu
   addNodeFailed: "Couldn't add the node. Check your connection and try again.",
+  connectAfterAddFailed: "Added the node, but couldn't connect it. Check your connection and try again.",
   waitForReply: "Wait for the current reply to finish.",
 
   // S4 — Node detail
@@ -92,6 +93,11 @@ export const COPY = {
   traceNoGoalsBody: "Every trace starts at a goal. Add one, then connect what serves it.",
   traceAddGoal: "Add a goal",
   traceNothingServes: "Nothing serves this yet.",
+  addSheetTitle: "Add to the board",
+  addSheetImport: "Import a file",
+  addSheetImportHint: "Images, PDF, text, Office \u00b7 25MB",
+  addSheetDraft: "Draft in chat",
+  addSheetDraftHint: "Ask the assistant to write one",
   traceServedBy: "served by",
 
   // P5 — Find
@@ -117,6 +123,9 @@ export const CHAT_EXAMPLES = [
   { mode: "Librarian", text: "What serves the Ramadan push?" },
   { mode: "Operator", text: "Connect the linen shoot hero to the Ramadan push" },
 ] as const;
+
+/** What an empty row in Trace offers to add: the layer it expects. */
+export const traceAdd = (type: string) => (type === "content" ? "Add a piece of content" : `Add a ${type}`);
 
 /** What Find says when what was typed matches nothing. */
 export const findNoMatch = (query: string) => `No nodes match \u201c${query.trim()}\u201d.`;

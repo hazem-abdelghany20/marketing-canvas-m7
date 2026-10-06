@@ -1,9 +1,11 @@
+import { Plus } from "lucide-react";
 import { useEffect, useId, useRef, type KeyboardEvent } from "react";
 import { TYPE_BG, TypeChip } from "../components/TypeChip";
 import { prefersReducedMotion } from "../lib/motion";
 import { plural } from "../lib/format";
 import type { NodeType } from "../types";
-import { COPY } from "../ui/copy";
+import { Button } from "../components/Button";
+import { COPY, traceAdd } from "../ui/copy";
 import { rowLabel, type TraceCard, type TraceRow } from "./traceModel";
 
 /** The next card shows this much beyond the one on screen: how a row says it can be swiped. */
@@ -45,13 +47,15 @@ interface TraceRowViewProps {
   onChoose: (index: number) => void;
   /** The card on screen was tapped. */
   onOpen: (id: string) => void;
+  /** An empty row's button: make what it expects, serving the card above. */
+  onAdd: () => void;
 }
 
 /**
  * One layer of a trace: a row of cards that is swiped sideways, one on screen with the next peeking in. Scrolling
  * snaps to a card and the card it lands on is the one chosen; choosing one any other way scrolls it into place.
  */
-export function TraceRowView({ row, parentTitle, onChoose, onOpen }: TraceRowViewProps) {
+export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: TraceRowViewProps) {
   const label = rowLabel(row);
   const count = row.cards.length;
   const track = useRef<HTMLUListElement>(null);
@@ -155,8 +159,14 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen }: TraceRowVie
       <section role="group" aria-label={`${label}, empty`} data-trace-row={row.depth} className="pt-3.5">
         {connector}
         {heading}
-        <div className="mx-4 rounded-lg border border-dashed border-strong p-4 text-[13.5px] text-muted">
+        <div className="mx-4 flex flex-col items-start gap-2.5 rounded-lg border border-dashed border-strong p-4 text-[13.5px] text-muted">
           {COPY.traceNothingServes}
+          {row.addType ? (
+            <Button variant="secondary" onClick={onAdd} className="min-h-10 gap-1.5 px-3.5 text-[13.5px]">
+              <Plus size={16} aria-hidden="true" />
+              {traceAdd(row.addType)}
+            </Button>
+          ) : null}
         </div>
       </section>
     );

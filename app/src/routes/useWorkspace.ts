@@ -2,7 +2,7 @@ import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef } from "react";
 import { useMatch, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
-import { arrangeBoard, createNote } from "../canvas/actions";
+import { arrangeBoard, createNodeAt, createNote } from "../canvas/actions";
 import { exitConnect, startConnect } from "../canvas/connect";
 import { useCitationHighlight } from "../canvas/useCitationHighlight";
 import { useFitToBounds } from "../canvas/useFitToBounds";
@@ -16,7 +16,7 @@ import { importFiles, ROW_GAP } from "../files/importFiles";
 import { isNarrow, useNarrow } from "../lib/useMediaQuery";
 import { ADD_TAB_ID } from "../phone/TabBar";
 import { appStore } from "../store";
-import type { CanvasNode } from "../types";
+import type { CanvasNode, NodeType } from "../types";
 import { COPY } from "../ui/copy";
 import { uiStore, useUi } from "../ui/uiStore";
 import { useToolShortcuts } from "../whiteboard/useToolShortcuts";
@@ -79,6 +79,18 @@ export function useWorkspace() {
       onCreated: (node) => navigate(`/node/${encodeURIComponent(node.id)}`, { state: { focusTitle: true } }),
     });
   }, [closeAddMenu, navigate, viewportCenter]);
+
+  /** The phone's Add sheet chooses the type first; the desktop's menu makes a note and asks later. */
+  const addOfType = useCallback(
+    (type: NodeType) => {
+      closeAddMenu(false);
+      void createNodeAt(viewportCenter(), {
+        type,
+        onCreated: (node) => navigate(`/node/${encodeURIComponent(node.id)}`, { state: { focusTitle: true } }),
+      });
+    },
+    [closeAddMenu, navigate, viewportCenter],
+  );
 
   const fromChat = useCallback(() => {
     closeAddMenu(false);
@@ -189,6 +201,7 @@ export function useWorkspace() {
     openAddMenu,
     closeAddMenu,
     addNote,
+    addOfType,
     fromChat,
     pickFile,
     onPickFiles,

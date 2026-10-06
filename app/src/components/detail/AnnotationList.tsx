@@ -69,7 +69,7 @@ export function AnnotationList({ nodeId }: { nodeId: string }) {
           }}
           rows={2}
           placeholder="Add a note…  ⌘↵ to save"
-          className="min-w-0 flex-1 resize-none rounded-sm border border-subtle bg-elevated px-2.5 py-2 text-[13px] leading-normal text-primary placeholder:text-muted"
+          className="min-w-0 flex-1 resize-none rounded-sm border border-subtle bg-elevated px-2.5 py-2 text-[13px] leading-normal text-primary placeholder:text-muted max-[639px]:text-base"
         />
         <Button
           type="submit"

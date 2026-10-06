@@ -10,6 +10,14 @@ export interface NodeUpdate {
   patch: NodePatch;
 }
 
+/** What making a node that serves another came to: the node always, the edge unless it was refused. */
+export interface ServingResult {
+  node: CanvasNode;
+  edge: Edge | null;
+  /** Why the edge was refused, when it was. The node is made and stays. */
+  edgeError: unknown;
+}
+
 export interface NodesSlice {
   nodes: ById<CanvasNode>;
   /**
@@ -17,6 +25,12 @@ export interface NodesSlice {
    * never leaves a half-made node on the canvas.
    */
   createNode: (input: NodeInput) => Promise<CanvasNode>;
+  /**
+   * A node, and the edge that has it serve `parentId`, as ONE step to undo (which deletes the node, and the API takes its
+   * edge with it). If the node is refused, nothing is made and this rejects. If only the edge is refused the node stays,
+   * still undoable, and the result says so, so the caller can offer the connection again.
+   */
+  createServingNode: (input: NodeInput, parentId: string) => Promise<ServingResult>;
   updateNode: (id: string, patch: NodePatch) => Promise<CanvasNode>;
   /**
    * Several nodes at once, as ONE undo step. Each goes through the same optimistic
@@ -32,6 +46,7 @@ export interface NodesSlice {
 export const createNodesSlice: SliceCreator<NodesSlice> = (ctx) => (_set, _get, store) => ({
   nodes: {},
   createNode: (input) => createNode(ctx, store, input),
+  createServingNode: (input, parentId) => createServingNode(ctx, store, input, parentId),
   updateNode: (id, patch) => updateNode(ctx, store, id, patch, true),
   updateNodes: (updates, label) => updateNodes(ctx, store, updates, label),
   deleteNode: (id) => deleteNode(ctx, store, id, true),
@@ -48,6 +63,29 @@ async function createNode(ctx: StoreContext, store: AppStore, input: NodeInput) 
     undo: () => deleteNode(ctx, store, ctx.ids.resolve(node.id), false),
   });
   return node;
+}
+
+async function createServingNode(ctx: StoreContext, store: AppStore, input: NodeInput, parentId: string): Promise<ServingResult> {
+  const node = await mutate(store, {
+    request: () => ctx.api.nodes.create(input),
+    commit: (s, created) => ({ nodes: { ...s.nodes, [created.id]: created } }),
+    rollback: () => ({}),
+  });
+  // One entry, recorded before the edge is tried, so there is exactly one whatever becomes of it.
+  record(store, {
+    label: "Add node",
+    undo: () => deleteNode(ctx, store, ctx.ids.resolve(node.id), false),
+  });
+  try {
+    const edge = await mutate(store, {
+      request: () => ctx.api.edges.create({ fromId: node.id, toId: parentId, kind: "serves" }),
+      commit: (s, created) => ({ edges: { ...s.edges, [created.id]: created } }),
+      rollback: () => ({}),
+    });
+    return { node, edge, edgeError: null };
+  } catch (edgeError) {
+    return { node, edge: null, edgeError };
+  }
 }
 
 async function updateNode(ctx: StoreContext, store: AppStore, id: string, patch: NodePatch, track: boolean) {

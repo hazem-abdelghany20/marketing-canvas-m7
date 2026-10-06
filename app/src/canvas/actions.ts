@@ -1,7 +1,8 @@
 import { plural } from "../lib/format";
 import { motionMs } from "../lib/motion";
 import { appStore } from "../store";
-import type { CanvasNode } from "../types";
+import { CARD_HEIGHT } from "../components/NodeCard";
+import type { CanvasNode, NodeType } from "../types";
 import { COPY } from "../ui/copy";
 import { uiStore } from "../ui/uiStore";
 import { autoArrange, layoutBounds } from "./autoArrange";
@@ -124,15 +125,18 @@ export function avoidOverlap(at: Point, nodes: CanvasNode[]): Point {
   return { x, y };
 }
 
-/** O1 — creates a note, or says it couldn't and offers to try again. Nothing half-made stays behind. */
-export async function createNote(
+/**
+ * O1 — creates a node of a type, or says it couldn't and offers to try again. Nothing half-made stays behind. The desktop's
+ * menu makes notes (the type is chosen afterwards, in the panel); the phone's Add sheet chooses it first.
+ */
+export async function createNodeAt(
   at: Point,
-  options: { title?: string; onCreated?: (node: CanvasNode) => void } = {},
+  options: { type: NodeType; title?: string; onCreated?: (node: CanvasNode) => void },
 ): Promise<CanvasNode | null> {
   const { nodes, createNode } = appStore.getState();
   const { x, y } = avoidOverlap(at, Object.values(nodes));
   try {
-    const node = await createNode({ type: "note", x, y, ...(options.title ? { title: options.title } : {}) });
+    const node = await createNode({ type: options.type, x, y, ...(options.title ? { title: options.title } : {}) });
     options.onCreated?.(node);
     return node;
   } catch {
@@ -140,8 +144,73 @@ export async function createNote(
       message: COPY.addNodeFailed,
       tone: "danger",
       actionLabel: "Retry",
-      onAction: () => void createNote(at, options),
+      onAction: () => void createNodeAt(at, options),
     });
     return null;
+  }
+}
+
+/** O1 — creates a note: a node of the one type that says nothing about what it is for. */
+export function createNote(
+  at: Point,
+  options: { title?: string; onCreated?: (node: CanvasNode) => void } = {},
+): Promise<CanvasNode | null> {
+  return createNodeAt(at, { ...options, type: "note" });
+}
+
+/** How far under the node it serves a new one is put: clear of its card, where the chain runs down the board. */
+export const SERVING_GAP = 80;
+
+/** Serves that are being made right now, so a second tap on the same button waits for the first. */
+const adding = new Set<string>();
+
+/** Joins a node to the one it serves, or says it couldn't and offers to try again. */
+function connectServing(nodeId: string, parentId: string) {
+  appStore
+    .getState()
+    .createEdge({ fromId: nodeId, toId: parentId, kind: "serves" })
+    .catch(() => reportConnectAfterAdd(nodeId, parentId));
+}
+
+function reportConnectAfterAdd(nodeId: string, parentId: string) {
+  uiStore.getState().toast({
+    message: COPY.connectAfterAddFailed,
+    tone: "danger",
+    actionLabel: "Retry",
+    onAction: () => connectServing(nodeId, parentId),
+  });
+}
+
+/**
+ * Adds a node of `type` that serves `parentId`: made under it, joined to it, as one step to undo. It is what an empty row in
+ * Trace offers. If the node can't be made nothing is, and it says so; if only the joining fails the node stays and it offers
+ * the joining again, and the node is still reported as made, since there is a node to name.
+ */
+export async function addServing(
+  parentId: string,
+  type: NodeType,
+  options: { onCreated?: (node: CanvasNode) => void } = {},
+): Promise<CanvasNode | null> {
+  const { nodes, createServingNode } = appStore.getState();
+  const parent = nodes[parentId];
+  const key = `${parentId}:${type}`;
+  if (!parent || adding.has(key)) return null;
+  adding.add(key);
+  try {
+    const at = avoidOverlap({ x: parent.x, y: parent.y + CARD_HEIGHT + SERVING_GAP }, Object.values(nodes));
+    const { node, edgeError } = await createServingNode({ type, x: at.x, y: at.y }, parentId);
+    if (edgeError) reportConnectAfterAdd(node.id, parentId);
+    options.onCreated?.(node);
+    return node;
+  } catch {
+    uiStore.getState().toast({
+      message: COPY.addNodeFailed,
+      tone: "danger",
+      actionLabel: "Retry",
+      onAction: () => void addServing(parentId, type, options),
+    });
+    return null;
+  } finally {
+    adding.delete(key);
   }
 }

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
+import { addServing } from "../canvas/actions";
 import { Button } from "../components/Button";
 import { UndoButton } from "../components/UndoButton";
 import { BoardFailed, BoardLoading } from "../routes/CanvasStage";
@@ -58,6 +59,13 @@ export function TraceScreen({ w }: { w: WorkspaceController }) {
               parentTitle={row.parentId ? (nodes[row.parentId]?.title.trim() || "Untitled") : null}
               onChoose={(index) => choose(row.depth, index)}
               onOpen={(id) => navigate(`/node/${encodeURIComponent(id)}`)}
+              onAdd={() => {
+                if (!row.parentId || !row.addType) return;
+                // Made under the card above and joined to it; then opened, with its title ready to be typed.
+                void addServing(row.parentId, row.addType, {
+                  onCreated: (node) => navigate(`/node/${encodeURIComponent(node.id)}`, { state: { focusTitle: true } }),
+                });
+              }}
             />
           ))
         )}

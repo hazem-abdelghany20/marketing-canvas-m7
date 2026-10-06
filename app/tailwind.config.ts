@@ -58,6 +58,9 @@ const config: Config = {
         "mc-rise": { from: { opacity: "0", transform: "translateY(8px)" }, to: { opacity: "1", transform: "translateY(0)" } },
         "mc-flash": { "0%, 100%": { opacity: "1" }, "50%": { opacity: ".25" } },
         "mc-slide": { from: { transform: "translateX(-100%)" }, to: { transform: "translateX(250%)" } },
+        // A bottom sheet rises into place. No fill after it ends: the sheet is then dragged with an inline transform,
+        // which a held animation value would beat.
+        "mc-sheet": { from: { transform: "translateY(100%)" }, to: { transform: "translateY(0)" } },
       },
       animation: {
         "mc-pop": "mc-pop .14s ease both",
@@ -65,6 +68,7 @@ const config: Config = {
         "mc-flash": "mc-flash .6s ease 2",
         "mc-pulse": "mc-flash 1.2s ease infinite",
         "mc-slide": "mc-slide 1.1s ease-in-out infinite",
+        "mc-sheet": "mc-sheet .26s cubic-bezier(.2,.8,.2,1) backwards",
       },
       fontFamily: {
         sans: ["Instrument Sans", "system-ui", "sans-serif"],

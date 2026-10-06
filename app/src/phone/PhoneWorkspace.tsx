@@ -5,7 +5,6 @@ import { ChatPanel } from "../chat/ChatRail";
 import { startConnect } from "../canvas/connect";
 import { ConnectMode } from "../canvas/ConnectMode";
 import { FIT_MAX_ZOOM, FIT_PADDING } from "../canvas/useViewport";
-import { AddNodeMenu, MenuItem } from "../components/AddNodeMenu";
 import { QuickPeek } from "../components/QuickPeek";
 import { ReasonTip } from "../components/ReasonTip";
 import { ToastViewport } from "../components/Toast";
@@ -20,6 +19,7 @@ import { ClearInkDialog } from "../whiteboard/ClearInkDialog";
 import { Dock } from "../whiteboard/Dock";
 import { InkOptions } from "../whiteboard/InkOptions";
 import { ToolHint } from "../whiteboard/ToolHint";
+import { AddSheet } from "./AddSheet";
 import { BoardBar } from "./BoardBar";
 import { boardOutOfView } from "./boardView";
 import { TabBar } from "./TabBar";
@@ -77,7 +77,7 @@ function BringBoardIntoView({ shown, ready }: { shown: boolean; ready: boolean }
  */
 export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
   const tab = useUi((s) => s.phoneTab);
-  const { ready, state, addMenuOpen, fileInput, openAddMenu, closeAddMenu, addNote, fromChat, pickFile, onPickFiles } = w;
+  const { ready, state, addMenuOpen, fileInput, openAddMenu, closeAddMenu, addOfType, fromChat, pickFile, onPickFiles } = w;
   const boardShown = tab === "board";
 
   return (
@@ -113,11 +113,6 @@ export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
           <FindScreen w={w} />
         </Screen>
 
-        {addMenuOpen && ready ? (
-          <AddNodeMenu onClose={closeAddMenu} onNote={addNote} onFromChat={fromChat}>
-            <MenuItem label="File" hint="Images, PDF, text, Office · 25MB" onSelect={pickFile} />
-          </AddNodeMenu>
-        ) : null}
         <input
           ref={fileInput}
           type="file"
@@ -138,6 +133,10 @@ export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
       </main>
 
       <TabBar onAdd={openAddMenu} addOpen={addMenuOpen} />
+      {/* The Add sheet rises over the bar, as a node's detail does. */}
+      {addMenuOpen && ready ? (
+        <AddSheet onClose={closeAddMenu} onType={addOfType} onFile={pickFile} onFromChat={fromChat} />
+      ) : null}
       {/* A node's detail is the last thing in the shell and above the bar, so it covers it. */}
       <Outlet />
     </div>

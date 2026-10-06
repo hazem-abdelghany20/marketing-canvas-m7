@@ -17,7 +17,7 @@ export function BodyEditor({ body, save, hold }: { body: string; save: Autosave[
         onFocus={field.onFocus}
         onBlur={field.onBlur}
         rows={5}
-        className="min-h-[120px] w-full resize-y rounded-sm border border-transparent bg-transparent p-0 text-[13.5px] leading-relaxed text-primary [field-sizing:content] placeholder:text-muted hover:border-subtle focus:border-subtle focus:p-2"
+        className="min-h-[120px] w-full resize-y rounded-sm border border-transparent bg-transparent p-0 text-[13.5px] leading-relaxed text-primary max-[639px]:text-base [field-sizing:content] placeholder:text-muted hover:border-subtle focus:border-subtle focus:p-2"
       />
       <p className="mt-2 font-mono text-[9.5px] text-muted opacity-75"># heading · **bold** · - list · [link](url)</p>
     </Section>

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { demoSession, freshSession, openCanvas, type Session } from "./support";
 
 const bar = (page: Page) => page.getByRole("navigation", { name: "Main" });
@@ -6,6 +6,19 @@ const tab = (page: Page, name: string) => bar(page).getByRole("button", { name }
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Add to the board" });
 const detail = (page: Page) => page.getByRole("complementary", { name: "Node detail" });
 const trace = (page: Page) => page.getByRole("region", { name: "Trace" });
+
+/** A sheet rises into place as it opens: wait until it has stopped, then measure it. */
+async function settled(locator: Locator) {
+  let last = "";
+  await expect
+    .poll(async () => {
+      const now = JSON.stringify(await locator.boundingBox());
+      const still = now === last;
+      last = now;
+      return still;
+    })
+    .toBe(true);
+}
 
 /** One finger down, along a path, and up: through the browser's own touch input. */
 async function drag(page: Page, from: [number, number], to: [number, number]) {
@@ -30,6 +43,7 @@ test.describe("the Add tab", () => {
 
   test("opens a sheet from the bottom edge, over the bar, with a scrim behind it", async ({ page }) => {
     const { width, height } = page.viewportSize()!;
+    await settled(sheet(page));
     const box = (await sheet(page).boundingBox())!;
 
     expect(box.x).toBe(0);
@@ -67,6 +81,7 @@ test.describe("the Add tab", () => {
 
   test("goes away when the handle is dragged down, and makes nothing", async ({ page }) => {
     const before = (await s.nodes()).length;
+    await settled(sheet(page));
     const handle = (await sheet(page).locator("[data-sheet-handle]").boundingBox())!;
 
     await drag(page, [handle.x + handle.width / 2, handle.y + handle.height / 2], [handle.x + handle.width / 2, handle.y + 260]);
@@ -131,6 +146,7 @@ test.describe("a node's detail as a sheet", () => {
 
   test("rises from the bottom edge, over the bar and the screen, never taller than 92% of it", async ({ page }) => {
     const { width, height } = page.viewportSize()!;
+    await settled(detail(page));
     const box = (await detail(page).boundingBox())!;
 
     expect(box.x).toBe(0);
@@ -141,6 +157,7 @@ test.describe("a node's detail as a sheet", () => {
   });
 
   test("goes away when its handle is dragged down, and the address goes back", async ({ page }) => {
+    await settled(detail(page));
     const handle = (await detail(page).locator("[data-sheet-handle]").boundingBox())!;
 
     await drag(page, [handle.x + handle.width / 2, handle.y + handle.height / 2], [handle.x + handle.width / 2, handle.y + 300]);
@@ -182,8 +199,8 @@ test.describe("a node's detail as a sheet", () => {
 
   test("keeps its fields at 16px, so the browser does not zoom the page to one", async ({ page }) => {
     for (const name of ["Title", "Description", "New annotation"]) {
-      const size = await detail(page).getByRole("textbox", { name }).evaluate((el) => getComputedStyle(el).fontSize);
-      expect(size, name).toBe("16px");
+      const size = await detail(page).getByRole("textbox", { name }).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(size, name).toBeGreaterThanOrEqual(16);
     }
   });
 });
