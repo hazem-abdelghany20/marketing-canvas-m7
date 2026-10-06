@@ -1,7 +1,8 @@
 # Roadmap — what is built, what is next
 
 Tickets 001–015 are done (005–010 live on `005-010-node-card-to-search`, 011–015 on
-`011-015-arrange-chat-states`), and 016–022 on `016-022-whiteboard-layer`.
+`011-015-arrange-chat-states`), 016–022 on `016-022-whiteboard-layer`, and 023–029 (the phone layout)
+on `mobile-optimization-ui`.
 Each ticket below has its own file in this folder; this page is the map.
 
 ## Layout — 011
@@ -26,6 +27,23 @@ Each ticket below has its own file in this folder; this page is the map.
   pins · **020** save PNG · **021** chat modes + Reasoner · **022** send board to assistant.
 
 Order: 012 before 013, 014 and 021. 011 is independent. 015 comes last of 011–015.
+
+## Phone layout — 023–029 (on `mobile-optimization-ui`)
+Below 640px the workspace is four screens and a bar, drawn in `design/mobile-direction.html`
+(`design/mobile-options.html` is the three layouts it was chosen from). From 640px up nothing changes.
+- **023 Phone shell:** the tab bar (Trace · Board · Chat · Find · Add, Chat raised in the middle), the screens
+  that already exist as tabs, and the node detail over the bar.
+- **024 Trace:** the home screen. One row per layer from a goal down, each swiped sideways; swiping a row redraws
+  the rows under it.
+- **025 Board:** the dock as a bar above the tab bar, ink options above that, two fingers for the camera while a
+  tool is in hand, and a top bar that holds what the desktop toolbar did.
+- **026 Chat:** the assistant as a screen, with a strip of the board that shows what a reply cites.
+- **027 Find:** search and an index by type, the way into Trace for any node, and the nodes no goal reaches.
+- **028 Add and the node sheet:** Add a node of a type, add what serves the card in a Trace row, and the node
+  detail as a bottom sheet that goes back to the board or the assistant.
+- **029 Phone pass:** sizes, touch targets, motion, focus and the docs.
+
+Order: 023 first, then 024–028 in any order that suits (028's Trace button needs 024). 029 last.
 
 ---
 
