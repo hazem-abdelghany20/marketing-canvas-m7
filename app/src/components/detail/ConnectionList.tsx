@@ -69,7 +69,7 @@ export function ConnectionList({ nodeId }: { nodeId: string }) {
     <Section
       title="Connections"
       action={
-        <Button className="!px-2 !py-1 text-xs" onClick={connect}>
+        <Button className="!px-2 !py-1 text-xs max-[639px]:!min-h-10 max-[639px]:!px-3" onClick={connect}>
           + Connect
         </Button>
       }
@@ -77,7 +77,7 @@ export function ConnectionList({ nodeId }: { nodeId: string }) {
       {sections.length === 0 ? (
         <div className="rounded-md border border-dashed border-strong p-3.5 text-center">
           <p className="m-0 mb-2 text-[13px] text-primary">{COPY.noConnections}</p>
-          <Button variant="primary" className="text-[12.5px]" onClick={connect}>
+          <Button variant="primary" className="text-[12.5px] max-[639px]:!min-h-10" onClick={connect}>
             Connect
           </Button>
         </div>
@@ -103,7 +103,7 @@ export function ConnectionList({ nodeId }: { nodeId: string }) {
                       type="button"
                       onClick={() => goTo(other.id)}
                       aria-label={`${title}, ${typeLabel(other.type)}. Show on canvas`}
-                      className="min-w-0 flex-1 truncate rounded-sm text-left text-[13px] text-primary"
+                      className="min-w-0 flex-1 truncate rounded-sm text-left text-[13px] text-primary max-[639px]:min-h-10"
                     >
                       {title}
                     </button>

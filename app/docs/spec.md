@@ -72,6 +72,19 @@ Overlays and modes of S3 — not separate screens, specified inline under S3:
 | O8 | Marks — stickies and board text | `open it, annotate` |
 | O9 | Comment pins and threads | `open it, annotate` |
 
+**Below 640px** the workspace is the phone layout: four screens and a tab bar, drawn in
+`design/mobile-direction.html`. They are the same board and the same actions, arranged for a thumb;
+from 640px up none of this applies.
+
+| # | Phone screen | Opened from | Traces to |
+|---|---|---|---|
+| P1 | Phone shell | `/` below 640px | `land on canvas` — it replaces S3's layout |
+| P2 | Trace | the Trace tab; the home screen | `connect it` (read what a node serves) |
+| P3 | Board on a phone | the Board tab | `add node`, `connect it` |
+| P4 | Chat on a phone | the Chat tab | spans path |
+| P5 | Find | the Find tab | `connect it` (find the node, then trace it) |
+| P6 | Add and node sheets | the Add tab; a node's card | `add node`, `open it, annotate` |
+
 **Cut, off-path:** settings/profile, onboarding tour, node-type manager, sharing, export,
 Notion/Drive sync, **sharing, presence, live sync and permission tiers**. Each is a v2 file,
 not a v1 omission by accident.
@@ -299,6 +312,9 @@ The app. Everything else is a panel over this.
 **Below 900px:** the rail becomes an overlay sheet over the canvas rather than a column, opened
 from a floating chat button. Canvas remains full-bleed underneath. Toolbar collapses its labels
 to icons only.
+
+**Below 640px:** the workspace is the phone layout (P1): four screens and a tab bar instead of a
+canvas with panels over it. From 640px up the layout above is unchanged.
 
 ### Content
 
@@ -575,6 +591,342 @@ See `state-matrix.md`, row S4.
 - While an autosave is in flight, the panel shall show a saving indicator and shall not block
   further typing.
 
+# P1 — Phone shell
+
+The workspace below 640px. A phone is for reading a chain and asking a question more than for dragging a
+graph, so the canvas with panels over it gives way to four screens and a bar. The 900px layout (the rail as
+a sheet, a toolbar of icons) is the tablet's, between 640px and 900px, and is not changed.
+
+### Layout
+
+```
+┌──────────────────────────────┐
+│                              │
+│   Trace · Board · Chat · Find│   one screen at a time, full height
+│                              │
+├──────────────────────────────┤
+│ Trace  Board  ( Chat )  Find  Add │   tab bar, Chat raised in the middle
+└──────────────────────────────┘
+```
+
+- **Tab bar** — Trace, Board, Chat, Find, Add, along the bottom edge. Every tab is at least 44px high. It clears
+  the home indicator itself (the page asks for the whole screen with `viewport-fit=cover`). Chat is raised, where
+  the thumb rests. **Add** is not a screen: it opens a sheet over the one shown (P6).
+- **Screens** — one at a time. The others are hidden from sight, from Tab and from assistive technology.
+- **The canvas is never unmounted.** The Board is kept laid out, but `inert` and see-through, so React Flow keeps
+  its size and the camera, the selection and a file still being read survive a trip to another tab.
+- **A node's detail** opens over the bar (P6), and leaves the screen underneath as it was.
+
+### Content
+
+```
+phoneTab  = 'trace' | 'board' | 'chat' | 'find'     // client-only; opens on Trace; not kept across a reload
+```
+
+### Behavior
+
+```
+Tap a tab                  → show that screen
+Ask for the assistant      → show Chat (From chat, sending the board, Ask about it); focus the composer if asked
+Start connect mode         → show Board (connecting is picking cards on the canvas)
+Leave Board in connect mode→ connect mode ends: it cannot sit unseen with the drawing tools disabled
+Open /node/:id             → the detail sheet over the bar; the tab underneath is left as it was
+```
+
+### States
+See `state-matrix.md`, row P1.
+
+### Acceptance criteria
+- Given a window narrower than 640px, when the workspace loads, then a bar offers Trace, Board, Chat, Find and
+  Add, in that order, with Chat in the middle and raised.
+- Given a window 640px or wider, when the workspace loads, then there is no bar and the layout is the desktop's.
+- Given the bar, when a tab is chosen, then its screen shows, the others are hidden from sight and from assistive
+  technology, and the chosen tab is marked as the current page.
+- Given the Board is hidden, when another tab is shown, then the canvas stays mounted: the camera and selection survive.
+- Given a phone, when the assistant is asked for from anywhere, then the Chat tab is shown.
+- Given the phone layout at 320, 360, 375, 390 and 430px, when any tab is shown, then the page does not scroll
+  sideways and nothing on it runs past an edge.
+
+---
+
+# P2 — Trace
+
+The home screen. It answers the app's one question on a phone: why does this piece of content exist? A column of
+rows from a goal down, one for each layer of what serves the card on screen above it. Each row is swiped sideways,
+and swiping a row redraws every row under it.
+
+### Layout
+
+```
+ Trace                              ↶
+ GOAL  1 of 2                  ━ ·
+ ┌───────────────────────┐ ┌──────
+ │ Vayn: 500 orders/…    │ │ Menta…
+ │ [7 under it] [1 note] │ │
+ └───────────────────────┘ └──────
+   │ served by
+ STRATEGY  1 of 2              ━ ·
+ ┌───────────────────────┐ ┌──────
+ │ Vayn ICP: 25-34 …     │ │ Vayn …
+ └───────────────────────┘ └──────
+   │ served by
+ CAMPAIGN  1 of 1
+ ┌─────────────────────────────┐
+ │ Vayn linen drop - September │
+ └─────────────────────────────┘
+```
+
+- **Rows** are built from `serves` depth, not from node type: a row holds the nodes that serve the card on screen in
+  the row above. A row's label is the type it holds, or "Served by" when it mixes types (and then every card shows
+  its type). A node never appears twice in one chain; rows stop at eight.
+- **A row** scrolls sideways and snaps to a card, with the next peeking in at the edge. The dots, the "1 of 2" and the
+  arrow keys are the other ways to move along it.
+- **A card** shows its title and the start of its body, how many serve it (a goal: how many sit under it, at any
+  depth), the nodes it is joined to by `relates-to`, and how many notes it carries.
+- **Under a goal, strategy or campaign that nothing serves** the next row is empty: "Nothing serves this yet." and
+  a button to add what is expected there (P6). Nothing is expected to serve content, an asset or a note.
+
+### Content
+
+```
+tracePath = string[]   // the card on screen in each row, from the goals down; kept in sessionStorage (mc-trace-path)
+```
+A choice made under a card is only kept while that card is the one on screen: when a row changes, every row under it
+starts again at its first card. A node that has gone falls back to the first card in its row.
+
+### Behavior
+
+```
+Swipe a row / tap a dot / ← →  → bring that card on screen; redraw every row under it
+Tap the card on screen          → open its node detail (P6)
+Tap a card peeking in           → bring it on screen
+Choose a node in Find (P5)      → set tracePath to the chain from its goal, and show Trace
+```
+
+### States
+See `state-matrix.md`, row P2.
+
+### Acceptance criteria
+- Given a board with goals, when Trace opens, then its first row lists the goals and under the goal on screen there is
+  one row for each layer of what serves it.
+- Given a row, when it is swiped, then the card on screen changes and every row beneath is replaced by what serves
+  the new card, starting at its first card.
+- Given the card on screen, when it is tapped, then its node detail opens; given a card peeking in, then it comes on screen.
+- Given serves edges that loop, when Trace is built, then a node never appears twice in one chain.
+- Given a board with no goals, when Trace opens, then it says "No goals yet." and how a trace starts.
+- Given a reload in the same tab, when Trace opens, then it opens on the chain that was on screen.
+
+---
+
+# P3 — Board on a phone
+
+The canvas, with the whiteboard's tools along the bottom of it and everything the desktop toolbar held behind one menu.
+
+### Layout
+
+```
+┌──────────────────────────────┐
+│ ┌─────────────────┐ ┌────────┐│
+│ │ Board name  ↶ ⋯ │ │ Ask…   ││   top bar: name, Undo, More; Ask about this
+│ └─────────────────┘ └────────┘│
+│                              │
+│           canvas             │
+│                              │
+│      ┌ colours · widths ┐    │   ink options, above the dock, while a pen is in hand
+│   ┌── ↖ ✎ ▮ ⌫ ▢ T ◌ ──┐     │   the dock: seven tools in a row
+├──────────────────────────────┤
+│           tab bar            │
+└──────────────────────────────┘
+```
+
+- **Dock** — the seven tools of O7 in one row above the tab bar, each at least 40px. The tools' states, keys and
+  reasons are O7's; Send, Save and Clear ink are not in it.
+- **Ink options** — the colours and widths in a bar above the dock while the Pen or the Highlighter is in hand.
+- **Top bar** — the board's name, Undo, a **More** menu and **Ask about this**, which sends the board to the assistant
+  (O7's rules: "Draw or add a note first.", "Wait for the current reply to finish."). More offers Connect, Auto-arrange,
+  Fit to screen, Save as PNG, and Clear ink while there is ink.
+- **Two fingers are the camera.** With a tool that draws or places in hand, one finger is the tool's; a second throws the
+  first finger's stroke away and the pair pan and zoom the board until every finger lifts. A finger left down after the other
+  leaves does nothing. A third is ignored.
+- **A control that can't be used says why when it is tapped** (a toast, or the item's own second line), because a
+  touch screen has no tooltip to read.
+- **The camera is the board's, not the phone's.** The first time the Board is shown, if fewer than half the cards are
+  centred on screen (a wider screen left it), it is brought back to all of them.
+
+### Content
+O7, O8, O9: the same strokes, marks and pins. The hint for a tool is written for a finger ("One finger draws · two
+fingers pan and zoom") with a Done button where a desktop has Esc.
+
+### Behavior
+
+```
+Tap a tool                   → pick it (disabled: say why)
+One finger over a tool       → the tool's gesture
+Second finger lands          → cancel the first finger's stroke; pan and zoom with the pair
+More › Connect               → connect mode: tap a card, tap another, choose the kind; the banner is under the top bar
+Ask about this               → draw the board, show Chat, stream the reply
+```
+
+### States
+See `state-matrix.md`, row P3.
+
+### Acceptance criteria
+- Given the Board tab, when it renders, then the seven tools sit in one bar above the tab bar, each at least 40px across.
+- Given a tool that draws is in hand, when a second finger touches down, then the stroke is thrown away and nothing is saved,
+  and the two fingers pan and zoom the board until every finger lifts.
+- Given a disabled control, when it is tapped, then it says why.
+- Given connect mode starts anywhere on a phone, then the Board is shown; given it is left, connect mode ends.
+- Given a toast on the Board tab, then it is above the dock; on any other tab it is above the tab bar.
+
+---
+
+# P4 — Chat on a phone
+
+The assistant as a screen of its own, with a strip of the board above the conversation.
+
+### Layout
+
+```
+ ● ● ASSISTANT
+ 2 CITED                    Open board
+ ┌──────────────────────────────────┐
+ │  [Vayn Ramadan push]──[Vayn pos…]│   the strip
+ │      [Email: Ramadan…]           │
+ └──────────────────────────────────┘
+ [Auto][Generator][Librarian][Reasoner]
+   …the conversation…
+ (◉) [ Ask, or say “draft a…”   ] (➤)
+```
+
+- **The strip** is an outline of the whole board while nothing is cited. When a reply cites nodes it is those nodes and
+  every node joined to one of them, the cited ones marked, each a way into that node. Positions are the board's, scaled
+  to fit; sizes are not, so a title stays legible, and chips that would overlap are nudged apart. **Open board** shows the
+  Board with the cited nodes in view. With little height left (the keyboard is up) the strip steps aside.
+- **The composer** is a row: a button that sends the board (O7's rules), a field, and Send. The field is 16px so the browser
+  does not zoom the page when it takes focus, and grows to about four lines. **Enter adds a line**; Send sends, because
+  Shift+Enter is out of reach of a phone's keyboard.
+- **A citation chip** in a reply shows the Board with that node selected and in view.
+- Everything O6 does stays: Retry, proposals, example prompts, the four modes, the single announcement of a finished reply.
+
+### Behavior
+
+```
+Send                        → ask; the reply streams in below
+Enter                       → a new line (Send sends)
+Tap a chip in the strip     → open that node (P6)
+Open board                  → show the Board, with what was cited in view
+Tap a citation chip         → show the Board, that node selected and in view
+```
+
+### States
+See `state-matrix.md`, row P4.
+
+### Acceptance criteria
+- Given a finished reply that cites nodes, when the strip renders, then it shows those nodes and what they connect to, the cited
+  ones marked, and says how many were cited.
+- Given a reply that cites nothing, then the strip is the whole board as an outline.
+- Given the composer, when text is typed, then the field is 16px, grows to four lines, and Enter adds a line.
+- Given the board button, when it is used, then it sends the board under O7's rules and the reply streams in on this screen.
+
+---
+
+# P5 — Find
+
+Search, and an index of the board by type. It is the way into Trace for any node, and where the gaps show.
+
+### Layout
+
+```
+ Find
+ ┌──────────────────────────────────┐
+ │ ⌕  Find a node to trace          │
+ └──────────────────────────────────┘
+ (All 16) Goals Strategies Campaigns …      one row, scrolls sideways
+ GOALS
+   Vayn: 500 orders/month by Q4        7 under it
+ STRATEGIES · CAMPAIGNS · CONTENT
+   Reel: 3 ways to style linen            trace →
+ NOT CONNECTED TO A GOAL
+   IG reach down 30% since the algo…      no links
+```
+
+- **Nothing typed:** the nodes that reach a goal, grouped by type in the order of the chain, then, in a group of its own, what
+  no chain of `serves` edges reaches a goal from — each node once, saying why (`no links`, `relates only`, `no goal above it`).
+- **A type chosen:** every node of it, connected or not. **Something typed:** the matches, titles before bodies, as search does
+  on a desktop, narrowed by the type chosen. Enter takes the first match.
+- **Choosing a node** that reaches a goal shows Trace with its whole chain lined up (a goal: Trace on that goal); one that does
+  not opens its detail.
+- "Reaches a goal" is the walk up `serves` edges that Trace uses, so the two never disagree.
+
+### Behavior
+
+```
+Type                        → the matches replace the index
+Tap a type                  → only that type
+Enter                       → choose the first match
+Tap a row                   → trace it, or open it
+```
+
+### States
+See `state-matrix.md`, row P5.
+
+### Acceptance criteria
+- Given nothing typed, when Find renders, then nodes are grouped by type and what no goal is above is last.
+- Given a node that reaches a goal, when it is chosen, then Trace opens with its chain lined up; given one that does not, then its detail opens.
+- Given text that matches nothing, then Find says so and offers to make a note with that title.
+- Given the field, then it is 16px.
+
+---
+
+# P6 — Add and node sheets
+
+The two bottom sheets: what the Add tab opens, and a node's detail.
+
+### Layout
+
+```
+ ┌─ handle ─────────────────────┐
+ │ Add to the board          ✕  │
+ │ ┌ Goal ──────┐ ┌ Strategy ──┐│
+ │ ┌ Campaign ──┐ ┌ Content ───┐│
+ │ ┌ Note ──────┐               │
+ │ ┌ Import a file ─────────────┐│
+ │ ┌ Draft in chat ─────────────┐│
+ └──────────────────────────────┘
+```
+
+- **The Add sheet** offers a node of each type (the type is chosen now; the desktop's menu makes a note and asks later), each
+  saying what it is for; a file to bring in; and a draft to ask the assistant for (off while a reply is coming). A type makes the
+  node in the middle of the board and opens it with its title ready to be typed. Escape, a tap on the scrim, Close and a pull down
+  on the handle all close it and make nothing; focus goes back to the Add tab.
+- **Adding what serves a card.** An empty row in Trace offers to add what it expects ("Add a strategy" …). It makes a node of that
+  type and connects it so that it **serves** the card above, as one step to undo, and opens it to be named. If only the connection
+  fails the node stays and the toast offers the connection again.
+- **A node's detail** (S4) is a bottom sheet: rounded at the top, a handle, a scrim, never taller than 92% of the screen. The handle
+  pulls it down; Escape, the scrim, Close and the browser's Back close it. **Show on board** shows the Board with the node selected
+  and in view; **Ask about it** shows Chat with a question about the node waiting in the composer, not sent. Every button in it is
+  at least 40px, and its fields 16px.
+
+### Behavior
+
+```
+Add tab                     → open the sheet
+Tap a type                  → make a node of it in the middle of the board; open it, title focused
+Tap an empty row's button   → make a node that serves the card above; one Undo takes both away
+Pull the handle down        → close the sheet
+Show on board / Ask about it→ go to the Board, or to Chat with a question waiting
+```
+
+### States
+See `state-matrix.md`, row P6.
+
+### Acceptance criteria
+- Given the Add tab, when it is used, then a sheet offers Goal, Strategy, Campaign, Content and Note, Import a file, and Draft in chat.
+- Given an empty row in Trace, when its button is used, then a node of that type is made, connected so that it serves the card above,
+  and one Undo takes both away.
+- Given a node's detail on a phone, then it is a sheet from the bottom, and dragging its handle down, Escape, the scrim, Close and Back all close it.
+- Given Show on board, then the Board is shown with that node selected; given Ask about it, then Chat has the question waiting.
+
 ---
 
 ## Component specs
@@ -657,4 +1009,7 @@ Tokens    — --bg-elevated · --ok · --warn · --danger
 - Every destructive action is either confirmed or undoable. Never both absent.
 - Focus is never removed, only restyled. Keyboard reaches every action.
 - No raw hex outside `tokens.css`. No inline colors.
-- Motion respects `prefers-reduced-motion`: auto-arrange and pans become instant.
+- Motion respects `prefers-reduced-motion`: auto-arrange and pans become instant, and on a phone a sheet
+  does not rise and a row goes to its card at once.
+- On a phone every control is a target at least 40px across (the tab bar's 44px), every text field is at least
+  16px, and a control that can't be used says why when it is tapped.

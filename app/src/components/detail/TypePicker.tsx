@@ -56,7 +56,7 @@ export function TypePicker({
         aria-label={`Type: ${typeLabel(type)}. Change type`}
         disabledReason={saving ? COPY.typeWhileSaving : null}
         onClick={() => setOpen((o) => !o)}
-        className="!rounded-full !px-2.5 !py-1"
+        className="!rounded-full !px-2.5 !py-1 max-[639px]:!min-h-10 max-[639px]:!px-3.5"
       >
         <span aria-hidden="true" className={`size-2 flex-none rounded-full ${TYPE_BG[type]}`} />
         <span className="text-xs font-medium">{typeLabel(type)}</span>

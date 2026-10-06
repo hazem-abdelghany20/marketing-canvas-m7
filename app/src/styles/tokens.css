@@ -190,6 +190,22 @@
     }
   }
 
+  /* An app, not a page: pulling down at the top does not reload it, and a drag that runs out of room does not bounce it. */
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+
+  /* A touch is a tap at once: no wait to see whether it is the first half of a double-tap zoom. Cards are not buttons here, and keep their drag. */
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  summary {
+    touch-action: manipulation;
+  }
+
   body {
     margin: 0;
     background: var(--bg-canvas);

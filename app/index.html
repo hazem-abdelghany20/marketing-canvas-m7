@@ -5,6 +5,9 @@
     <!-- viewport-fit=cover lets the phone layout draw to the screen's edges and clear the home indicator itself
          (env(safe-area-inset-*)); interactive-widget keeps the composer above an open keyboard. Page zoom stays the reader's. -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <!-- The browser's own chrome on a phone takes the canvas's colour, for each scheme (--bg-canvas in tokens.css). -->
+    <meta name="theme-color" content="#f2eee7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1916" media="(prefers-color-scheme: dark)" />
     <title>Marketing Canvas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

@@ -214,9 +214,9 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
                 aria-describedby={hasChips ? `${chipsId}-${card.node.id}` : undefined}
                 onClick={() => (current ? onOpen(card.node.id) : onChoose(index))}
                 className={[
-                  "relative block min-h-[74px] w-full rounded-lg border bg-elevated py-3 pl-4 pr-3.5 text-left [touch-action:manipulation] transition-[opacity,border-color]",
+                  "relative block min-h-[74px] w-full rounded-lg border bg-elevated py-3 pl-4 pr-3.5 text-left [touch-action:manipulation] transition-[border-color]",
                   goal ? "min-h-[104px]" : "",
-                  current ? "border-strong opacity-100" : "border-subtle opacity-70",
+                  current ? "border-strong" : "border-subtle",
                 ].join(" ")}
               >
                 <span

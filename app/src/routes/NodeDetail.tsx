@@ -158,7 +158,7 @@ function NodePanel({ node, onClose }: { node: CanvasNode; onClose: () => void })
             aria-label="Close"
             title="Close — Esc"
             onClick={onClose}
-            className="!p-1.5 text-muted"
+            className="!p-1.5 text-muted max-[639px]:!size-10 max-[639px]:!p-0"
           >
             <X size={15} aria-hidden="true" />
           </Button>

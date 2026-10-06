@@ -58,7 +58,7 @@ export function FileList({ node, save }: { node: CanvasNode; save: Autosave["sav
     <Section
       title="Files"
       action={
-        <Button className="!px-2 !py-1 text-xs" onClick={() => picker.current?.click()}>
+        <Button className="!px-2 !py-1 text-xs max-[639px]:!min-h-10 max-[639px]:!px-3" onClick={() => picker.current?.click()}>
           + Attach
         </Button>
       }
@@ -124,7 +124,7 @@ function FileRow({ file, url, onRemove }: { file: FileRef; url: string | null; o
         </div>
         {url ? (
           <Button
-            className="!px-2 !py-1 text-[11.5px]"
+            className="!px-2 !py-1 text-[11.5px] max-[639px]:!min-h-10 max-[639px]:!px-3"
             aria-label={`${image ? "Preview" : "Open"} ${file.name}`}
             aria-expanded={image ? previewing : undefined}
             onClick={() => (image ? setPreviewing((p) => !p) : window.open(url, "_blank", "noopener,noreferrer"))}
@@ -144,7 +144,7 @@ function FileRow({ file, url, onRemove }: { file: FileRef; url: string | null; o
               }}
             />
             <Button
-              className="!px-2 !py-1 text-[11.5px]"
+              className="!px-2 !py-1 text-[11.5px] max-[639px]:!min-h-10 max-[639px]:!px-3"
               aria-label={`Re-attach ${file.name}`}
               onClick={() => reattach.current?.click()}
             >

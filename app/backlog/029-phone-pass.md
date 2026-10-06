@@ -19,7 +19,9 @@ Whatever 023–028 left uneven: spacing, truncation, tap sizes, motion, focus an
 - Given any text field on a phone, when focused, then its font is at least 16px.
 - Given `prefers-reduced-motion`, when a row, a tab or a sheet changes, then nothing animates and a programmatic scroll is instant.
 - Given a keyboard, when Tab is pressed through each tab's screen, then every control is reached in reading order with a visible focus ring, and nothing hidden is reachable.
-- Given the light and the dark theme, when each screen renders, then every text colour meets 4.5:1 on its surface (the token test already holds the pairs).
+- Given the light and the dark theme, when each screen renders, then every text colour meets 4.5:1 on its surface (the token test already holds the pairs), which is why a card peeking in at the edge of its row is told from the one on screen by its border and not by fading it.
+- Given a touch, when a button is pressed, then there is no wait for a double-tap, and a drag that runs out of room does not pull the page down to reload it (`touch-action: manipulation` on buttons, `overscroll-behavior: none`).
+- Given the browser's own chrome on a phone, when the page loads, then it takes the canvas's colour for the scheme in use (`theme-color`).
 - Given the docs, when read, then each phone screen has a section in `docs/spec.md` and a state table in `docs/state-matrix.md`, and the roadmap lists 023–029.
 
 ## Guardrails

@@ -46,7 +46,7 @@ export function ThreadComposer({ placeholder, onPost }: ThreadComposerProps) {
         placeholder={placeholder}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={onKeyDown}
-        className="w-full resize-none rounded-md border border-subtle bg-elevated px-2.5 py-[9px] text-[13px] leading-normal text-primary outline-none placeholder:text-muted"
+        className="w-full resize-none rounded-md border border-subtle bg-elevated px-2.5 py-[9px] text-[13px] leading-normal text-primary outline-none placeholder:text-muted max-[639px]:text-base"
       />
       <div>
         <Button variant="primary" disabledReason={empty ? COPY.commentWriteFirst : null} onClick={post}>

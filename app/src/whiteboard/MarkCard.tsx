@@ -205,7 +205,7 @@ export function MarkCard({ mark }: { mark: Mark }) {
           onKeyDown={onFieldKeyDown}
           className={[
             "block w-full resize-none overflow-hidden border-0 bg-transparent p-0 leading-[1.45] outline-none placeholder:opacity-60",
-            sticky ? "text-[13.5px]" : "text-[17px] font-semibold tracking-[-0.01em] text-primary",
+            sticky ? "text-[13.5px] max-[639px]:text-base" : "text-[17px] font-semibold tracking-[-0.01em] text-primary",
           ].join(" ")}
         />
         {sync === "saving" ? (

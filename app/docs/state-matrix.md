@@ -149,3 +149,76 @@ Error copy always says what failed **and** what to do.
 | **Success** | The comment appears attributed to you with its timestamp, the composer clears and keeps focus for a follow-up. A resolved pin renders visibly muted but stays on the board — resolving is not deleting. |
 | **Disabled** | Post is disabled while the composer is empty or whitespace only. Resolve is disabled on a thread with no comments — there is nothing to resolve. The Comment tool is disabled while the board is loading and while connect mode is on. |
 | **Permissions** | Every comment carries an author, but a board still belongs to one account: there is nobody else to grant or refuse access to. You can delete any comment on your own board, including seeded ones. Sharing is v2 — see `spec.md` § Actors. |
+
+---
+
+# The phone layout
+
+Below 640px (`spec.md` § P1–P6). The rows above still apply wherever the screen they describe is
+shown; these add what the phone does differently, and say where a tooltip has to be a sentence.
+
+## P1 — Phone shell
+
+| State | Behavior |
+|---|---|
+| **Loading** | The bar is there at once. Trace, Board and Find show the board's spinner while the board loads; Chat shows its own three message placeholders. The tab can be changed meanwhile. |
+| **Empty** | Nothing on the board: Trace says "No goals yet.", the Board shows its first-run panel, Find says "Nothing to find yet.", Chat is the same empty prompt with its examples. Each offers the first step. |
+| **Error** | The board fails to load: Trace, Board and Find each say "We couldn't load your board. Check your connection, then reload." with Reload; the bar stays, so Chat is still there. A mutation that fails toasts as in S3, above the dock on the Board and above the bar elsewhere. |
+| **Success** | The chosen tab is marked as the current page; the others are hidden from sight, from Tab and from assistive technology; the Board stays mounted under them. |
+| **Disabled** | Add while the board is loading offers nothing (the sheet opens only when the board is there). Everything a screen disables, it disables as on a desktop, and says why when it is tapped. |
+| **Permissions** | Unauthenticated visitor redirected to `/signin`. n/a otherwise — single actor. |
+
+## P2 — Trace
+
+| State | Behavior |
+|---|---|
+| **Loading** | The header and Undo render at once with the board's spinner over the rows. No layout shift when the rows land. |
+| **Empty** | *No goals:* "No goals yet." with "Every trace starts at a goal. Add one, then connect what serves it." and an Add a goal button. *A goal, strategy or campaign that nothing serves:* the next row says "Nothing serves this yet." with a button to add what is expected there. |
+| **Error** | Board request fails: the board's failure message with Reload. *Adding a node under an empty row fails:* toast — "Couldn't add the node. Check your connection and try again." with Retry; nothing is made. *Only its connection fails:* toast — "Added the node, but couldn't connect it. Check your connection and try again." with Retry; the node stays. |
+| **Success** | The card on screen in each row is marked; swiping redraws what is under it; the chain on screen is kept for the tab. |
+| **Disabled** | Undo disabled with an empty history ("Nothing to undo yet.") and while an undo is running ("Undoing…"). A row has no dots beyond eight cards; its "1 of N" still says where it is. |
+| **Permissions** | n/a — single actor. |
+
+## P3 — Board on a phone
+
+| State | Behavior |
+|---|---|
+| **Loading** | The dock and top bar render with the board; every tool waits ("Waiting for the board.") and tapping one says so. |
+| **Empty** | The board's first-run panel; Fit, Auto-arrange and Save as PNG say in the menu why they can't be used ("Nothing to fit yet.", "Nothing to arrange yet.", "Nothing to save yet."); Ask about this says "Draw or add a note first." |
+| **Error** | As S3 and O7: a stroke, mark or pin that fails stays on screen with a toast and Retry. A failed send says "Couldn't prepare the board to send. Try again." |
+| **Success** | The tool in hand is selected and its hint, written for a finger, says what to do; two fingers move the board and a stroke begun by the first is not saved. Toasts stand above the dock. |
+| **Disabled** | O7's rules, said when tapped (a toast) and in the menu (the item's own second line), since there is no tooltip: "Finish connecting first.", "Nothing to erase yet.", "Wait for the current reply to finish." |
+| **Permissions** | n/a — one owner per board. |
+
+## P4 — Chat on a phone
+
+| State | Behavior |
+|---|---|
+| **Loading** | The conversation shows its three placeholders while the board loads; the strip is the outline once there is one. |
+| **Empty** | No messages: the prompt and three examples, as O6. An empty board: the strip says "Nothing on the board yet." |
+| **Error** | As O6: "That reply didn't finish. Try again." with Retry; the user's message is kept. Sending the board fails: "Couldn't prepare the board to send. Try again." |
+| **Success** | A finished reply that cites nodes fills the strip with them, the cited ones marked, "N cited"; a citation chip, or Open board, shows the Board. |
+| **Disabled** | Send says "Write a message first." or "Wait for the current reply to finish."; the board button says "Draw or add a note first." — each said again when tapped. The reply modes are fixed while a reply streams. |
+| **Permissions** | n/a — single actor, mocked model. |
+
+## P5 — Find
+
+| State | Behavior |
+|---|---|
+| **Loading** | The header, the field and the filters render; the board's spinner is over the list. |
+| **Empty** | *No nodes:* "Nothing to find yet." with Add your first node. *A type with none:* "No notes yet." (and so on). *Text that matches nothing:* "No nodes match “…”." with Create a note with this title. |
+| **Error** | Board request fails: the board's failure message with Reload. *Creating the note fails:* as O1. |
+| **Success** | Choosing a node that reaches a goal shows Trace with its chain lined up; one that does not opens its detail. |
+| **Disabled** | n/a — the field and the filters are always usable; there is nothing to wait for once the board is there. |
+| **Permissions** | n/a — single actor. |
+
+## P6 — Add and node sheets
+
+| State | Behavior |
+|---|---|
+| **Loading** | A node's sheet deep-linked before the board arrives: the skeleton of S4 in the sheet. The Add sheet opens only once the board is there. |
+| **Empty** | S4's empty states inside the sheet (no body, no files, no connections, no notes). The Add sheet always has its options. |
+| **Error** | *A node can't be made:* "Couldn't add the node. Check your connection and try again." with Retry, nothing left half made. *Made but not connected:* "Added the node, but couldn't connect it. Check your connection and try again." with Retry. Everything else in the sheet is S4's. |
+| **Success** | A node made from the sheet opens with its title ready to be typed; a node made from an empty row appears in its row and opens to be named. One Undo takes a node and its connection away together. |
+| **Disabled** | Draft in chat is off while a reply is coming, and says "Wait for the current reply to finish." in its own second line. S4's rules otherwise. |
+| **Permissions** | n/a — single actor. |

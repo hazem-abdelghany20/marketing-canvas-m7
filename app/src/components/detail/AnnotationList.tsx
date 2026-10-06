@@ -76,6 +76,7 @@ export function AnnotationList({ nodeId }: { nodeId: string }) {
           variant="primary"
           disabledReason={empty ? COPY.emptyAnnotation : null}
           aria-busy={posting}
+          className="max-[639px]:!min-h-11 max-[639px]:!px-4"
         >
           Add note
         </Button>

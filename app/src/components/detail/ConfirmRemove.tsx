@@ -46,7 +46,7 @@ export function ConfirmRemove({ label, onConfirm, disabledReason }: ConfirmRemov
         <Button
           variant="danger"
           autoFocus
-          className="!px-2 !py-0.5 text-[11.5px]"
+          className="!px-2 !py-0.5 text-[11.5px] max-[639px]:!min-h-10 max-[639px]:!px-3"
           onClick={(event) => {
             // The row goes with its control; focus stays in the panel rather than falling to the page.
             event.currentTarget.closest<HTMLElement>("[data-node-detail]")?.focus({ preventScroll: true });
@@ -56,7 +56,7 @@ export function ConfirmRemove({ label, onConfirm, disabledReason }: ConfirmRemov
         >
           Remove
         </Button>
-        <Button variant="ghost" className="!px-2 !py-0.5 text-[11.5px]" onClick={cancel}>
+        <Button variant="ghost" className="!px-2 !py-0.5 text-[11.5px] max-[639px]:!min-h-10 max-[639px]:!px-3" onClick={cancel}>
           Cancel
         </Button>
       </span>
@@ -71,7 +71,7 @@ export function ConfirmRemove({ label, onConfirm, disabledReason }: ConfirmRemov
       title={label}
       disabledReason={disabledReason}
       onClick={() => setAsking(true)}
-      className="!p-1.5 text-muted"
+      className="!p-1.5 text-muted max-[639px]:!size-10 max-[639px]:!p-0"
     >
       <X size={13} aria-hidden="true" />
     </Button>
