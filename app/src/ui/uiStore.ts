@@ -112,6 +112,32 @@ function writeChatMode(mode: ChatMode) {
   }
 }
 
+/**
+ * The card on screen in each row of Trace, from the goals down, kept for the tab's session so a reload opens where you
+ * were. Like the rail's collapse it is a preference of the screen, so it is sessionStorage and not localStorage. Anything
+ * stored that is not a list of ids reads as nothing, which is the first goal and the first card in every row.
+ */
+const TRACE_PATH_KEY = "mc-trace-path";
+
+function readTracePath(): string[] {
+  try {
+    const stored = globalThis.sessionStorage?.getItem(TRACE_PATH_KEY);
+    const parsed: unknown = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) && parsed.every((id) => typeof id === "string") ? (parsed as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeTracePath(path: string[]) {
+  try {
+    if (path.length > 0) globalThis.sessionStorage?.setItem(TRACE_PATH_KEY, JSON.stringify(path));
+    else globalThis.sessionStorage?.removeItem(TRACE_PATH_KEY);
+  } catch {
+    /* storage unavailable: Trace opens on the first goal next time */
+  }
+}
+
 export const FLASH_MS = 1200;
 const DEFAULT_TOAST_MS = 5000;
 const ACTION_TOAST_MS = 10_000;
@@ -149,6 +175,8 @@ export interface UiState {
   openPinId: string | null;
   /** The screen the phone layout shows (below 640px). Client-only, and not kept across a reload. */
   phoneTab: PhoneTab;
+  /** The card on screen in each row of Trace, from the goals down. Kept for the tab's session. */
+  tracePath: string[];
   /** The board is being drawn into a PNG right now. */
   exporting: boolean;
   /** The board is being drawn to be sent to the assistant right now. */
@@ -181,6 +209,7 @@ export interface UiState {
   setInk: (patch: Partial<InkPrefs>) => void;
   setClearInkOpen: (open: boolean) => void;
   setPhoneTab: (tab: PhoneTab) => void;
+  setTracePath: (path: string[]) => void;
   openPin: (id: string | null) => void;
   setExporting: (exporting: boolean) => void;
   setPreparingBoard: (preparing: boolean) => void;
@@ -224,6 +253,7 @@ export const uiStore = createStore<UiState>()((set) => ({
   ...INITIAL,
   railCollapsed: readRailCollapsed(),
   chatMode: readChatMode(),
+  tracePath: readTracePath(),
 
   select: (ids) => set({ selectedIds: ids }),
   setConnect: (connect) => set((s) => ({ connect: { ...s.connect, ...connect } })),
@@ -274,6 +304,10 @@ export const uiStore = createStore<UiState>()((set) => ({
   setInk: (patch) => set((s) => ({ ink: { ...s.ink, ...patch } })),
   setClearInkOpen: (open) => set({ clearInkOpen: open }),
   setPhoneTab: (tab) => set({ phoneTab: tab }),
+  setTracePath(path) {
+    writeTracePath(path);
+    set({ tracePath: path });
+  },
   openPin: (id) => set({ openPinId: id }),
   setExporting: (exporting) => set({ exporting }),
   setPreparingBoard: (preparingBoard) => set({ preparingBoard }),
@@ -303,7 +337,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
-  reset: () => set({ ...INITIAL, railCollapsed: readRailCollapsed(), chatMode: readChatMode() }),
+  reset: () =>
+    set({ ...INITIAL, railCollapsed: readRailCollapsed(), chatMode: readChatMode(), tracePath: readTracePath() }),
 }));
 
 export function useUi<T>(selector: (state: UiState) => T): T {

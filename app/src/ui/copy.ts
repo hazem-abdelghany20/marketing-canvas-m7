@@ -86,6 +86,14 @@ export const COPY = {
   clearInkTitle: "Clear all ink?",
   clearInkBody: "Every stroke on this board is removed. Notes, stickies and comments stay.",
 
+  // P2 — Trace
+  traceTitle: "Trace",
+  traceNoGoals: "No goals yet.",
+  traceNoGoalsBody: "Every trace starts at a goal. Add one, then connect what serves it.",
+  traceAddGoal: "Add a goal",
+  traceNothingServes: "Nothing serves this yet.",
+  traceServedBy: "served by",
+
   // O4 — Quick-peek
   noDescription: "No description yet",
   connectNeedsAnother: "Add another node to connect to.",

@@ -129,9 +129,9 @@ describe("Trace on a board with goals", () => {
     await openTrace();
 
     const mixed = row("Served by, 1 of 3");
-    for (const el of within(mixed).getAllByRole("button")) {
-      expect(el.querySelector("[data-type-chip]")).not.toBeNull();
-    }
+    const cards = mixed.querySelectorAll("[data-trace-card]");
+    expect(cards).toHaveLength(3);
+    for (const el of cards) expect(el.querySelector("[data-type-chip]")).not.toBeNull();
     // A row of one type does not repeat it on each card: the row's label says it.
     expect(card("Vayn linen drop - September").querySelector("[data-type-chip]")).toBeNull();
   });

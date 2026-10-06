@@ -15,6 +15,7 @@ import { ClearInkDialog } from "../whiteboard/ClearInkDialog";
 import { Dock } from "../whiteboard/Dock";
 import { InkOptions } from "../whiteboard/InkOptions";
 import { ToolHint } from "../whiteboard/ToolHint";
+import { TraceScreen } from "../trace/TraceScreen";
 import { TabBar } from "./TabBar";
 
 /** React 18 has no `inert` prop; the attribute still works when it is written out. */
@@ -66,7 +67,7 @@ export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
     <div data-phone-shell data-phone-tab={tab} className="relative flex h-dvh w-full flex-col overflow-hidden bg-canvas">
       <main data-canvas-state={state} className="relative min-h-0 flex-1 overflow-hidden bg-canvas">
         <Screen name="Trace" shown={tab === "trace"}>
-          <Soon title="Trace" />
+          <TraceScreen w={w} />
         </Screen>
 
         <section
