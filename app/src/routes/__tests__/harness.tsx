@@ -4,7 +4,7 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { routes } from "../../App";
 import { appStore } from "../../store";
 import { apiError, json, type RecordedCall } from "../../api/__tests__/helpers";
-import type { Annotation, CanvasNode, Edge } from "../../types";
+import type { Annotation, CanvasNode, Edge, Mark, Stroke } from "../../types";
 
 export { apiError, json };
 
@@ -73,15 +73,21 @@ export function serveBoard({
   nodes = [],
   edges = [],
   annotations = [],
+  strokes = [],
+  marks = [],
 }: {
   nodes?: CanvasNode[];
   edges?: Edge[];
   annotations?: Annotation[];
+  strokes?: Stroke[];
+  marks?: Mark[];
 } = {}) {
   network.on("GET /board", () => json(200, emptyBoard));
   network.on("GET /nodes", () => json(200, nodes));
   network.on("GET /edges", () => json(200, edges));
-  for (const p of ["/files", "/strokes", "/marks", "/pins"]) network.on(`GET ${p}`, () => json(200, []));
+  network.on("GET /strokes", () => json(200, strokes));
+  network.on("GET /marks", () => json(200, marks));
+  for (const p of ["/files", "/pins"]) network.on(`GET ${p}`, () => json(200, []));
   for (const n of nodes) {
     network.on(`GET /nodes/${n.id}/annotations`, () => json(200, annotations.filter((a) => a.nodeId === n.id)));
   }
