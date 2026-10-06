@@ -33,7 +33,12 @@ describe("what the strip shows", () => {
     expect(cited.cited).toBe(2);
     // The reel and the linen drop, and what touches them: the other piece of content, the strategy above, the asset joined to the reel.
     expect(ids(cited)).toEqual(["nd_ast_hero", "nd_cmp_linen", "nd_con_linenstyle", "nd_con_quiet", "nd_str_icp"]);
-    expect(cited.items.filter((item) => item.cited).map((item) => item.node.id).sort()).toEqual([...LINEN].sort());
+    expect(
+      cited.items
+        .filter((item) => item.cited)
+        .map((item) => item.node.id)
+        .sort(),
+    ).toEqual([...LINEN].sort());
   });
 
   it("draws a line only between two nodes that are both in it", () => {

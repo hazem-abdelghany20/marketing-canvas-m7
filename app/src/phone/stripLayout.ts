@@ -135,7 +135,12 @@ export function stripScene(
   const points = place(shown, box, size);
   if (mode === "cited") separate(points, box, size);
 
-  const items = shown.map((node, index) => ({ node, x: points[index]!.x, y: points[index]!.y, cited: cited.has(node.id) }));
+  const items = shown.map((node, index) => ({
+    node,
+    x: points[index]!.x,
+    y: points[index]!.y,
+    cited: cited.has(node.id),
+  }));
   const at = new Map(items.map((item) => [item.node.id, item]));
   const lines = edges
     .filter((edge) => at.has(edge.fromId) && at.has(edge.toId) && edge.fromId !== edge.toId)

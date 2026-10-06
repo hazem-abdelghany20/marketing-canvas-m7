@@ -136,7 +136,9 @@ function BoardMenu({ w, onClose }: { w: WorkspaceController; onClose: (restoreFo
           hint="Zoom to show every node"
           reasonAsHint
           disabledReason={waiting ?? (nodeCount === 0 ? COPY.nothingToFit : null)}
-          onSelect={choose(() => void flow.fitView({ padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: motionMs(300) }))}
+          onSelect={choose(
+            () => void flow.fitView({ padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: motionMs(300) }),
+          )}
         />
         <MenuItem
           label="Save as PNG"

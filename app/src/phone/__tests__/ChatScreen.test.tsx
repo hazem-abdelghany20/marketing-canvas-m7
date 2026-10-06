@@ -13,7 +13,14 @@ import { BOARD_MESSAGE } from "../../whiteboard/sendBoardToChat";
 import { stubBrowserExport } from "../../whiteboard/__tests__/canvasStub";
 
 const T = "2026-09-02T00:00:00.000Z";
-const STROKE: Stroke = { id: "stk_a", tool: "pen", color: "var(--ink-1)", width: 3, points: [0, 0, 100, 100], createdAt: T };
+const STROKE: Stroke = {
+  id: "stk_a",
+  tool: "pen",
+  color: "var(--ink-1)",
+  width: 3,
+  points: [0, 0, 100, 100],
+  createdAt: T,
+};
 const IMAGE = "data:image/png;base64,cG5n";
 
 beforeEach(() => {
@@ -150,7 +157,9 @@ describe("a citation chip in a reply, on a phone", () => {
     await openChat();
     await ask("what serves the Ramadan push?");
 
-    fireEvent.click(within(screen.getByRole("list", { name: "Cited nodes" })).getByRole("button", { name: /Vayn Ramadan push/ }));
+    fireEvent.click(
+      within(screen.getByRole("list", { name: "Cited nodes" })).getByRole("button", { name: /Vayn Ramadan push/ }),
+    );
 
     expect(uiStore.getState().phoneTab).toBe("board");
     expect(uiStore.getState().selectedIds).toEqual(["nd_cmp_ramadan"]);

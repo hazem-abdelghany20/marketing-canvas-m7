@@ -27,7 +27,9 @@ test("shows the strip, the reply modes and a composer, all inside the screen", a
     expect(box.x + box.width).toBeLessThanOrEqual(width);
   }
   await expect(strip(page)).toHaveAttribute("data-strip-mode", "overview");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(
+    true,
+  );
 });
 
 test("the field is 16px, so the browser does not zoom the page when it takes focus", async ({ page }) => {
@@ -80,7 +82,9 @@ test("a reply that cites nodes fills the strip with them, and Open board takes y
 test("tapping a chip in the strip opens that node's detail", async ({ page }) => {
   await ask(page, "What serves the Ramadan push?");
 
-  await strip(page).getByRole("button", { name: /^Vayn Ramadan push/ }).tap();
+  await strip(page)
+    .getByRole("button", { name: /^Vayn Ramadan push/ })
+    .tap();
 
   await expect(page).toHaveURL(/\/node\/nd_cmp_ramadan$/);
   await expect(page.getByRole("complementary", { name: "Node detail" })).toBeVisible();
@@ -89,7 +93,10 @@ test("tapping a chip in the strip opens that node's detail", async ({ page }) =>
 test("a citation chip in the reply shows the Board tab, with that node on screen", async ({ page }) => {
   await ask(page, "What serves the Ramadan push?");
 
-  await page.getByRole("list", { name: "Cited nodes" }).getByRole("button", { name: /Vayn Ramadan push/ }).tap();
+  await page
+    .getByRole("list", { name: "Cited nodes" })
+    .getByRole("button", { name: /Vayn Ramadan push/ })
+    .tap();
 
   await expect(tab(page, "Board")).toHaveAttribute("aria-current", "page");
 });
@@ -101,7 +108,9 @@ test("the board button sends the board, and the reply comes in on this screen", 
   await expect(page.getByText("Read my markup on the board.")).toBeVisible();
 });
 
-test("with little height left, as with the keyboard open, the strip steps aside and the composer is still in reach", async ({ page }) => {
+test("with little height left, as with the keyboard open, the strip steps aside and the composer is still in reach", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 420 });
 
   await expect(strip(page)).toBeHidden();

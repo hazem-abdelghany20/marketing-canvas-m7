@@ -68,7 +68,9 @@ export function FindScreen({ w }: { w: WorkspaceController }) {
       >
         <span aria-hidden="true" className={`size-2 flex-none rounded-full ${TYPE_BG[row.node.type]}`} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[14.5px] font-medium text-primary">{row.node.title.trim() || "Untitled"}</span>
+          <span className="block truncate text-[14.5px] font-medium text-primary">
+            {row.node.title.trim() || "Untitled"}
+          </span>
           {detail ? (
             <span className="block truncate text-[12px] text-muted">
               {typeLabel(row.node.type)}
@@ -152,7 +154,9 @@ export function FindScreen({ w }: { w: WorkspaceController }) {
         {view.kind === "index"
           ? view.groups.map((group) => (
               <section key={group.id} aria-label={group.label} className="mt-4">
-                <h2 className="m-0 font-mono text-[10.5px] font-normal uppercase tracking-[0.13em] text-muted">{group.label}</h2>
+                <h2 className="m-0 font-mono text-[10.5px] font-normal uppercase tracking-[0.13em] text-muted">
+                  {group.label}
+                </h2>
                 <ul role="list" className="m-0 list-none p-0">
                   {group.rows.map((row) => rowButton(row, false))}
                 </ul>

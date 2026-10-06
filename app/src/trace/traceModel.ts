@@ -65,7 +65,8 @@ export function buildGraph({ nodes, edges, annotations }: GraphInput): Graph {
       link(related, edge.toId, edge.fromId);
     }
   }
-  for (const annotation of Object.values(annotations)) notes.set(annotation.nodeId, (notes.get(annotation.nodeId) ?? 0) + 1);
+  for (const annotation of Object.values(annotations))
+    notes.set(annotation.nodeId, (notes.get(annotation.nodeId) ?? 0) + 1);
 
   const inBoardOrder = (map: Map<string, Set<string>>, id: string): CanvasNode[] =>
     [...(map.get(id) ?? [])].sort((a, b) => order.get(a)! - order.get(b)!).map((other) => nodes[other]!);

@@ -1,7 +1,16 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { apiError, emptyBoard, json, network, renderAt, resetApp, serveBoard, user } from "../../routes/__tests__/harness";
+import {
+  apiError,
+  emptyBoard,
+  json,
+  network,
+  renderAt,
+  resetApp,
+  serveBoard,
+  user,
+} from "../../routes/__tests__/harness";
 import { appStore } from "../../store";
 import { edge, node, SEED_ANNOTATIONS, SEED_EDGES, SEED_NODES } from "../../test/seed";
 import { stubViewport, unstubViewport } from "../../test/viewport";
@@ -31,7 +40,8 @@ async function openTrace(path = "/") {
 
 const trace = () => within(screen.getByRole("region", { name: "Trace" }));
 const row = (name: string | RegExp) => trace().getByRole("group", { name });
-const card = (title: string) => trace().getByRole("button", { name: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}, `) });
+const card = (title: string) =>
+  trace().getByRole("button", { name: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}, `) });
 const isCurrent = (el: HTMLElement) => el.getAttribute("aria-current") === "true";
 
 describe("Trace on a board with goals", () => {
@@ -119,7 +129,9 @@ describe("Trace on a board with goals", () => {
     expect(within(card("Reel: 3 ways to style linen")).getByText("linen-shoot-hero.jpg")).toBeTruthy();
     expect(within(card("Reel: 3 ways to style linen")).getByText("1 note")).toBeTruthy();
     expect(within(card("Vayn: 500 orders/month by Q4")).getByText("1 note")).toBeTruthy();
-    expect(within(card("Vayn positioning: quiet luxury, not fast fashion")).getByText("Competitor dropped price 20%")).toBeTruthy();
+    expect(
+      within(card("Vayn positioning: quiet luxury, not fast fashion")).getByText("Competitor dropped price 20%"),
+    ).toBeTruthy();
   });
 
   it("shows the type on every card of a row that mixes types, and labels the row 'Served by'", async () => {

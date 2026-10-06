@@ -19,7 +19,8 @@ const SIDE_TABS: Record<"left" | "right", Array<{ id: PhoneTab; label: string; i
 };
 
 /** Every tab is a target a thumb can't miss: tall, and a fifth of the width. How its contents sit is each tab's own. */
-const TAB = "relative flex min-h-[48px] flex-1 flex-col items-center gap-0.5 rounded-md border-0 bg-transparent px-1 text-[11px] text-muted [touch-action:manipulation] aria-[current=page]:font-semibold aria-[current=page]:text-primary";
+const TAB =
+  "relative flex min-h-[48px] flex-1 flex-col items-center gap-0.5 rounded-md border-0 bg-transparent px-1 text-[11px] text-muted [touch-action:manipulation] aria-[current=page]:font-semibold aria-[current=page]:text-primary";
 const CENTRED = "justify-center";
 
 /**

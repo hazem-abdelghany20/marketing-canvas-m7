@@ -76,7 +76,13 @@ export function AddSheet({ onClose, onType, onFile, onFromChat }: AddSheetProps)
         </div>
         <div className="flex items-center justify-between pl-5 pr-2">
           <h2 className="m-0 text-[17px] font-semibold text-primary">{COPY.addSheetTitle}</h2>
-          <Button variant="ghost" aria-label="Close" title="Close — Esc" onClick={onClose} className="!size-10 !rounded-md !p-0 text-muted">
+          <Button
+            variant="ghost"
+            aria-label="Close"
+            title="Close — Esc"
+            onClick={onClose}
+            className="!size-10 !rounded-md !p-0 text-muted"
+          >
             <X size={18} aria-hidden="true" />
           </Button>
         </div>

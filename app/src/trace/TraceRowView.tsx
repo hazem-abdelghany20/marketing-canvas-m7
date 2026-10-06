@@ -121,7 +121,9 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
   const heading = (
     <div className="flex items-center gap-2 px-[18px] pb-1.5">
       <h2 className="m-0 font-mono text-[10.5px] font-normal uppercase tracking-[0.13em] text-muted">{label}</h2>
-      {count > 0 ? <span className="font-mono text-[10.5px] text-muted">{`${row.selected + 1} of ${count}`}</span> : null}
+      {count > 0 ? (
+        <span className="font-mono text-[10.5px] text-muted">{`${row.selected + 1} of ${count}`}</span>
+      ) : null}
       {count > 1 && count <= MAX_DOTS ? (
         <span className="ml-auto flex items-center">
           {row.cards.map((card, index) => (

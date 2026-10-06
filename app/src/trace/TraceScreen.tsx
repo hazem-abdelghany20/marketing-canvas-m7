@@ -56,14 +56,15 @@ export function TraceScreen({ w }: { w: WorkspaceController }) {
               // A new parent makes a new row, which starts at its first card instead of wherever the last one was.
               key={`${row.depth}:${row.parentId ?? "goals"}`}
               row={row}
-              parentTitle={row.parentId ? (nodes[row.parentId]?.title.trim() || "Untitled") : null}
+              parentTitle={row.parentId ? nodes[row.parentId]?.title.trim() || "Untitled" : null}
               onChoose={(index) => choose(row.depth, index)}
               onOpen={(id) => navigate(`/node/${encodeURIComponent(id)}`)}
               onAdd={() => {
                 if (!row.parentId || !row.addType) return;
                 // Made under the card above and joined to it; then opened, with its title ready to be typed.
                 void addServing(row.parentId, row.addType, {
-                  onCreated: (node) => navigate(`/node/${encodeURIComponent(node.id)}`, { state: { focusTitle: true } }),
+                  onCreated: (node) =>
+                    navigate(`/node/${encodeURIComponent(node.id)}`, { state: { focusTitle: true } }),
                 });
               }}
             />

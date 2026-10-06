@@ -19,7 +19,9 @@ afterEach(() => {
   unstubViewport();
 });
 
-async function openFind(content: Parameters<typeof serveBoard>[0] = { nodes: SEED_NODES, edges: SEED_EDGES, annotations: SEED_ANNOTATIONS }) {
+async function openFind(
+  content: Parameters<typeof serveBoard>[0] = { nodes: SEED_NODES, edges: SEED_EDGES, annotations: SEED_ANNOTATIONS },
+) {
   serveBoard(content);
   const rendered = renderAt("/");
   const nav = await screen.findByRole("navigation", { name: "Main" });
@@ -30,7 +32,8 @@ async function openFind(content: Parameters<typeof serveBoard>[0] = { nodes: SEE
 
 const find = () => within(screen.getByRole("region", { name: "Find" }));
 const field = () => screen.getByRole("searchbox", { name: "Find a node" }) as HTMLInputElement;
-const row = (title: string) => find().getByRole("button", { name: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`) });
+const row = (title: string) =>
+  find().getByRole("button", { name: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`) });
 const type = (text: string) => fireEvent.change(field(), { target: { value: text } });
 
 describe("the Find screen with nothing typed", () => {
@@ -40,7 +43,15 @@ describe("the Find screen with nothing typed", () => {
     expect(find().getByRole("heading", { level: 1, name: "Find" })).toBeTruthy();
     expect(field().placeholder).toBe("Find a node to trace");
     const filters = within(find().getByRole("radiogroup", { name: "Type" })).getAllByRole("radio");
-    expect(filters.map((el) => el.textContent)).toEqual([`All ${SEED_NODES.length}`, "Goals", "Strategies", "Campaigns", "Content", "Assets", "Notes"]);
+    expect(filters.map((el) => el.textContent)).toEqual([
+      `All ${SEED_NODES.length}`,
+      "Goals",
+      "Strategies",
+      "Campaigns",
+      "Content",
+      "Assets",
+      "Notes",
+    ]);
     expect(filters[0]!.getAttribute("aria-checked")).toBe("true");
     const headings = find()
       .getAllByRole("heading", { level: 2 })
@@ -82,7 +93,9 @@ describe("choosing a node", () => {
     expect(uiStore.getState().phoneTab).toBe("trace");
     expect(uiStore.getState().tracePath).toEqual(["nd_goal_vayn", "nd_str_pos", "nd_cmp_ramadan", "nd_con_email"]);
     const trace = within(screen.getByRole("region", { name: "Trace" }));
-    expect(trace.getByRole("button", { name: /^Email: Ramadan lookbook drop, / }).getAttribute("aria-current")).toBe("true");
+    expect(trace.getByRole("button", { name: /^Email: Ramadan lookbook drop, / }).getAttribute("aria-current")).toBe(
+      "true",
+    );
     expect(trace.getByRole("group", { name: "Strategy, 2 of 2" })).toBeTruthy();
   });
 
@@ -175,7 +188,10 @@ describe("the Find screen with a type chosen", () => {
   });
 
   it("says there are none of a type, when there are none", async () => {
-    await openFind({ nodes: SEED_NODES.filter((n) => n.type !== "note"), edges: SEED_EDGES.filter((e) => e.kind === "serves") });
+    await openFind({
+      nodes: SEED_NODES.filter((n) => n.type !== "note"),
+      edges: SEED_EDGES.filter((e) => e.kind === "serves"),
+    });
 
     fireEvent.click(find().getByRole("radio", { name: "Notes" }));
 

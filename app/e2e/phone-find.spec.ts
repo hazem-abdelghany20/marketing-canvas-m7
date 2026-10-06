@@ -22,7 +22,9 @@ test("lists the nodes by type, with what no goal is above last, and fits the scr
   const width = page.viewportSize()!.width;
   const box = (await find(page).getByRole("radiogroup", { name: "Type" }).boundingBox())!;
   expect(box.x + box.width).toBeLessThanOrEqual(width);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(
+    true,
+  );
 });
 
 test("the field is 16px, so the browser does not zoom the page when it takes focus", async ({ page }) => {
@@ -33,18 +35,26 @@ test("the type filters sit in one row that scrolls sideways, never the page", as
   await page.setViewportSize({ width: 320, height: 640 });
   const filters = find(page).getByRole("radiogroup", { name: "Type" });
 
-  const [scrolls, rows] = await filters.evaluate((el) => [el.scrollWidth > el.clientWidth, new Set([...el.children].map((c) => (c as HTMLElement).offsetTop)).size]);
+  const [scrolls, rows] = await filters.evaluate((el) => [
+    el.scrollWidth > el.clientWidth,
+    new Set([...el.children].map((c) => (c as HTMLElement).offsetTop)).size,
+  ]);
 
   expect(scrolls).toBe(true);
   expect(rows).toBe(1);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(
+    true,
+  );
 });
 
 test("choosing a piece of content lines Trace up on its whole chain", async ({ page }) => {
   await row(page, "Email: Ramadan lookbook drop").tap();
 
   await expect(tab(page, "Trace")).toHaveAttribute("aria-current", "page");
-  await expect(trace(page).getByRole("button", { name: /^Email: Ramadan lookbook drop, / })).toHaveAttribute("aria-current", "true");
+  await expect(trace(page).getByRole("button", { name: /^Email: Ramadan lookbook drop, / })).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
   await expect(trace(page).getByRole("group", { name: "Strategy, 2 of 2" })).toBeVisible();
   await expect(trace(page).getByRole("group", { name: "Goal, 1 of 2" })).toBeVisible();
 });
@@ -53,7 +63,14 @@ test("choosing the other goal shows Trace on that goal, with its row scrolled in
   await row(page, "Mental Diet: 1,000 course completions by December").tap();
 
   await expect(trace(page).getByRole("group", { name: "Goal, 2 of 2" })).toBeVisible();
-  await expect.poll(() => trace(page).getByRole("group", { name: "Goal, 2 of 2" }).getByRole("list").evaluate((el) => el.scrollLeft)).toBeGreaterThan(100);
+  await expect
+    .poll(() =>
+      trace(page)
+        .getByRole("group", { name: "Goal, 2 of 2" })
+        .getByRole("list")
+        .evaluate((el) => el.scrollLeft),
+    )
+    .toBeGreaterThan(100);
 });
 
 test("typing narrows to matches, and Enter takes the first to Trace", async ({ page }) => {
@@ -66,7 +83,10 @@ test("typing narrows to matches, and Enter takes the first to Trace", async ({ p
   await field(page).press("Enter");
 
   await expect(tab(page, "Trace")).toHaveAttribute("aria-current", "page");
-  await expect(trace(page).getByRole("button", { name: /^Vayn Ramadan push, / })).toHaveAttribute("aria-current", "true");
+  await expect(trace(page).getByRole("button", { name: /^Vayn Ramadan push, / })).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
 });
 
 test("a node no goal is above opens its detail instead", async ({ page }) => {

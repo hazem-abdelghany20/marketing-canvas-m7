@@ -7,7 +7,8 @@ const dock = (page: Page) => page.getByRole("group", { name: "Whiteboard tools" 
 const tool = (page: Page, name: string) => dock(page).getByRole("button", { name });
 const toolbar = (page: Page) => page.getByRole("toolbar", { name: "Canvas tools" });
 const strokes = (page: Page) => page.locator("[data-stroke-id]");
-const camera = (page: Page) => page.locator(".react-flow__viewport").evaluate((el) => (el as HTMLElement).style.transform);
+const camera = (page: Page) =>
+  page.locator(".react-flow__viewport").evaluate((el) => (el as HTMLElement).style.transform);
 
 let s: Session;
 test.beforeEach(async ({ page }) => {
@@ -54,7 +55,9 @@ test("fits a 320px screen: the dock and the top bar stay inside it", async ({ pa
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(320);
   }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(
+    true,
+  );
 });
 
 test("the top bar has the board's name, Undo, More and Ask about this", async ({ page }) => {
@@ -101,7 +104,9 @@ test("one finger draws a stroke that is saved", async ({ page }) => {
   await expect.poll(async () => (await s.call<unknown[]>("GET", "/strokes")).length).toBe(before + 1);
 });
 
-test("two fingers pan and zoom the board with the Pen in hand, and the stroke the first finger began is thrown away", async ({ page }) => {
+test("two fingers pan and zoom the board with the Pen in hand, and the stroke the first finger began is thrown away", async ({
+  page,
+}) => {
   await tool(page, "Pen").tap();
   const strokesBefore = await strokes(page).count();
   const cameraBefore = await camera(page);
@@ -126,7 +131,9 @@ test("two fingers pan and zoom the board with the Pen in hand, and the stroke th
   expect((await s.call<unknown[]>("GET", "/strokes")).length).toBe(strokesBefore);
 });
 
-test("More offers Connect, Auto-arrange, Fit to screen, Save as PNG and Clear ink, and Fit moves the camera", async ({ page }) => {
+test("More offers Connect, Auto-arrange, Fit to screen, Save as PNG and Clear ink, and Fit moves the camera", async ({
+  page,
+}) => {
   await toolbar(page).getByRole("button", { name: "More" }).tap();
   const menu = page.getByRole("menu", { name: "Board actions" });
   await expect(menu.getByRole("menuitem")).toHaveCount(5);
@@ -155,7 +162,10 @@ test("connecting from the menu: pick two cards, and the kind picker asks what th
 
 test("connect mode started from another tab brings the Board forward", async ({ page }) => {
   await tab(page, "Trace").tap();
-  await page.getByRole("region", { name: "Trace" }).getByRole("button", { name: /^Vayn ICP/ }).tap(); // the card on screen opens its detail
+  await page
+    .getByRole("region", { name: "Trace" })
+    .getByRole("button", { name: /^Vayn ICP/ })
+    .tap(); // the card on screen opens its detail
   await expect(page.getByRole("complementary", { name: "Node detail" })).toBeVisible();
 
   await page.getByRole("button", { name: "+ Connect" }).tap();
@@ -182,7 +192,9 @@ test("Ask about this sends the board and shows the Chat tab with a reply on its 
   await expect(page.getByText("Read my markup on the board.")).toBeVisible();
 });
 
-test("a camera left by a wider screen is brought back to the cards the first time the Board is shown", async ({ page }) => {
+test("a camera left by a wider screen is brought back to the cards the first time the Board is shown", async ({
+  page,
+}) => {
   await setViewport(s, { x: -9000, y: -9000, zoom: 1 });
   await page.reload();
   await expect(page.locator("[data-canvas-state=ready]")).toBeVisible();

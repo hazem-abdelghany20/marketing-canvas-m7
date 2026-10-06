@@ -77,11 +77,26 @@ function BringBoardIntoView({ shown, ready }: { shown: boolean; ready: boolean }
  */
 export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
   const tab = useUi((s) => s.phoneTab);
-  const { ready, state, addMenuOpen, fileInput, openAddMenu, closeAddMenu, addOfType, fromChat, pickFile, onPickFiles } = w;
+  const {
+    ready,
+    state,
+    addMenuOpen,
+    fileInput,
+    openAddMenu,
+    closeAddMenu,
+    addOfType,
+    fromChat,
+    pickFile,
+    onPickFiles,
+  } = w;
   const boardShown = tab === "board";
 
   return (
-    <div data-phone-shell data-phone-tab={tab} className="relative flex h-dvh w-full flex-col overflow-hidden bg-canvas">
+    <div
+      data-phone-shell
+      data-phone-tab={tab}
+      className="relative flex h-dvh w-full flex-col overflow-hidden bg-canvas"
+    >
       <main data-canvas-state={state} className="relative min-h-0 flex-1 overflow-hidden bg-canvas">
         <Screen name="Trace" shown={tab === "trace"}>
           <TraceScreen w={w} />

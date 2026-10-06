@@ -30,15 +30,18 @@ function section(doc: string, heading: string): string {
 }
 
 describe("the spec", () => {
-  it.each(SCREENS)("has a section for %s — %s, with its layout, content, behavior and acceptance criteria", (id, title) => {
-    const body = section(spec, `# ${id} — ${title}`);
+  it.each(SCREENS)(
+    "has a section for %s — %s, with its layout, content, behavior and acceptance criteria",
+    (id, title) => {
+      const body = section(spec, `# ${id} — ${title}`);
 
-    expect(body, `# ${id} — ${title}`).not.toBe("");
-    for (const part of ["### Layout", "### Behavior", "### States", "### Acceptance criteria"]) {
-      expect(body, `${id} ${part}`).toContain(part);
-    }
-    expect(body).toContain("state-matrix.md");
-  });
+      expect(body, `# ${id} — ${title}`).not.toBe("");
+      for (const part of ["### Layout", "### Behavior", "### States", "### Acceptance criteria"]) {
+        expect(body, `${id} ${part}`).toContain(part);
+      }
+      expect(body).toContain("state-matrix.md");
+    },
+  );
 
   it("lists the phone's screens in the screen inventory, each tracing to a step of the path", () => {
     const inventory = section(spec, "## Screen inventory");
@@ -74,7 +77,8 @@ describe("the roadmap", () => {
     const phone = section(roadmap, "## Phone layout — 023–029 (on `mobile-optimization-ui`)");
 
     expect(phone).not.toBe("");
-    for (const ticket of ["023", "024", "025", "026", "027", "028", "029"]) expect(phone, ticket).toContain(`**${ticket} `);
+    for (const ticket of ["023", "024", "025", "026", "027", "028", "029"])
+      expect(phone, ticket).toContain(`**${ticket} `);
     expect(roadmap).toContain("mobile-optimization-ui");
   });
 

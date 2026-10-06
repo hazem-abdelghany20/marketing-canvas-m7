@@ -26,7 +26,15 @@ afterEach(() => {
 
 function serveWrites() {
   network.on("POST /nodes", (call) =>
-    json(201, { id: "nd_new", title: "", body: "", fileIds: [], createdAt: T, updatedAt: T, ...(call.body as object) } satisfies Partial<CanvasNode>),
+    json(201, {
+      id: "nd_new",
+      title: "",
+      body: "",
+      fileIds: [],
+      createdAt: T,
+      updatedAt: T,
+      ...(call.body as object),
+    } satisfies Partial<CanvasNode>),
   );
   network.on("POST /edges", (call) => json(201, { id: "ed_new", label: null, ...(call.body as object) }));
   network.on("DELETE /nodes/nd_new", () => json(204));
@@ -56,7 +64,10 @@ describe("the empty row's button", () => {
     cleanup();
 
     const withCampaign = [GOAL, SEED_NODES[2]!, SEED_NODES[6]!];
-    await openTrace(withCampaign, [SEED_EDGES.find((e) => e.id === "edg_8")!, SEED_EDGES.find((e) => e.id === "edg_6")!]);
+    await openTrace(withCampaign, [
+      SEED_EDGES.find((e) => e.id === "edg_8")!,
+      SEED_EDGES.find((e) => e.id === "edg_6")!,
+    ]);
     expect(within(empty("Content")).getByRole("button", { name: "Add a piece of content" })).toBeTruthy();
   });
 

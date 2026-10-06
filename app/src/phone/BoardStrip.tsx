@@ -32,7 +32,8 @@ export function BoardStrip() {
     if (!el) return;
     const measure = () => {
       const { width, height } = el.getBoundingClientRect();
-      if (width > 0 && height > 0) setSize((was) => (was.width === width && was.height === height ? was : { width, height }));
+      if (width > 0 && height > 0)
+        setSize((was) => (was.width === width && was.height === height ? was : { width, height }));
     };
     measure();
     if (typeof ResizeObserver === "undefined") return;
@@ -118,7 +119,9 @@ export function BoardStrip() {
                     height: STRIP_CHIP.height,
                   }}
                   className={`absolute flex items-center gap-1.5 overflow-hidden rounded-md border bg-elevated px-1.5 text-left text-[10.5px] leading-tight text-primary [touch-action:manipulation] ${
-                    item.cited ? "border-accent shadow-[0_0_0_2px_color-mix(in_srgb,var(--accent)_25%,transparent)]" : "border-subtle opacity-75"
+                    item.cited
+                      ? "border-accent shadow-[0_0_0_2px_color-mix(in_srgb,var(--accent)_25%,transparent)]"
+                      : "border-subtle opacity-75"
                   }`}
                 >
                   <span aria-hidden="true" className={`size-[6px] flex-none rounded-full ${TYPE_BG[item.node.type]}`} />

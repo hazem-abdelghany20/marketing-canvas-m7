@@ -64,7 +64,9 @@ describe("the Add sheet", () => {
     expect(buttons).toHaveLength(names.length);
     names.forEach((name, i) => {
       const button = buttons[i]!;
-      expect(button.getAttribute("aria-label") === name || (button.textContent ?? "").startsWith(name), name).toBe(true);
+      expect(button.getAttribute("aria-label") === name || (button.textContent ?? "").startsWith(name), name).toBe(
+        true,
+      );
     });
     // Each type says what it is for, so the first choice is an informed one.
     expect(pick(/^Goal/).textContent).toContain("Outcome with a number and a horizon");

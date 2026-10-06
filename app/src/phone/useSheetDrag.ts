@@ -38,6 +38,7 @@ export function useSheetDrag(onClose: () => void) {
     onPointerCancel: (event: PointerEvent<HTMLElement>) => finish(event, false),
   };
 
-  const style: CSSProperties | undefined = offset > 0 ? { transform: `translateY(${offset}px)`, transition: "none" } : undefined;
+  const style: CSSProperties | undefined =
+    offset > 0 ? { transform: `translateY(${offset}px)`, transition: "none" } : undefined;
   return { handleProps, style };
 }

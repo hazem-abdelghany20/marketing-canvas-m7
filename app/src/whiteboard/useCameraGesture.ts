@@ -79,7 +79,10 @@ export function useCameraGesture(tool: SurfaceHandlers, camera: GestureCamera) {
     const a = fingers.current.get(ids[0])!;
     const b = fingers.current.get(ids[1])!;
     const { camera: cam } = latest.current;
-    pair.current = { ids, start: { anchor: cam.toBoard(midpoint(a, b)), span: distance(a, b), zoom: cam.viewport().zoom } };
+    pair.current = {
+      ids,
+      start: { anchor: cam.toBoard(midpoint(a, b)), span: distance(a, b), zoom: cam.viewport().zoom },
+    };
     // The first finger was drawing, or erasing, or dropping something: it was the start of a gesture, not of a stroke.
     latest.current.tool.onPointerCancel({ ...first.current, button: 0 } as unknown as Touch);
   }

@@ -25,7 +25,9 @@ test.beforeEach(async ({ page }) => {
   await openCanvas(page);
 });
 
-test("opens on the first goal, with a row under it for each layer, and the next card peeking in at the edge", async ({ page }) => {
+test("opens on the first goal, with a row under it for each layer, and the next card peeking in at the edge", async ({
+  page,
+}) => {
   await expect(row(page, "Goal, 1 of 2")).toBeVisible();
   await expect(row(page, "Strategy, 1 of 2")).toBeVisible();
   await expect(row(page, "Campaign, 1 of 1")).toBeVisible();
@@ -87,14 +89,18 @@ test("tapping a card that is peeking in brings it on screen, and opens nothing",
   await expect(page).not.toHaveURL(/\/node\//);
 });
 
-test("the rows scroll up and down when they do not all fit, and the page itself does not scroll sideways", async ({ page }) => {
+test("the rows scroll up and down when they do not all fit, and the page itself does not scroll sideways", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 520 });
   const last = row(page, "Content, 1 of 2");
 
   await last.scrollIntoViewIfNeeded();
 
   await expect(last).toBeInViewport();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(
+    true,
+  );
 });
 
 test("remembers the chain across a reload in the same tab", async ({ page }) => {
@@ -105,5 +111,11 @@ test("remembers the chain across a reload in the same tab", async ({ page }) => 
   await expect(page.locator("[data-canvas-state=ready]")).toBeVisible();
 
   await expect(card(page, "Mental Diet: 1,000 course completions by December")).toHaveAttribute("aria-current", "true");
-  await expect.poll(() => row(page, "Goal, 2 of 2").getByRole("list").evaluate((el) => el.scrollLeft)).toBeGreaterThan(100);
+  await expect
+    .poll(() =>
+      row(page, "Goal, 2 of 2")
+        .getByRole("list")
+        .evaluate((el) => el.scrollLeft),
+    )
+    .toBeGreaterThan(100);
 });

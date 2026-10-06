@@ -38,7 +38,8 @@ async function pastTheEdge(page: Page): Promise<string[]> {
         if (overflowX === "auto" || overflowX === "scroll") scrolls = true;
       }
       if (scrolls) continue;
-      if (box.left < -0.5 || box.right > width + 0.5) out.push(`${name(el)} ${Math.round(box.left)}..${Math.round(box.right)}`);
+      if (box.left < -0.5 || box.right > width + 0.5)
+        out.push(`${name(el)} ${Math.round(box.left)}..${Math.round(box.right)}`);
     }
     return out;
   });
@@ -52,7 +53,10 @@ for (const width of WIDTHS) {
     for (const name of TABS) {
       await tab(page, name).tap();
       await page.waitForTimeout(150);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${name} scrolls sideways`).toBe(true);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+        `${name} scrolls sideways`,
+      ).toBe(true);
       expect(await pastTheEdge(page), `${name} runs past an edge`).toEqual([]);
     }
 
@@ -68,7 +72,10 @@ test("every control that is tapped to do something is a target a thumb can hit",
   const check = async (what: string, els: Locator, min: number) => {
     for (const el of await els.all()) {
       const box = await size(el);
-      if (box.width < min - 0.5 || box.height < min - 0.5) tooSmall.push(`${what}: ${await el.getAttribute("aria-label") ?? (await el.textContent())?.trim()} ${Math.round(box.width)}x${Math.round(box.height)}`);
+      if (box.width < min - 0.5 || box.height < min - 0.5)
+        tooSmall.push(
+          `${what}: ${(await el.getAttribute("aria-label")) ?? (await el.textContent())?.trim()} ${Math.round(box.width)}x${Math.round(box.height)}`,
+        );
     }
   };
 
@@ -106,7 +113,9 @@ test("the node's sheet gives every button a target a thumb can hit", async ({ pa
     if (!(await el.isVisible())) continue;
     const box = await size(el);
     if (box.height < 39.5 || box.width < 39.5) {
-      tooSmall.push(`${(await el.getAttribute("aria-label")) ?? (await el.textContent())?.trim()} ${Math.round(box.width)}x${Math.round(box.height)}`);
+      tooSmall.push(
+        `${(await el.getAttribute("aria-label")) ?? (await el.textContent())?.trim()} ${Math.round(box.width)}x${Math.round(box.height)}`,
+      );
     }
   }
 
@@ -119,8 +128,17 @@ test("every text field on a phone is at least 16px, so the browser never zooms t
   const fields = async (what: string) => {
     const found = await page.evaluate(() =>
       [...document.querySelectorAll<HTMLElement>("input, textarea")]
-        .filter((el) => !el.closest("[inert], [hidden]") && el.getBoundingClientRect().width > 0 && (el as HTMLInputElement).type !== "hidden" && (el as HTMLInputElement).type !== "file")
-        .map((el) => ({ label: el.getAttribute("aria-label") ?? el.tagName, px: parseFloat(getComputedStyle(el).fontSize) })),
+        .filter(
+          (el) =>
+            !el.closest("[inert], [hidden]") &&
+            el.getBoundingClientRect().width > 0 &&
+            (el as HTMLInputElement).type !== "hidden" &&
+            (el as HTMLInputElement).type !== "file",
+        )
+        .map((el) => ({
+          label: el.getAttribute("aria-label") ?? el.tagName,
+          px: parseFloat(getComputedStyle(el).fontSize),
+        })),
     );
     for (const f of found) if (f.px < 16) tooSmall.push(`${what}: ${f.label} ${f.px}px`);
   };
@@ -145,7 +163,9 @@ test("every text field on a phone is at least 16px, so the browser never zooms t
   expect(tooSmall).toEqual([]);
 });
 
-test("a card peeking in at the edge of its row is not dimmed with opacity, which would take its text below 4.5:1", async ({ page }) => {
+test("a card peeking in at the edge of its row is not dimmed with opacity, which would take its text below 4.5:1", async ({
+  page,
+}) => {
   await openCanvas(page);
 
   const opacities = await page.evaluate(() =>
@@ -166,7 +186,9 @@ test.describe("with reduced motion asked for", () => {
 
     await tab(page, "Add").tap();
 
-    const duration = await page.getByRole("dialog", { name: "Add to the board" }).evaluate((el) => parseFloat(getComputedStyle(el).animationDuration));
+    const duration = await page
+      .getByRole("dialog", { name: "Add to the board" })
+      .evaluate((el) => parseFloat(getComputedStyle(el).animationDuration));
     expect(duration).toBeLessThan(0.05); // seconds: the stylesheet flattens it to a hundredth of a millisecond
   });
 
@@ -187,7 +209,9 @@ test.describe("with reduced motion asked for", () => {
 
 test.describe("with only a keyboard", () => {
   for (const name of TABS) {
-    test(`Tab on ${name} reaches controls in order, with a visible ring, and never one on a screen that is not shown`, async ({ page }) => {
+    test(`Tab on ${name} reaches controls in order, with a visible ring, and never one on a screen that is not shown`, async ({
+      page,
+    }) => {
       await openCanvas(page);
       await tab(page, name).tap();
       await page.waitForTimeout(150);
@@ -240,9 +264,9 @@ test("a button answers a touch at once: no double-tap delay, and no pull-to-refr
 test("the browser's own chrome takes the app's colours: a theme-color for each scheme", async ({ page }) => {
   await page.goto("/");
 
-  const schemes = await page.locator('meta[name="theme-color"]').evaluateAll((els) =>
-    els.map((el) => `${el.getAttribute("media")}|${el.getAttribute("content")}`),
-  );
+  const schemes = await page
+    .locator('meta[name="theme-color"]')
+    .evaluateAll((els) => els.map((el) => `${el.getAttribute("media")}|${el.getAttribute("content")}`));
 
   expect(schemes.sort()).toEqual(["(prefers-color-scheme: dark)|#1b1916", "(prefers-color-scheme: light)|#f2eee7"]);
 });

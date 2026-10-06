@@ -34,7 +34,9 @@ const toasts = () => uiStore.getState().toasts;
 
 describe("createNodeAt", () => {
   it("makes a node of the type asked for, where it is asked to, and says which it made", async () => {
-    network.on("POST /nodes", (call) => json(201, made({ ...(call.body as object), id: "nd_goal_new" } as Partial<CanvasNode>)));
+    network.on("POST /nodes", (call) =>
+      json(201, made({ ...(call.body as object), id: "nd_goal_new" } as Partial<CanvasNode>)),
+    );
     let seen: CanvasNode | undefined;
 
     const node = await createNodeAt({ x: 700, y: 1200 }, { type: "goal", onCreated: (n) => (seen = n) });
@@ -67,7 +69,9 @@ describe("addServing", () => {
   const parent = "nd_goal_vayn";
 
   function serveWrites() {
-    network.on("POST /nodes", (call) => json(201, made({ ...(call.body as object), id: "nd_new" } as Partial<CanvasNode>)));
+    network.on("POST /nodes", (call) =>
+      json(201, made({ ...(call.body as object), id: "nd_new" } as Partial<CanvasNode>)),
+    );
     network.on("POST /edges", (call) => json(201, { id: "ed_new", label: null, ...(call.body as object) }));
     network.on("DELETE /nodes/nd_new", () => json(204));
   }

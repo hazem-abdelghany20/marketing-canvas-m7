@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { byIdMap, edge, node, SEED_ANNOTATIONS, SEED_EDGES, SEED_NODES } from "../../test/seed";
 import type { CanvasNode, Edge } from "../../types";
-import { buildGraph, buildTrace, MAX_TRACE_ROWS, reachesGoal, rowLabel, tracePathTo, type TraceRow } from "../traceModel";
+import {
+  buildGraph,
+  buildTrace,
+  MAX_TRACE_ROWS,
+  reachesGoal,
+  rowLabel,
+  tracePathTo,
+  type TraceRow,
+} from "../traceModel";
 
 const graph = (nodes: CanvasNode[] = SEED_NODES, edges: Edge[] = SEED_EDGES) =>
   buildGraph({ nodes: byIdMap(nodes), edges: byIdMap(edges), annotations: byIdMap(SEED_ANNOTATIONS) });
@@ -66,7 +74,9 @@ describe("the rows of a trace", () => {
     expect(rows.map(rowLabel)).toEqual(["Goal", "Strategy", "Campaign", "Content"]);
 
     const direct = node("nd_con_direct", "content", "A reel made straight for the goal");
-    const mixed = buildTrace(graph([...SEED_NODES, direct], [...SEED_EDGES, edge(99, "nd_con_direct", "nd_goal_vayn")]));
+    const mixed = buildTrace(
+      graph([...SEED_NODES, direct], [...SEED_EDGES, edge(99, "nd_con_direct", "nd_goal_vayn")]),
+    );
     expect(titles(mixed[1]!)).toEqual([
       "Vayn ICP: 25-34 urban women",
       "Vayn positioning: quiet luxury, not fast fashion",
@@ -102,12 +112,16 @@ describe("a card", () => {
     expect(card(0, "nd_goal_vayn").notes).toBe(1);
     expect(card(2, "nd_cmp_linen").related).toEqual([]);
 
-    const positioning = buildTrace(graph(), ["nd_goal_vayn", "nd_str_pos"])[1]!.cards.find((c) => c.node.id === "nd_str_pos")!;
+    const positioning = buildTrace(graph(), ["nd_goal_vayn", "nd_str_pos"])[1]!.cards.find(
+      (c) => c.node.id === "nd_str_pos",
+    )!;
     expect(positioning.related.map((n) => n.id)).toEqual(["nd_not_price"]);
   });
 
   it("does not count a relates-to edge as serving", () => {
-    expect(buildTrace(graph(), ["nd_goal_vayn", "nd_str_pos"])[2]!.cards.map((c) => c.node.id)).toEqual(["nd_cmp_ramadan"]);
+    expect(buildTrace(graph(), ["nd_goal_vayn", "nd_str_pos"])[2]!.cards.map((c) => c.node.id)).toEqual([
+      "nd_cmp_ramadan",
+    ]);
     expect(ids(buildTrace(graph(), ["nd_goal_vayn", "nd_str_pos", "nd_cmp_ramadan"])[3]!)).toEqual(["nd_con_email"]);
   });
 });

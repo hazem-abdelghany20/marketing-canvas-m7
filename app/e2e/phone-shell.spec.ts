@@ -29,7 +29,9 @@ for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 800 });
     await openCanvas(page);
 
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+    ).toBe(true);
     const box = (await bar(page).boundingBox())!;
     expect(box.x).toBe(0);
     expect(box.width).toBe(width);
@@ -78,7 +80,8 @@ test("no card from the board is painted over another screen", async ({ page }) =
   // Cards keep visibility: visible of their own; what keeps them off the Trace screen is the board's opacity.
   const painted = await page.evaluate(() =>
     [...document.querySelectorAll("[data-node-card]")].some((card) => {
-      for (let el: Element | null = card; el; el = el.parentElement) if (getComputedStyle(el).opacity === "0") return false;
+      for (let el: Element | null = card; el; el = el.parentElement)
+        if (getComputedStyle(el).opacity === "0") return false;
       return card.getBoundingClientRect().width > 0 && !card.closest("[inert]");
     }),
   );

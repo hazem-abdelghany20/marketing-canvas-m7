@@ -54,7 +54,9 @@ describe("createServingNode", () => {
   it("leaves nothing behind, and nothing to undo, when the node is refused", async () => {
     const { store, backend } = await loadedStore({ ...routes(), "POST /nodes": () => apiError(503, "forced_failure") });
 
-    await expect(store.getState().createServingNode({ type: "strategy", x: 0, y: 220 }, "nd_goal")).rejects.toMatchObject({
+    await expect(
+      store.getState().createServingNode({ type: "strategy", x: 0, y: 220 }, "nd_goal"),
+    ).rejects.toMatchObject({
       status: 503,
     });
 

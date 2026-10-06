@@ -48,7 +48,12 @@ describe("Find with nothing typed", () => {
   });
 
   it("puts what no goal is above in the last group, in board order, whatever its type", () => {
-    expect(ids(group(index(), "loose").rows)).toEqual(["nd_ast_lookbook", "nd_ast_hero", "nd_not_price", "nd_not_reach"]);
+    expect(ids(group(index(), "loose").rows)).toEqual([
+      "nd_ast_lookbook",
+      "nd_ast_hero",
+      "nd_not_price",
+      "nd_not_reach",
+    ]);
   });
 
   it("shows a node once: the last group takes it from its type's group", () => {
@@ -59,7 +64,12 @@ describe("Find with nothing typed", () => {
   });
 
   it("leaves out a group with nothing in it", () => {
-    const onlyGoals = index(graph(SEED_NODES.filter((n) => n.type === "goal"), []));
+    const onlyGoals = index(
+      graph(
+        SEED_NODES.filter((n) => n.type === "goal"),
+        [],
+      ),
+    );
 
     expect(onlyGoals.map((g) => g.id)).toEqual(["goal"]);
   });
@@ -128,7 +138,15 @@ describe("Find by type", () => {
 
   it("offers a filter for every type, and for all", () => {
     expect(FIND_FILTERS.map((f) => f.id)).toEqual(["all", "goal", "strategy", "campaign", "content", "asset", "note"]);
-    expect(FIND_FILTERS.map((f) => f.label)).toEqual(["All", "Goals", "Strategies", "Campaigns", "Content", "Assets", "Notes"]);
+    expect(FIND_FILTERS.map((f) => f.label)).toEqual([
+      "All",
+      "Goals",
+      "Strategies",
+      "Campaigns",
+      "Content",
+      "Assets",
+      "Notes",
+    ]);
   });
 });
 

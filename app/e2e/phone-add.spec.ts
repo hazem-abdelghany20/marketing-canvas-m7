@@ -23,7 +23,10 @@ async function settled(locator: Locator) {
 /** One finger down, along a path, and up: through the browser's own touch input. */
 async function drag(page: Page, from: [number, number], to: [number, number]) {
   const client = await page.context().newCDPSession(page);
-  await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: from[0], y: from[1], id: 1 }] });
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: from[0], y: from[1], id: 1 }],
+  });
   for (let i = 1; i <= 8; i++) {
     const x = from[0] + ((to[0] - from[0]) * i) / 8;
     const y = from[1] + ((to[1] - from[1]) * i) / 8;
@@ -84,7 +87,11 @@ test.describe("the Add tab", () => {
     await settled(sheet(page));
     const handle = (await sheet(page).locator("[data-sheet-handle]").boundingBox())!;
 
-    await drag(page, [handle.x + handle.width / 2, handle.y + handle.height / 2], [handle.x + handle.width / 2, handle.y + 260]);
+    await drag(
+      page,
+      [handle.x + handle.width / 2, handle.y + handle.height / 2],
+      [handle.x + handle.width / 2, handle.y + 260],
+    );
 
     await expect(sheet(page)).toBeHidden();
     expect((await s.nodes()).length).toBe(before);
@@ -98,7 +105,9 @@ test.describe("the Add tab", () => {
   });
 
   test("Draft in chat shows the assistant with the composer ready", async ({ page }) => {
-    await sheet(page).getByRole("button", { name: /^Draft in chat/ }).tap();
+    await sheet(page)
+      .getByRole("button", { name: /^Draft in chat/ })
+      .tap();
 
     await expect(tab(page, "Chat")).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("textbox", { name: "Message" })).toBeFocused();
@@ -132,7 +141,10 @@ test.describe("what serves a card", () => {
     await page.keyboard.press("Escape"); // closes the sheet
     await expect(detail(page)).toBeHidden();
     await expect(trace(page).getByRole("group", { name: "Strategy, 1 of 1" })).toBeVisible();
-    await expect(trace(page).getByRole("button", { name: "Gift sets for her, Strategy" })).toHaveAttribute("aria-current", "true");
+    await expect(trace(page).getByRole("button", { name: "Gift sets for her, Strategy" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
   });
 });
 
@@ -140,7 +152,9 @@ test.describe("a node's detail as a sheet", () => {
   test.beforeEach(async ({ page }) => {
     await demoSession(page);
     await openCanvas(page);
-    await trace(page).getByRole("button", { name: /^Vayn ICP/ }).tap();
+    await trace(page)
+      .getByRole("button", { name: /^Vayn ICP/ })
+      .tap();
     await expect(detail(page)).toBeVisible();
   });
 
@@ -160,7 +174,11 @@ test.describe("a node's detail as a sheet", () => {
     await settled(detail(page));
     const handle = (await detail(page).locator("[data-sheet-handle]").boundingBox())!;
 
-    await drag(page, [handle.x + handle.width / 2, handle.y + handle.height / 2], [handle.x + handle.width / 2, handle.y + 300]);
+    await drag(
+      page,
+      [handle.x + handle.width / 2, handle.y + handle.height / 2],
+      [handle.x + handle.width / 2, handle.y + 300],
+    );
 
     await expect(detail(page)).toBeHidden();
     await expect(page).not.toHaveURL(/\/node\//);
@@ -170,7 +188,9 @@ test.describe("a node's detail as a sheet", () => {
     await page.locator("[data-sheet-scrim]").tap({ position: { x: 20, y: 20 } });
     await expect(detail(page)).toBeHidden();
 
-    await trace(page).getByRole("button", { name: /^Vayn ICP/ }).tap();
+    await trace(page)
+      .getByRole("button", { name: /^Vayn ICP/ })
+      .tap();
     await expect(detail(page)).toBeVisible();
     await page.goBack();
     await expect(detail(page)).toBeHidden();
@@ -193,13 +213,17 @@ test.describe("a node's detail as a sheet", () => {
     await detail(page).getByRole("button", { name: "Ask about it" }).tap();
 
     await expect(tab(page, "Chat")).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue("Tell me about “Vayn ICP: 25-34 urban women”.");
+    await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(
+      "Tell me about “Vayn ICP: 25-34 urban women”.",
+    );
     await expect(page.locator("[data-chat-message]")).toHaveCount(0);
   });
 
   test("keeps its fields at 16px, so the browser does not zoom the page to one", async ({ page }) => {
     for (const name of ["Title", "Description", "New annotation"]) {
-      const size = await detail(page).getByRole("textbox", { name }).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      const size = await detail(page)
+        .getByRole("textbox", { name })
+        .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
       expect(size, name).toBeGreaterThanOrEqual(16);
     }
   });

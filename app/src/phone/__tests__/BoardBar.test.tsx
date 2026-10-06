@@ -15,8 +15,24 @@ import { stubBrowserExport } from "../../whiteboard/__tests__/canvasStub";
 
 const T = "2026-09-02T00:00:00.000Z";
 const IMAGE = "data:image/png;base64,cG5n"; // what the stubbed canvas "encodes": the bytes "png"
-const STROKE: Stroke = { id: "stk_a", tool: "pen", color: "var(--ink-1)", width: 3, points: [0, 0, 100, 100], createdAt: T };
-const MARK: Mark = { id: "mrk_a", variant: "sticky", x: 300, y: 300, body: "Reshoot the hook", color: null, createdAt: T, updatedAt: T };
+const STROKE: Stroke = {
+  id: "stk_a",
+  tool: "pen",
+  color: "var(--ink-1)",
+  width: 3,
+  points: [0, 0, 100, 100],
+  createdAt: T,
+};
+const MARK: Mark = {
+  id: "mrk_a",
+  variant: "sticky",
+  x: 300,
+  y: 300,
+  body: "Reshoot the hook",
+  color: null,
+  createdAt: T,
+  updatedAt: T,
+};
 const WITH_INK = { nodes: SEED_NODES, edges: SEED_EDGES, strokes: [STROKE], marks: [MARK] };
 
 beforeEach(() => {
