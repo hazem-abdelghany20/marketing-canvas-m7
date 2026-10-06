@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { structuralProblems } from "./structure";
 import { demoSession, openCanvas } from "./support";
 
 /**
@@ -65,6 +66,33 @@ for (const width of WIDTHS) {
     expect(await pastTheEdge(page), "the Add sheet runs past an edge").toEqual([]);
   });
 }
+
+test("each of the four screens, and the sheets over them, has no structural problems: a name for every control, unique ids, aria that points somewhere", async ({
+  page,
+}) => {
+  await openCanvas(page);
+
+  for (const name of TABS) {
+    await tab(page, name).tap();
+    await page.waitForTimeout(150);
+    expect(await structuralProblems(page), name).toEqual([]);
+  }
+
+  await tab(page, "Add").tap();
+  await expect(page.getByRole("dialog", { name: "Add to the board" })).toBeVisible();
+  await page.waitForTimeout(400);
+  expect(await structuralProblems(page), "the Add sheet").toEqual([]);
+  await page.keyboard.press("Escape");
+
+  await tab(page, "Trace").tap();
+  await page
+    .getByRole("region", { name: "Trace" })
+    .getByRole("button", { name: /^Vayn ICP/ })
+    .tap();
+  await expect(page.getByRole("complementary", { name: "Node detail" })).toBeVisible();
+  await page.waitForTimeout(400);
+  expect(await structuralProblems(page), "a node's sheet").toEqual([]);
+});
 
 test("every control that is tapped to do something is a target a thumb can hit", async ({ page }) => {
   await openCanvas(page);

@@ -92,7 +92,16 @@ test("keeps the board where it was while another tab is shown", async ({ page })
   await openCanvas(page);
   await tab(page, "Board").tap();
   const camera = () => page.locator(".react-flow__viewport").evaluate((el) => (el as HTMLElement).style.transform);
-  const before = await camera();
+  // The first time the Board is shown the camera may be brought back to the cards (ticket 025): take it once it has settled.
+  let before = "";
+  await expect
+    .poll(async () => {
+      const now = await camera();
+      const settled = now === before;
+      before = now;
+      return settled;
+    })
+    .toBe(true);
 
   await tab(page, "Chat").tap();
   await tab(page, "Find").tap();
@@ -119,11 +128,14 @@ test("opens a node's detail over the bar, and the screen underneath stays as it 
   await expect(tab(page, "Trace")).toHaveAttribute("aria-current", "page");
 });
 
-test("asking for the assistant from the Add menu shows Chat with the composer focused", async ({ page }) => {
+test("asking for the assistant from the Add sheet shows Chat with the composer focused", async ({ page }) => {
   await openCanvas(page);
 
   await tab(page, "Add").tap();
-  await page.getByRole("menuitem", { name: /^From chat/ }).tap();
+  await page
+    .getByRole("dialog", { name: "Add to the board" })
+    .getByRole("button", { name: /^Draft in chat/ })
+    .tap();
 
   await expect(tab(page, "Chat")).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("textbox", { name: "Message" })).toBeFocused();

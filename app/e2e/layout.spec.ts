@@ -25,10 +25,19 @@ async function within(page: Page, selector: string) {
 const noSideScroll = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
+/**
+ * Below 640px the workspace is the phone layout (tickets 023-029), whose toolbar is on its Board tab. The same promises are made
+ * of it there: it stays inside the canvas, every control can be reached, and the page does not scroll sideways.
+ */
+async function openToolbar(page: Page, width: number) {
+  await openCanvas(page);
+  if (width < 640) await page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "Board" }).click();
+}
+
 for (const width of WIDTHS) {
   test(`at ${width}px the toolbar stays inside the canvas and the page does not scroll sideways`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
-    await openCanvas(page);
+    await openToolbar(page, width);
 
     expect(await within(page, "[role=toolbar]")).toBe(true);
     // Every control can be reached: none is clipped off the edge.
@@ -43,7 +52,7 @@ for (const width of WIDTHS) {
 
   test(`at ${width}px the connect banner sits clear of the toolbar, inside the canvas`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
-    await openCanvas(page);
+    await openToolbar(page, width);
 
     await page.keyboard.press("l");
     await expect(page.locator("[data-connect-banner]")).toBeVisible();
