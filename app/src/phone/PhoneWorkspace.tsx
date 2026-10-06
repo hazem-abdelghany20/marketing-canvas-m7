@@ -10,6 +10,7 @@ import { QuickPeek } from "../components/QuickPeek";
 import { ReasonTip } from "../components/ReasonTip";
 import { ToastViewport } from "../components/Toast";
 import { FILE_ACCEPT } from "../files/importFiles";
+import { FindScreen } from "../find/FindScreen";
 import { CanvasStage } from "../routes/CanvasStage";
 import type { WorkspaceController } from "../routes/useWorkspace";
 import { appStore } from "../store";
@@ -41,18 +42,6 @@ function Screen({ name, shown, children }: { name: string; shown: boolean; child
     >
       {children}
     </section>
-  );
-}
-
-/** A screen whose ticket has not landed yet. */
-function Soon({ title }: { title: string }) {
-  return (
-    <div className="grid h-full place-items-center p-8 text-center">
-      <div>
-        <h2 className="m-0 mb-1 text-[17px] font-semibold text-primary">{title}</h2>
-        <p className="m-0 text-sm text-muted">This screen is on its way.</p>
-      </div>
-    </div>
   );
 }
 
@@ -121,7 +110,7 @@ export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
         </Screen>
 
         <Screen name="Find" shown={tab === "find"}>
-          <Soon title="Find" />
+          <FindScreen w={w} />
         </Screen>
 
         {addMenuOpen && ready ? (

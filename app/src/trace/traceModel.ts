@@ -113,7 +113,8 @@ export function sharedType(nodes: CanvasNode[]): NodeType | null {
   return first && nodes.every((node) => node.type === first) ? first : null;
 }
 
-function countUnder(graph: Graph, id: string): number {
+/** How many nodes sit under `id`, at any depth: everything that serves it, and what serves that, and so on. */
+export function countUnder(graph: Graph, id: string): number {
   const seen = new Set<string>([id]);
   const queue = [id];
   for (let i = 0; i < queue.length; i++) {

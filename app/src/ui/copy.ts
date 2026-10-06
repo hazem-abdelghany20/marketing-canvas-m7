@@ -94,6 +94,14 @@ export const COPY = {
   traceNothingServes: "Nothing serves this yet.",
   traceServedBy: "served by",
 
+  // P5 — Find
+  findTitle: "Find",
+  findPlaceholder: "Find a node to trace",
+  findNothing: "Nothing to find yet.",
+  findAddFirst: "Add your first node",
+  findCreateNote: "Create a note with this title",
+  findLoose: "Not connected to a goal",
+
   // O4 — Quick-peek
   noDescription: "No description yet",
   connectNeedsAnother: "Add another node to connect to.",
@@ -109,6 +117,12 @@ export const CHAT_EXAMPLES = [
   { mode: "Librarian", text: "What serves the Ramadan push?" },
   { mode: "Operator", text: "Connect the linen shoot hero to the Ramadan push" },
 ] as const;
+
+/** What Find says when what was typed matches nothing. */
+export const findNoMatch = (query: string) => `No nodes match \u201c${query.trim()}\u201d.`;
+
+/** What Find says when a type has no nodes: "No notes yet.", "No strategies yet." */
+export const findNoneOfType = (plural: string) => `No ${plural.toLowerCase()} yet.`;
 
 export const proposalAdded = (title: string) => `Added \u201c${title}\u201d to the canvas.`;
 
