@@ -1,8 +1,10 @@
-import type { ReactNode } from "react";
+import { useReactFlow, useStoreApi } from "@xyflow/react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Outlet } from "react-router-dom";
 import { ChatPanel } from "../chat/ChatRail";
 import { startConnect } from "../canvas/connect";
 import { ConnectMode } from "../canvas/ConnectMode";
+import { FIT_MAX_ZOOM, FIT_PADDING } from "../canvas/useViewport";
 import { AddNodeMenu, MenuItem } from "../components/AddNodeMenu";
 import { QuickPeek } from "../components/QuickPeek";
 import { ReasonTip } from "../components/ReasonTip";
@@ -10,12 +12,15 @@ import { ToastViewport } from "../components/Toast";
 import { FILE_ACCEPT } from "../files/importFiles";
 import { CanvasStage } from "../routes/CanvasStage";
 import type { WorkspaceController } from "../routes/useWorkspace";
-import { uiStore, useUi } from "../ui/uiStore";
+import { appStore } from "../store";
+import { TraceScreen } from "../trace/TraceScreen";
+import { useUi } from "../ui/uiStore";
 import { ClearInkDialog } from "../whiteboard/ClearInkDialog";
 import { Dock } from "../whiteboard/Dock";
 import { InkOptions } from "../whiteboard/InkOptions";
 import { ToolHint } from "../whiteboard/ToolHint";
-import { TraceScreen } from "../trace/TraceScreen";
+import { BoardBar } from "./BoardBar";
+import { boardOutOfView } from "./boardView";
 import { TabBar } from "./TabBar";
 
 /** React 18 has no `inert` prop; the attribute still works when it is written out. */
@@ -52,6 +57,29 @@ function Soon({ title }: { title: string }) {
 }
 
 /**
+ * The camera is the board's, one for every screen that opens it, so a phone can be handed one that a wider screen left,
+ * showing a corner of it. The first time the Board is shown, if fewer than half the cards are centred on screen, it is brought
+ * back to all of them. Inside the canvas.
+ */
+function BringBoardIntoView({ shown, ready }: { shown: boolean; ready: boolean }) {
+  const flow = useReactFlow();
+  const store = useStoreApi();
+  const done = useRef(false);
+
+  useEffect(() => {
+    if (!shown || !ready || done.current) return;
+    done.current = true;
+    const { width, height, transform } = store.getState();
+    const camera = { x: transform[0], y: transform[1], zoom: transform[2] };
+    if (boardOutOfView(Object.values(appStore.getState().nodes), camera, { width, height })) {
+      void flow.fitView({ padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: 0 });
+    }
+  }, [shown, ready, flow, store]);
+
+  return null;
+}
+
+/**
  * P1 — the phone layout (below 640px): four screens and a tab bar. The canvas is never unmounted, so the
  * camera, the selection and any file still being read survive a trip to another tab. It is hidden without
  * `display: none`, so React Flow keeps the size it measured: `inert` takes it out of Tab, touch and the
@@ -78,10 +106,12 @@ export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
           {...inertWhen(!boardShown)}
           className="absolute inset-0"
         >
-          <Dock onClearInk={() => uiStore.getState().setClearInkOpen(true)} />
-          <InkOptions />
-          <ToolHint />
           <CanvasStage w={w} />
+          <BringBoardIntoView shown={boardShown} ready={ready} />
+          <BoardBar w={w} />
+          <InkOptions layout="bar" />
+          <Dock layout="bar" />
+          <ToolHint />
           {ready ? <QuickPeek onConnect={(id) => void startConnect(id)} /> : null}
           {ready ? <ConnectMode /> : null}
         </section>

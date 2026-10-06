@@ -88,8 +88,21 @@ const HINTS: Record<Exclude<Tool, "select">, string> = {
   comment: "Click where the comment belongs",
 };
 
-/** What the hint pill says for a tool. Select has none: it is the resting state, not a mode to leave. */
-export function toolHint(tool: Tool): ToolHintText | null {
+/** The same, for a finger: it taps and drags where a mouse clicks, and two fingers are the camera. */
+const TOUCH_HINTS: Record<Exclude<Tool, "select">, string> = {
+  pen: "One finger draws · two fingers pan and zoom",
+  highlighter: "One finger draws · two fingers pan and zoom",
+  eraser: "Drag across ink to erase a whole stroke",
+  sticky: "Tap to drop a sticky note",
+  text: "Tap to type text on the board",
+  comment: "Tap where the comment belongs",
+};
+
+/**
+ * What the hint pill says for a tool, written for a finger when `touch` is set. Select has none: it is the resting state,
+ * not a mode to leave.
+ */
+export function toolHint(tool: Tool, touch = false): ToolHintText | null {
   if (tool === "select") return null;
-  return { label: TOOLS.find((t) => t.id === tool)!.label, text: HINTS[tool] };
+  return { label: TOOLS.find((t) => t.id === tool)!.label, text: (touch ? TOUCH_HINTS : HINTS)[tool] };
 }

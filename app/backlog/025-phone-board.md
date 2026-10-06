@@ -24,12 +24,14 @@ and `e2e/phone-board.spec.ts`.
 - Given the More menu, when it opens, then it offers Connect, Auto-arrange, Fit to screen and Save as PNG, and Clear ink only while there is ink, each with the reason it can't be used when it can't.
 - Given connect mode, when it starts anywhere on a phone, then the Board tab is shown and the banner sits under the top bar.
 - Given a toast, when it shows on the Board tab, then it is above the dock, and on any other tab it is above the tab bar.
+- Given the camera the board was last left in (by a wider screen: it is the board's, not the device's), when the Board is shown for the first time and fewer than half the cards are centred on screen, then the camera is brought back to all of them; otherwise it is left where it is.
 
 ## Guardrails
 The tool reducer in `toolMode.ts` is untouched: this ticket changes where the tools are and how fingers reach the camera, not
 what a tool is. The dock keeps `role="group"` and every `aria-label` (many specs find tools by them). Send and Save keep one
 implementation, in `useBoardActions`, used by the dock, the menu and the top bar. The camera gesture computes the pan and zoom
 in a pure function (the board point under the fingers' midpoint stays under it) and is clamped to the canvas's own zoom range.
+Bringing the camera back moves it, and a moved camera is saved to the board like any other: the next screen to open it finds it there.
 
 ## Verify
 `npm run typecheck && npx vitest run src/whiteboard src/phone src/components && npx playwright test e2e/phone-board.spec.ts e2e/whiteboard-dock.spec.ts`

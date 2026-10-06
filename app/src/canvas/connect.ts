@@ -1,4 +1,5 @@
 import type { ApiError } from "../api/client";
+import { isPhone } from "../lib/useMediaQuery";
 import { appStore } from "../store";
 import { connectionBetween } from "../store/edges";
 import type { Edge, EdgeKind } from "../types";
@@ -27,6 +28,8 @@ export function startConnect(sourceId: string | null = null): boolean {
     return false;
   }
   uiStore.getState().select([]);
+  // Connecting is picking cards on the canvas: on a phone that means the Board tab, wherever it was asked for.
+  if (isPhone()) uiStore.getState().setPhoneTab("board");
   uiStore.getState().setConnect({ active: true, sourceId, targetId: null });
   return true;
 }

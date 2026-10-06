@@ -6,7 +6,7 @@ import { byIdMap, node, SEED_NODES } from "../../test/seed";
 import { stubViewport, unstubViewport } from "../../test/viewport";
 import type { Viewport } from "../../types";
 import { uiStore } from "../../ui/uiStore";
-import { nothingInView } from "../boardView";
+import { boardOutOfView } from "../boardView";
 
 beforeEach(() => {
   uiStore.getState().reset();
@@ -71,33 +71,45 @@ describe("connect mode on a phone", () => {
   });
 });
 
-describe("whether the board needs bringing into view the first time it is shown", () => {
+describe("whether the board needs bringing back the first time it is shown", () => {
   const size = { width: 360, height: 700 };
   const camera = (x: number, y: number, zoom = 1): Viewport => ({ x, y, zoom });
 
-  it("does not when a card is on screen", () => {
-    expect(nothingInView([node("a", "note", "A", "", 0, 0)], camera(0, 0), size)).toBe(false);
-    // A card partly on screen is on screen.
-    expect(nothingInView([node("a", "note", "A", "", 300, 600)], camera(0, 0), size)).toBe(false);
+  it("does not when the cards are about where you can see them", () => {
+    expect(boardOutOfView([node("a", "note", "A", "", 0, 0)], camera(0, 0), size)).toBe(false);
+    // Half is enough: the board is where it was left, and you can see most of it.
+    const half = [node("a", "note", "A", "", 0, 0), node("b", "note", "B", "", 9000, 0)];
+    expect(boardOutOfView(half, camera(0, 0), size)).toBe(false);
   });
 
   it("does when every card is somewhere else: the camera was left by a wider screen", () => {
-    expect(nothingInView([node("a", "note", "A", "", 5000, 40)], camera(0, 0), size)).toBe(true);
-    expect(nothingInView(SEED_NODES, camera(-5000, -5000), size)).toBe(true);
+    expect(boardOutOfView([node("a", "note", "A", "", 5000, 40)], camera(0, 0), size)).toBe(true);
+    expect(boardOutOfView(SEED_NODES, camera(-5000, -5000), size)).toBe(true);
+  });
+
+  it("does when only a corner of the board is on screen, not only when none of it is", () => {
+    // 16 cards, and the camera shows two of them.
+    const two = SEED_NODES.map((n, i) => ({ ...n, x: i < 2 ? 40 : 5000 + i * 300, y: 40 }));
+    expect(boardOutOfView(two, camera(0, 0), size)).toBe(true);
+  });
+
+  it("goes by where a card's centre is: a card with its edge on screen and its middle off it is not seen", () => {
+    expect(boardOutOfView([node("a", "note", "A", "", 300, 600)], camera(0, 0), size)).toBe(true);
+    expect(boardOutOfView([node("a", "note", "A", "", 240, 580)], camera(0, 0), size)).toBe(false);
   });
 
   it("follows the camera's pan and zoom", () => {
     // At 100%, panned so that board point (1000, 1000) is at the screen's (100, 100).
-    expect(nothingInView([node("a", "note", "A", "", 1000, 1000)], camera(-900, -900), size)).toBe(false);
+    expect(boardOutOfView([node("a", "note", "A", "", 1000, 1000)], camera(-900, -900), size)).toBe(false);
     // At 25%, a card 5000 away is 1250 away on screen.
-    expect(nothingInView([node("a", "note", "A", "", 5000, 0)], camera(0, 0, 0.25), size)).toBe(true);
+    expect(boardOutOfView([node("a", "note", "A", "", 5000, 0)], camera(0, 0, 0.25), size)).toBe(true);
   });
 
-  it("does not when there are no cards: there is nothing to bring into view", () => {
-    expect(nothingInView([], camera(0, 0), size)).toBe(false);
+  it("does not when there are no cards: there is nothing to bring back", () => {
+    expect(boardOutOfView([], camera(0, 0), size)).toBe(false);
   });
 
   it("does not when the canvas has no size yet: it cannot be known", () => {
-    expect(nothingInView(SEED_NODES, camera(-5000, -5000), { width: 0, height: 0 })).toBe(false);
+    expect(boardOutOfView(SEED_NODES, camera(-5000, -5000), { width: 0, height: 0 })).toBe(false);
   });
 });

@@ -6,6 +6,7 @@ import type { InkTool, Stroke } from "../types";
 import { useUi } from "../ui/uiStore";
 import { HIGHLIGHTER_OPACITY, inkColorValue, strokeWidthFor } from "./inkPalette";
 import { smoothPath } from "./strokePath";
+import { useCameraGesture, useFlowCamera } from "./useCameraGesture";
 import { useDrawing, useErasing, type LiveStroke, type SurfaceHandlers } from "./useDrawing";
 
 /**
@@ -75,6 +76,8 @@ export function InkLayer() {
 /** What the canvas shows while a tool that draws or erases is in hand: it takes the pointer, and hands the wheel on. */
 function Surface({ tool, handlers }: { tool: string; handlers: SurfaceHandlers }) {
   const element = useRef<HTMLDivElement>(null);
+  // One finger is the tool's; a second turns the pair into the camera and throws the first finger's stroke away.
+  const { handlers: touch } = useCameraGesture(handlers, useFlowCamera());
 
   // Zooming still works while a tool is in hand: the wheel goes to the canvas underneath.
   useEffect(() => {
@@ -95,7 +98,7 @@ function Surface({ tool, handlers }: { tool: string; handlers: SurfaceHandlers }
       ref={element}
       data-ink-surface
       data-tool={tool}
-      {...handlers}
+      {...touch}
       className={`absolute inset-0 z-[6] touch-none ${tool === "eraser" ? "cursor-cell" : "cursor-crosshair"}`}
     />
   );

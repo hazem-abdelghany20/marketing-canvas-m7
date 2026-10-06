@@ -1,5 +1,6 @@
 import { CircleAlert, CircleCheck, Info, TriangleAlert, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePhone } from "../lib/useMediaQuery";
 import { uiStore, useUi, type Toast as ToastModel, type ToastTone } from "../ui/uiStore";
 
 // The tone is told by shape as well as colour, so it survives a monochrome screen and colour blindness.
@@ -16,12 +17,18 @@ const ICON: Record<ToastTone, typeof Info> = {
  */
 export function ToastViewport({ contained = false }: { contained?: boolean }) {
   const toasts = useUi((s) => s.toasts);
+  const phone = usePhone();
+  const board = useUi((s) => s.phoneTab === "board");
+  // On a phone the canvas ends where the tab bar begins, and on the Board the dock is along the bottom of it.
+  const position = phone ? (board ? "bottom-[76px]" : "bottom-3") : "bottom-[18px]";
   return (
     <div
+      data-toast-viewport
       className={[
-        "pointer-events-none inset-x-0 bottom-[18px] z-[80] flex flex-col items-center gap-2 px-4",
-        // Below 900px the floating chat button sits in the bottom-left corner; stay above it.
-        contained ? "absolute max-[899px]:bottom-[68px]" : "fixed",
+        "pointer-events-none inset-x-0 z-[80] flex flex-col items-center gap-2 px-4",
+        position,
+        // Below 900px the floating chat button sits in the bottom-left corner; stay above it. (A phone has none.)
+        contained ? `absolute ${phone ? "" : "max-[899px]:bottom-[68px]"}` : "fixed",
       ].join(" ")}
     >
       {toasts.map((toast) => (

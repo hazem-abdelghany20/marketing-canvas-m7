@@ -5,6 +5,7 @@ import { appStore } from "../store";
 import { useUi, uiStore } from "../ui/uiStore";
 import { Thread } from "./Thread";
 import { closeThread, toggleThread } from "./threadActions";
+import { NO_TOOL, useCameraGesture, useFlowCamera } from "./useCameraGesture";
 
 const tenth = (n: number) => Math.round(n * 10) / 10;
 
@@ -20,6 +21,8 @@ export function PinLayer() {
   const openId = useUi((s) => s.openPinId);
   const [panX, panY, zoom] = useFlowStore((s) => s.transform);
   const flow = useReactFlow();
+  // The surface's own gesture is a click; two fingers over it still move the board.
+  const { handlers: touch, recently } = useCameraGesture(NO_TOOL, useFlowCamera());
 
   // A draft pin that has just been saved is a new pin under a new id: its open thread follows it.
   useEffect(() => {
@@ -44,6 +47,7 @@ export function PinLayer() {
   const threadKey = open ? (Object.entries(alias).find(([, real]) => real === open.id)?.[0] ?? open.id) : "";
 
   function dropPin(event: { clientX: number; clientY: number }) {
+    if (recently()) return; // lifting two fingers after a pinch is not a tap
     const at = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
     closeThread();
     const id = appStore.getState().draftPin({ x: tenth(at.x), y: tenth(at.y) });
@@ -89,7 +93,7 @@ export function PinLayer() {
       </div>
 
       {tool === "comment" ? (
-        <div data-pin-surface onClick={dropPin} className="absolute inset-0 z-[6] cursor-crosshair touch-none" />
+        <div data-pin-surface {...touch} onClick={dropPin} className="absolute inset-0 z-[6] cursor-crosshair touch-none" />
       ) : null}
     </>
   );

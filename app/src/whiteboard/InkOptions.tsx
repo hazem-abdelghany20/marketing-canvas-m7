@@ -5,11 +5,63 @@ import { uiStore, useUi } from "../ui/uiStore";
 /**
  * The pen's colour and width, beside the dock while the Pen or the Highlighter is in hand. Each row is a
  * radio group: the chosen one is the only tab stop, and the arrow keys move between them.
+ *
+ * On a phone (`layout="bar"`) it is two rows above the dock instead of a column beside it, with every choice a 40px target.
  */
-export function InkOptions() {
+export function InkOptions({ layout = "column" }: { layout?: "column" | "bar" }) {
   const tool = useUi((s) => s.tool);
   const ink = useUi((s) => s.ink);
   if (tool !== "pen" && tool !== "highlighter") return null;
+
+  if (layout === "bar") {
+    return (
+      <div
+        data-ink-options
+        data-layout="bar"
+        className="absolute inset-x-0 bottom-[68px] z-40 mx-auto flex w-fit max-w-[calc(100%-24px)] animate-mc-rise flex-col items-center rounded-lg border border-subtle bg-panel p-1 shadow-[0_8px_26px_-18px_rgba(0,0,0,.5)]"
+      >
+        <Choices label="Ink colour" gap="gap-0">
+          {INK_COLORS.map((color) => (
+            <Choice
+              key={color.id}
+              label={color.label}
+              checked={ink.color === color.id}
+              onChoose={() => uiStore.getState().setInk({ color: color.id })}
+              className="grid size-10 place-items-center rounded-md"
+              checkedClassName="bg-rail"
+              plain
+            >
+              <span
+                aria-hidden="true"
+                className="size-[22px] rounded-full shadow-[inset_0_0_0_1px_var(--border-subtle)]"
+                style={{ background: inkColorValue(color.id) }}
+              />
+            </Choice>
+          ))}
+        </Choices>
+        <span aria-hidden="true" className="h-px w-full bg-[var(--border-subtle)]" />
+        <Choices label="Stroke width" gap="gap-0">
+          {INK_SIZES.map((size) => (
+            <Choice
+              key={size.label}
+              label={size.label}
+              checked={ink.size === size.width}
+              onChoose={() => uiStore.getState().setInk({ size: size.width })}
+              className="grid size-10 place-items-center rounded-md"
+              checkedClassName="bg-rail"
+              plain
+            >
+              <span
+                aria-hidden="true"
+                className="rounded-full"
+                style={{ width: size.width + 6, height: size.width + 6, background: inkColorValue(ink.color) }}
+              />
+            </Choice>
+          ))}
+        </Choices>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -89,9 +141,11 @@ interface ChoiceProps {
   checkedClassName?: string;
   style?: CSSProperties;
   children?: ReactNode;
+  /** No hairline or border of its own: the choice is drawn by what is inside it (the phone's bar). */
+  plain?: boolean;
 }
 
-function Choice({ label, checked, onChoose, className, checkedClassName, style, children }: ChoiceProps) {
+function Choice({ label, checked, onChoose, className, checkedClassName, style, children, plain = false }: ChoiceProps) {
   return (
     <button
       type="button"
@@ -103,9 +157,10 @@ function Choice({ label, checked, onChoose, className, checkedClassName, style, 
       onClick={onChoose}
       style={style}
       className={[
-        "cursor-pointer shadow-[inset_0_0_0_1px_var(--border-subtle)]",
+        "cursor-pointer",
+        plain ? "border-0 p-0" : "shadow-[inset_0_0_0_1px_var(--border-subtle)]",
         className,
-        checked ? (checkedClassName ?? "border-primary") : "border-transparent",
+        checked ? (checkedClassName ?? "border-primary") : plain ? "bg-transparent" : "border-transparent",
       ].join(" ")}
     >
       {children}

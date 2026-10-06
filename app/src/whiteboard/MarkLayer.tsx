@@ -3,6 +3,7 @@ import { useStore } from "zustand";
 import { appStore } from "../store";
 import { useUi } from "../ui/uiStore";
 import { MarkCard } from "./MarkCard";
+import { NO_TOOL, useCameraGesture, useFlowCamera } from "./useCameraGesture";
 
 const tenth = (n: number) => Math.round(n * 10) / 10;
 
@@ -15,9 +16,12 @@ export function MarkLayer() {
   const marks = useStore(appStore, (s) => s.marks);
   const tool = useUi((s) => s.tool);
   const flow = useReactFlow();
+  // The surface's own gesture is a click; two fingers over it still move the board.
+  const { handlers: touch, recently } = useCameraGesture(NO_TOOL, useFlowCamera());
 
   // A click, not a press: on press the browser would move focus off the new mark's field as the button came up.
   function dropMark(event: { clientX: number; clientY: number }) {
+    if (recently()) return; // lifting two fingers after a pinch is not a tap
     const at = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
     appStore.getState().draftMark({ variant: tool === "text" ? "text" : "sticky", x: tenth(at.x), y: tenth(at.y) });
   }
@@ -39,6 +43,7 @@ export function MarkLayer() {
         <div
           data-mark-surface
           data-tool={tool}
+          {...touch}
           onClick={dropMark}
           className={`absolute inset-0 z-[6] touch-none ${tool === "text" ? "cursor-text" : "cursor-copy"}`}
         />

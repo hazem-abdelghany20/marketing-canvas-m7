@@ -303,7 +303,9 @@ export const uiStore = createStore<UiState>()((set) => ({
   // A drawing tool makes the cards inert, so a selection (and the quick-peek on it) has nothing to point at.
   setInk: (patch) => set((s) => ({ ink: { ...s.ink, ...patch } })),
   setClearInkOpen: (open) => set({ clearInkOpen: open }),
-  setPhoneTab: (tab) => set({ phoneTab: tab }),
+  // Connect mode is picked out on the board; left on another screen it would sit unseen, with the drawing tools disabled.
+  setPhoneTab: (tab) =>
+    set((s) => (tab !== "board" && s.connect.active ? { phoneTab: tab, connect: IDLE_CONNECT } : { phoneTab: tab })),
   setTracePath(path) {
     writeTracePath(path);
     set({ tracePath: path });

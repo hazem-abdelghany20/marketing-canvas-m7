@@ -18,13 +18,14 @@ test.beforeEach(async ({ page }) => {
   await expect(dock(page)).toBeVisible();
 });
 
-/** Real fingers, through the browser's own touch input, since a mouse cannot be two of them. */
-async function touch(page: Page, type: "touchStart" | "touchMove" | "touchEnd", points: Array<[number, number, number]>) {
+/**
+ * Real fingers, through the browser's own touch input, since a mouse cannot be two of them. One session for the whole
+ * gesture: the browser keeps which fingers are down in it. Each event lists every finger that is down.
+ */
+async function fingers(page: Page) {
   const client = await page.context().newCDPSession(page);
-  await client.send("Input.dispatchTouchEvent", {
-    type,
-    touchPoints: points.map(([x, y, id]) => ({ x, y, id })),
-  });
+  return (type: "touchStart" | "touchMove" | "touchEnd", points: Array<[number, number, number]> = []) =>
+    client.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y, id]) => ({ x, y, id })) });
 }
 
 test("the dock is one row of seven tools above the tab bar, each at least 40px across", async ({ page }) => {
@@ -69,9 +70,14 @@ test("the Pen opens its colours and widths above the dock, with a hint written f
 
   const options = page.locator("[data-ink-options]");
   await expect(options).toBeVisible();
-  const optionsBox = (await options.boundingBox())!;
-  const dockBox = (await dock(page).boundingBox())!;
-  expect(optionsBox.y + optionsBox.height).toBeLessThanOrEqual(dockBox.y);
+  // It rises into place as it appears: look where it settles.
+  await expect
+    .poll(async () => {
+      const optionsBox = (await options.boundingBox())!;
+      const dockBox = (await dock(page).boundingBox())!;
+      return optionsBox.y + optionsBox.height <= dockBox.y;
+    })
+    .toBe(true);
   for (const radio of await options.getByRole("radio").all()) {
     const box = (await radio.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(40);
@@ -86,9 +92,10 @@ test("one finger draws a stroke that is saved", async ({ page }) => {
   await tool(page, "Pen").tap();
   const before = await strokes(page).count();
 
-  await touch(page, "touchStart", [[120, 300, 1]]);
-  for (let i = 1; i <= 8; i++) await touch(page, "touchMove", [[120 + i * 18, 300 + i * 6, 1]]);
-  await touch(page, "touchEnd", []);
+  const finger = await fingers(page);
+  await finger("touchStart", [[120, 300, 1]]);
+  for (let i = 1; i <= 8; i++) await finger("touchMove", [[120 + i * 18, 300 + i * 6, 1]]);
+  await finger("touchEnd");
 
   await expect(strokes(page)).toHaveCount(before + 1);
   await expect.poll(async () => (await s.call<unknown[]>("GET", "/strokes")).length).toBe(before + 1);
@@ -99,18 +106,19 @@ test("two fingers pan and zoom the board with the Pen in hand, and the stroke th
   const strokesBefore = await strokes(page).count();
   const cameraBefore = await camera(page);
 
-  await touch(page, "touchStart", [[150, 300, 1]]);
-  await touch(page, "touchMove", [[160, 310, 1]]);
+  const finger = await fingers(page);
+  await finger("touchStart", [[150, 300, 1]]);
+  await finger("touchMove", [[160, 310, 1]]);
   // The second finger lands: the first's stroke is dropped, and the two move the board.
-  await touch(page, "touchStart", [
+  await finger("touchStart", [
     [160, 310, 1],
     [260, 310, 2],
   ]);
-  await touch(page, "touchMove", [
+  await finger("touchMove", [
     [120, 330, 1],
     [300, 330, 2],
   ]);
-  await touch(page, "touchEnd", []);
+  await finger("touchEnd");
 
   await expect.poll(() => camera(page)).not.toBe(cameraBefore);
   await expect(strokes(page)).toHaveCount(strokesBefore);
@@ -138,15 +146,16 @@ test("connecting from the menu: pick two cards, and the kind picker asks what th
   const top = (await toolbar(page).boundingBox())!;
   expect(banner.y).toBeGreaterThanOrEqual(top.y + top.height - 1); // under the bar, not on it
 
+  // Two cards that are on screen at this zoom.
   await card(page, "nd_not_reach").tap();
-  await card(page, "nd_goal_md").tap();
+  await card(page, "nd_goal_vayn").tap();
 
   await expect(page.getByRole("dialog", { name: "Connection kind" })).toBeVisible();
 });
 
 test("connect mode started from another tab brings the Board forward", async ({ page }) => {
   await tab(page, "Trace").tap();
-  await page.getByRole("button", { name: /^Vayn ICP/ }).tap(); // the card on screen opens its detail
+  await page.getByRole("region", { name: "Trace" }).getByRole("button", { name: /^Vayn ICP/ }).tap(); // the card on screen opens its detail
   await expect(page.getByRole("complementary", { name: "Node detail" })).toBeVisible();
 
   await page.getByRole("button", { name: "+ Connect" }).tap();

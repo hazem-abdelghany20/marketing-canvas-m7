@@ -85,7 +85,8 @@ describe("Ask about this", () => {
     await waitFor(() => expect(network.callsTo("POST /chat")).toHaveLength(1));
     expect(network.callsTo("POST /chat")[0]!.body).toEqual({ message: BOARD_MESSAGE, board: { image: IMAGE } });
     expect(uiStore.getState().phoneTab).toBe("chat");
-    expect(await screen.findByText("You wrote a note about the hook.")).toBeTruthy();
+    // A finished reply is read out once, by an announcer, with the visible copy stepping aside: so the words are there twice.
+    expect((await screen.findAllByText("You wrote a note about the hook.")).length).toBeGreaterThan(0);
   });
 
   it("says why it can't be used on a board with nothing to read, and says it again when it is tapped", async () => {

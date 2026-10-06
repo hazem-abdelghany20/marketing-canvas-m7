@@ -1,7 +1,8 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useStore } from "zustand";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
+import { menuItems, useMenuKeys } from "./useMenuKeys";
 
 interface AddNodeMenuProps {
   onClose: () => void;
@@ -20,24 +21,10 @@ export function AddNodeMenu({ onClose, onNote, onFromChat, children }: AddNodeMe
   const menu = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    items(menu.current)[0]?.focus();
+    menuItems(menu.current)[0]?.focus();
   }, []);
 
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    const list = items(menu.current);
-    const at = list.indexOf(document.activeElement as HTMLElement);
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      onClose();
-    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      const step = event.key === "ArrowDown" ? 1 : -1;
-      list[(at + step + list.length) % list.length]?.focus();
-    } else if (event.key === "Tab") {
-      onClose();
-    }
-  }
+  const onKeyDown = useMenuKeys(menu, onClose);
 
   return (
     <>
@@ -62,18 +49,18 @@ export function AddNodeMenu({ onClose, onNote, onFromChat, children }: AddNodeMe
   );
 }
 
-function items(menu: HTMLElement | null): HTMLElement[] {
-  return menu ? Array.from(menu.querySelectorAll<HTMLElement>("[role=menuitem]")) : [];
-}
-
 interface MenuItemProps {
   label: string;
   hint: string;
   onSelect: () => void;
   disabledReason?: string | null;
+  /** Say why the item can't be used in place of its hint, for a screen where there is no tooltip to read. */
+  reasonAsHint?: boolean;
 }
 
-export function MenuItem({ label, hint, onSelect, disabledReason }: MenuItemProps) {
+export function MenuItem({ label, hint, onSelect, disabledReason, reasonAsHint = false }: MenuItemProps) {
+  // When the reason is the hint it is the one thing to read: only the name steps back, not the whole item.
+  const dimWhole = Boolean(disabledReason) && !reasonAsHint;
   return (
     <button
       type="button"
@@ -83,11 +70,12 @@ export function MenuItem({ label, hint, onSelect, disabledReason }: MenuItemProp
       onClick={disabledReason ? undefined : onSelect}
       className={[
         "block w-full rounded-sm px-2.5 py-[9px] text-left text-[13.5px] text-primary",
-        disabledReason ? "cursor-not-allowed opacity-45" : "hover:bg-elevated focus-visible:bg-elevated",
+        disabledReason ? "cursor-not-allowed" : "hover:bg-elevated focus-visible:bg-elevated",
+        dimWhole ? "opacity-45" : "",
       ].join(" ")}
     >
-      {label}
-      <span className="block text-[11.5px] text-muted">{hint}</span>
+      <span className={disabledReason && reasonAsHint ? "opacity-55" : ""}>{label}</span>
+      <span className="block text-[11.5px] text-muted">{reasonAsHint && disabledReason ? disabledReason : hint}</span>
     </button>
   );
 }
