@@ -1,5 +1,5 @@
 import { useReactFlow } from "@xyflow/react";
-import { Ellipsis, LoaderCircle, ScanEye } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { useStore } from "zustand";
 import { CONNECT_COPY } from "../canvas/connect";
@@ -14,12 +14,16 @@ import type { WorkspaceController } from "../routes/useWorkspace";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
 import { uiStore, useUi } from "../ui/uiStore";
+import { availability } from "../whiteboard/toolMode";
+import { pickTool } from "../whiteboard/useToolShortcuts";
 import { explainWhy, useSavePng, useSendBoard } from "../whiteboard/useBoardActions";
+import { PhoneIcon } from "./icons";
 
 /**
- * P3 — the Board tab's top bar: the board's name, Undo, a More menu for what the desktop toolbar and the dock's
- * lower half held (Connect, Auto-arrange, Fit, Save as PNG, Clear ink), and Ask about this, which sends the board to the
- * assistant. It is one toolbar, so the layout specs that look for "Canvas tools" find it here as they do on a desktop.
+ * P3 — the Board tab's top bar, as design/mobile-direction.html draws it: a pill with the board's name and Undo, and Ask
+ * about this, which sends the board to the assistant. The name is a button: it opens the board's actions, what the desktop
+ * toolbar and the dock's lower half held (Connect, Auto-arrange, Fit, Save as PNG, Clear ink) and the Text tool, which
+ * the mockup's dock has no room for. It is one toolbar, so the layout specs that look for "Canvas tools" find it here as they do on a desktop.
  */
 export function BoardBar({ w }: { w: WorkspaceController }) {
   const board = useStore(appStore, (s) => s.board);
@@ -33,23 +37,25 @@ export function BoardBar({ w }: { w: WorkspaceController }) {
   }
 
   return (
-    <div className="absolute inset-x-3 top-[max(12px,env(safe-area-inset-top))] z-30 flex flex-col items-stretch gap-2">
+    <div className="absolute inset-x-3 top-[max(12px,calc(env(safe-area-inset-top)+6px))] z-30 flex flex-col items-stretch gap-2">
       <div role="toolbar" aria-label="Canvas tools" className="flex items-center gap-2">
-        <div className="flex min-h-[48px] min-w-0 flex-1 items-center gap-0.5 rounded-lg border border-subtle bg-panel py-1 pl-3.5 pr-1 shadow-[0_6px_20px_-14px_rgba(0,0,0,.4)]">
-          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-primary">{board?.name ?? ""}</span>
-          <UndoButton ready={w.ready} />
-          <Button
+        <div
+          data-board-title
+          className="flex h-[42px] min-w-0 flex-1 items-center gap-1 rounded-[14px] border border-subtle bg-panel pl-3.5 pr-1 shadow-[0_6px_18px_-8px_rgba(30,20,10,.25)]"
+        >
+          <button
             ref={more}
-            variant="ghost"
-            aria-label="More"
+            type="button"
+            aria-label={`${board?.name ?? "Board"}, more board actions`}
             aria-haspopup="menu"
             aria-expanded={open}
             title="More board actions"
             onClick={() => setOpen((was) => !was)}
-            className="!size-10 !rounded-md !p-0"
+            className="h-full min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-left text-[14.5px] font-semibold text-primary [touch-action:manipulation]"
           >
-            <Ellipsis size={18} aria-hidden="true" />
-          </Button>
+            {board?.name ?? ""}
+          </button>
+          <UndoButton ready={w.ready} className="!size-[34px]" />
         </div>
         <Button
           variant="primary"
@@ -59,12 +65,12 @@ export function BoardBar({ w }: { w: WorkspaceController }) {
           // A touch screen has no tooltip: tapping what can't be used says why.
           onDisabledClick={() => explainWhy(send.reason)}
           onClick={send.send}
-          className="min-h-[48px] flex-none gap-2 !rounded-lg px-3.5 text-[13.5px]"
+          className="h-[42px] flex-none !gap-1.5 !rounded-[14px] !border-0 !px-3.5 !py-0 !text-[13.5px] !font-medium !text-white"
         >
           {send.preparing ? (
-            <LoaderCircle size={16} aria-hidden="true" className="animate-spin" />
+            <LoaderCircle size={18} aria-hidden="true" className="animate-spin" />
           ) : (
-            <ScanEye size={16} aria-hidden="true" />
+            <PhoneIcon name="scan" />
           )}
           Ask about this
         </Button>
@@ -106,6 +112,7 @@ function BoardMenu({ w, onClose }: { w: WorkspaceController; onClose: (restoreFo
   };
 
   const { waiting, nodeCount } = w;
+  const textReason = availability("text", { boardReady: w.ready, connecting, hasInk }).reason;
   return (
     <>
       <div aria-hidden="true" data-menu-backdrop className="fixed inset-0 z-40" onClick={() => onClose(false)} />
@@ -114,7 +121,7 @@ function BoardMenu({ w, onClose }: { w: WorkspaceController; onClose: (restoreFo
         role="menu"
         aria-label="Board actions"
         onKeyDown={onKeyDown}
-        className="absolute right-0 top-[56px] z-[41] w-[min(260px,100%)] animate-mc-pop rounded-md border border-subtle bg-panel p-1.5 shadow-[0_18px_44px_-22px_rgba(0,0,0,.5)]"
+        className="absolute left-0 top-[50px] z-[41] w-[min(260px,100%)] animate-mc-pop rounded-md border border-subtle bg-panel p-1.5 shadow-[0_18px_44px_-22px_rgba(0,0,0,.5)]"
       >
         {/* What can't be used says why in the item itself: there is no tooltip under a finger. */}
         <MenuItem
@@ -123,6 +130,13 @@ function BoardMenu({ w, onClose }: { w: WorkspaceController; onClose: (restoreFo
           reasonAsHint
           disabledReason={connecting ? null : (waiting ?? (nodeCount < 2 ? CONNECT_COPY.needsTwo : null))}
           onSelect={choose(w.toggleConnect)}
+        />
+        <MenuItem
+          label="Text"
+          hint="Type text on the board"
+          reasonAsHint
+          disabledReason={textReason}
+          onSelect={choose(() => pickTool("text"))}
         />
         <MenuItem
           label="Auto-arrange"

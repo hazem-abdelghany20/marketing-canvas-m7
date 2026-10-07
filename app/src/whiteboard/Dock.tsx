@@ -20,6 +20,7 @@ import { useUi } from "../ui/uiStore";
 import { TOOLS, availability, type Tool } from "./toolMode";
 import { explainWhy, useSavePng, useSendBoard } from "./useBoardActions";
 import { pickTool } from "./useToolShortcuts";
+import { PhoneIcon, type PhoneIconName } from "../phone/icons";
 
 const ICONS: Record<Tool, LucideIcon> = {
   select: MousePointer2,
@@ -30,6 +31,20 @@ const ICONS: Record<Tool, LucideIcon> = {
   text: Type,
   comment: MessageCirclePlus,
 };
+
+/** The phone's dock draws the mockup's own icons. */
+const PHONE_ICONS: Record<Tool, PhoneIconName> = {
+  select: "pointer",
+  pen: "pen",
+  highlighter: "highlighter",
+  eraser: "eraser",
+  sticky: "sticky",
+  text: "text",
+  comment: "comment",
+};
+
+/** The phone's dock is the mockup's six; Text is in the board's menu (030). */
+const PHONE_TOOLS = TOOLS.filter((def) => def.id !== "text");
 
 /** What each tool does, for its tooltip. The key follows. */
 const DESCRIPTION: Record<Tool, string> = {
@@ -47,7 +62,7 @@ interface DockProps {
   onClearInk?: () => void;
   /**
    * `column` is the desktop's: down the left of the canvas, with Send, Save and Clear ink under the tools. `bar` is the
-   * phone's: one row of the seven tools along the bottom, above the tab bar, each 40px across. The three actions are in
+   * phone's: one row of six tools along the bottom, above the tab bar, each 42px across, as the mockup draws it. The three actions are in
    * the board's menu there, and a tool that can't be used says why when it is tapped, since a touch screen has no tooltip.
    */
   layout?: "column" | "bar";
@@ -77,11 +92,11 @@ export function Dock({ onClearInk, layout = "column" }: DockProps) {
       data-layout={layout}
       className={
         bar
-          ? "absolute inset-x-0 bottom-3 z-40 mx-auto flex w-fit items-center gap-0.5 rounded-lg border border-subtle bg-panel p-1 shadow-[0_8px_26px_-18px_rgba(0,0,0,.5)]"
+          ? "absolute inset-x-0 bottom-3.5 z-40 mx-auto flex w-fit items-center gap-0.5 rounded-[18px] border border-subtle bg-panel p-1 shadow-[0_6px_18px_-8px_rgba(30,20,10,.25)]"
           : "absolute left-3.5 top-[66px] z-40 flex flex-col items-center gap-0.5 rounded-lg border border-subtle bg-panel p-[5px] shadow-[0_8px_26px_-18px_rgba(0,0,0,.5)] max-[899px]:top-[100px]"
       }
     >
-      {TOOLS.map((def) => {
+      {(bar ? PHONE_TOOLS : TOOLS).map((def) => {
         const { reason } = availability(def.id, ctx);
         const Icon = ICONS[def.id];
         const active = tool === def.id;
@@ -96,9 +111,13 @@ export function Dock({ onClearInk, layout = "column" }: DockProps) {
             disabledReason={reason}
             onDisabledClick={bar ? () => explainWhy(reason) : undefined}
             onClick={() => pickTool(def.id)}
-            className={bar ? "!size-10 !rounded-md !p-0" : "!size-8 !rounded-md !p-0"}
+            className={
+              bar
+                ? `!size-[42px] !rounded-[12px] !border-0 !p-0 ${active ? "" : "!text-muted"}`
+                : "!size-8 !rounded-md !p-0"
+            }
           >
-            <Icon size={bar ? 18 : 15} aria-hidden="true" />
+            {bar ? <PhoneIcon name={PHONE_ICONS[def.id]} /> : <Icon size={15} aria-hidden="true" />}
           </Button>
         );
       })}

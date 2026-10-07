@@ -49,23 +49,23 @@ const tool = (name: string) => screen.getByRole("button", { name });
 const dock = () => screen.getByRole("group", { name: "Whiteboard tools" });
 
 describe("the dock as a bar", () => {
-  it("holds the seven tools in one row and nothing else: send, save and clear ink are in the board's menu", () => {
+  it("holds the mockup's six tools in one row and nothing else: Text, send, save and clear ink are in the board's menu", () => {
     render(<Harness />);
 
     const names = within(dock())
       .getAllByRole("button")
       .map((button) => button.getAttribute("aria-label"));
-    expect(names).toEqual(NAMES);
+    expect(names).toEqual(NAMES.filter((name) => name !== "Text"));
     expect(dock().getAttribute("data-layout")).toBe("bar");
     for (const gone of ["Send board to the assistant", "Save as PNG", "Clear ink"]) {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
     }
   });
 
-  it("makes every tool a target at least 40px across", () => {
+  it("makes every tool the mockup's 42px", () => {
     render(<Harness />);
 
-    for (const button of within(dock()).getAllByRole("button")) expect(button.className).toMatch(/!size-10/);
+    for (const button of within(dock()).getAllByRole("button")) expect(button.className).toMatch(/!size-\[42px\]/);
   });
 
   it("is still the same group, and keeps each tool's state and the reason it can't be used", () => {
@@ -98,17 +98,24 @@ describe("the dock as a bar", () => {
 });
 
 describe("the ink options as a bar", () => {
-  it("offers the colours and the widths while the Pen is in hand, each at least 40px across", () => {
+  it("offers the mockup's five inks and the width, as a tap that steps, while the Pen is in hand", () => {
     render(<Harness />);
     fireEvent.click(tool("Pen"));
 
     const options = document.querySelector<HTMLElement>("[data-ink-options]")!;
     expect(options.getAttribute("data-layout")).toBe("bar");
     const colours = within(options).getByRole("radiogroup", { name: "Ink colour" });
-    const widths = within(options).getByRole("radiogroup", { name: "Stroke width" });
-    expect(within(colours).getAllByRole("radio")).toHaveLength(6);
-    expect(within(widths).getAllByRole("radio")).toHaveLength(3);
-    for (const radio of within(options).getAllByRole("radio")) expect(radio.className).toMatch(/size-10/);
+    expect(within(colours).getAllByRole("radio").map((radio) => radio.getAttribute("aria-label"))).toEqual([
+      "Terracotta",
+      "Teal",
+      "Ochre",
+      "Sage",
+      "Ink",
+    ]);
+    const width = within(options).getByRole("button", { name: /^Stroke width/ });
+    expect(width.textContent).toBe("3 px");
+    fireEvent.click(width);
+    expect(uiStore.getState().ink.size).toBe(6);
   });
 
   it("is not there while Select is", () => {
@@ -130,17 +137,15 @@ describe("the hint for a tool in hand", () => {
     expect(toolHint("pen")?.text).toBe("Draw on the board");
   });
 
-  it("is a pill with the touch wording and a Done button on a phone, and keeps Esc on a desktop", () => {
+  it("is the mockup's quiet pill on a phone, the touch wording alone, and keeps Esc on a desktop", () => {
     render(<Harness />);
     fireEvent.click(tool("Pen"));
 
     const hint = document.querySelector<HTMLElement>("[data-tool-hint]")!;
-    expect(hint.textContent).toContain("One finger draws · two fingers pan and zoom");
-    const done = within(hint).getByRole("button", { name: "Put Pen away" });
-    expect(done.textContent).toBe("Done");
+    expect(hint.textContent).toBe("One finger draws · two fingers pan and zoom");
+    expect(within(hint).queryByRole("button")).toBeNull(); // Select in the dock puts it away
 
-    fireEvent.click(done);
-    expect(tool("Select").getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(tool("Select"));
     expect(document.querySelector("[data-tool-hint]")).toBeNull();
 
     cleanup();

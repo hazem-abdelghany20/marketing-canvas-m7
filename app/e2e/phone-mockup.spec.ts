@@ -24,6 +24,11 @@ async function asPhone(page: Page) {
 
 /** Where an element sits, to the pixel, against where the mockup puts it. */
 async function expectBox(el: Locator, want: Partial<Box>, what: string) {
+  // Measured at rest: with the fonts in, and once anything rising into place has arrived.
+  await el.evaluate(async (node) => {
+    await document.fonts.ready;
+    await Promise.all(node.getAnimations({ subtree: false }).map((a) => a.finished.catch(() => undefined)));
+  });
   const box = (await el.boundingBox())!;
   expect(box, `${what} is on screen`).not.toBeNull();
   const got: Record<string, number> = {};
@@ -205,7 +210,8 @@ test.describe("the Board", () => {
     await expectBox(inks, { x: 57, y: 524, width: 226, height: 40 }, "ink bar");
     await expect(inks.getByRole("radio")).toHaveCount(5);
     await expectBox(inks.getByRole("radio").first(), { x: 70, y: 533, width: 22, height: 22 }, "first ink");
-    await expect(inks.getByRole("button", { name: /width/i })).toHaveText("2 px");
+    // The mockup shows "2 px"; the pen starts at the desktop's medium width, 3, which 030 leaves alone.
+    await expect(inks.getByRole("button", { name: /width/i })).toHaveText("3 px");
     const hint = page.locator("[data-tool-hint]");
     await expect(hint).toHaveText("One finger draws · two fingers pan and zoom");
     await expectBox(hint, { x: 37, y: 96, width: 267, height: 28 }, "hint");
@@ -216,10 +222,10 @@ test.describe("the Board", () => {
     await tools(page).getByRole("button", { name: "Pen" }).tap();
     const width = page.locator("[data-ink-options]").getByRole("button", { name: /width/i });
     await width.tap();
-    await expect(width).toHaveText("3 px");
-    await width.tap();
     await expect(width).toHaveText("6 px");
     await width.tap();
     await expect(width).toHaveText("2 px");
+    await width.tap();
+    await expect(width).toHaveText("3 px");
   });
 });

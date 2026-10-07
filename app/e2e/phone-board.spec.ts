@@ -29,19 +29,17 @@ async function fingers(page: Page) {
     client.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y, id]) => ({ x, y, id })) });
 }
 
-test("the dock is one row of seven tools above the tab bar, each at least 40px across", async ({ page }) => {
+// 030: the dock is the mockup's six, 42px each; Text is in the board's menu (see phone-mockup.spec.ts).
+test("the dock is one row of six tools above the tab bar", async ({ page }) => {
   const boxes = [];
-  for (const name of ["Select", "Pen", "Highlighter", "Eraser", "Sticky", "Text", "Comment"]) {
+  for (const name of ["Select", "Pen", "Highlighter", "Eraser", "Sticky", "Comment"]) {
     boxes.push((await tool(page, name).boundingBox())!);
   }
   const barBox = (await bar(page).boundingBox())!;
   const dockBox = (await dock(page).boundingBox())!;
 
   expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1); // one row
-  for (const box of boxes) {
-    expect(box.width).toBeGreaterThanOrEqual(40);
-    expect(box.height).toBeGreaterThanOrEqual(40);
-  }
+  await expect(tool(page, "Text")).toHaveCount(0);
   expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(barBox.y);
   expect(dockBox.x).toBeGreaterThanOrEqual(0);
   expect(dockBox.x + dockBox.width).toBeLessThanOrEqual(page.viewportSize()!.width);
@@ -81,14 +79,12 @@ test("the Pen opens its colours and widths above the dock, with a hint written f
       return optionsBox.y + optionsBox.height <= dockBox.y;
     })
     .toBe(true);
-  for (const radio of await options.getByRole("radio").all()) {
-    const box = (await radio.boundingBox())!;
-    expect(box.width).toBeGreaterThanOrEqual(40);
-  }
   await expect(page.locator("[data-tool-hint]")).toContainText("One finger draws · two fingers pan and zoom");
 
-  await page.locator("[data-tool-hint]").getByRole("button", { name: "Put Pen away" }).tap();
+  // The mockup's hint is only a hint (030): Select in the dock puts the pen away.
+  await tool(page, "Select").tap();
   await expect(tool(page, "Select")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("[data-tool-hint]")).toHaveCount(0);
 });
 
 test("one finger draws a stroke that is saved", async ({ page }) => {
@@ -131,12 +127,12 @@ test("two fingers pan and zoom the board with the Pen in hand, and the stroke th
   expect((await s.call<unknown[]>("GET", "/strokes")).length).toBe(strokesBefore);
 });
 
-test("More offers Connect, Auto-arrange, Fit to screen, Save as PNG and Clear ink, and Fit moves the camera", async ({
+test("More offers Connect, Text, Auto-arrange, Fit to screen, Save as PNG and Clear ink, and Fit moves the camera", async ({
   page,
 }) => {
   await toolbar(page).getByRole("button", { name: "More" }).tap();
   const menu = page.getByRole("menu", { name: "Board actions" });
-  await expect(menu.getByRole("menuitem")).toHaveCount(5);
+  await expect(menu.getByRole("menuitem")).toHaveCount(6);
   const before = await camera(page);
 
   await menu.getByRole("menuitem", { name: /^Fit to screen/ }).tap();
@@ -146,6 +142,9 @@ test("More offers Connect, Auto-arrange, Fit to screen, Save as PNG and Clear in
 });
 
 test("connecting from the menu: pick two cards, and the kind picker asks what they are", async ({ page }) => {
+  // The phone opens the board on the goal at 100% (030); fit it first, so both cards are on screen.
+  await toolbar(page).getByRole("button", { name: "More" }).tap();
+  await page.getByRole("menuitem", { name: /^Fit to screen/ }).tap();
   await toolbar(page).getByRole("button", { name: "More" }).tap();
   await page.getByRole("menuitem", { name: /^Connect/ }).tap();
   await expect(page.locator("[data-connect-banner]")).toBeVisible();

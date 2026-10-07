@@ -70,7 +70,7 @@ export function TraceScreen({ w }: { w: WorkspaceController }) {
             />
           ))
         )}
-        {rows.length > 0 ? <p className="mx-[18px] mb-0 mt-3.5 text-center text-xs text-muted">{COPY.traceSwipeHint}</p> : null}
+        {rows.length > 0 ? <p className="mx-[18px] mb-0 mt-3.5 text-center text-[12px] text-muted">{COPY.traceSwipeHint}</p> : null}
       </div>
 
       {w.state === "loading" ? <BoardLoading /> : null}

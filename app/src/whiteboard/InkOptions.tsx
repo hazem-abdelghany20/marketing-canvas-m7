@@ -2,11 +2,14 @@ import { useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from "
 import { INK_COLORS, INK_SIZES, inkColorValue } from "./inkPalette";
 import { uiStore, useUi } from "../ui/uiStore";
 
+/** The phone's ink bar is the mockup's five: Plum stays the desktop's (030). */
+const PHONE_INKS = INK_COLORS.filter((color) => color.id !== "ink-5");
+
 /**
  * The pen's colour and width, beside the dock while the Pen or the Highlighter is in hand. Each row is a
  * radio group: the chosen one is the only tab stop, and the arrow keys move between them.
  *
- * On a phone (`layout="bar"`) it is two rows above the dock instead of a column beside it, with every choice a 40px target.
+ * On a phone (`layout="bar"`) it is the mockup's one row above the dock: five inks, and the width as a tap that steps.
  */
 export function InkOptions({ layout = "column" }: { layout?: "column" | "bar" }) {
   const tool = useUi((s) => s.tool);
@@ -14,51 +17,40 @@ export function InkOptions({ layout = "column" }: { layout?: "column" | "bar" })
   if (tool !== "pen" && tool !== "highlighter") return null;
 
   if (layout === "bar") {
+    const at = Math.max(0, INK_SIZES.findIndex((size) => size.width === ink.size));
+    const width = INK_SIZES[at]!;
+    const nextWidth = INK_SIZES[(at + 1) % INK_SIZES.length]!;
     return (
       <div
         data-ink-options
         data-layout="bar"
-        className="absolute inset-x-0 bottom-[68px] z-40 mx-auto flex w-fit max-w-[calc(100%-24px)] animate-mc-rise flex-col items-center rounded-lg border border-subtle bg-panel p-1 shadow-[0_8px_26px_-18px_rgba(0,0,0,.5)]"
+        className="absolute inset-x-0 bottom-[74px] z-40 mx-auto flex w-fit animate-mc-rise items-center gap-2.5 whitespace-nowrap rounded-[14px] border border-subtle bg-panel px-3 py-2 shadow-[0_6px_18px_-8px_rgba(30,20,10,.25)]"
       >
-        <Choices label="Ink colour" gap="gap-0">
-          {INK_COLORS.map((color) => (
+        <Choices label="Ink colour" gap="gap-2.5">
+          {PHONE_INKS.map((color) => (
             <Choice
               key={color.id}
               label={color.label}
               checked={ink.color === color.id}
               onChoose={() => uiStore.getState().setInk({ color: color.id })}
-              className="grid size-10 place-items-center rounded-md"
-              checkedClassName="bg-rail"
+              className="size-[22px] rounded-full border-2 border-solid border-[var(--bg-panel)]"
+              checkedClassName="shadow-[0_0_0_2px_var(--fg-primary)]"
+              style={{ background: inkColorValue(color.id) }}
               plain
-            >
-              <span
-                aria-hidden="true"
-                className="size-[22px] rounded-full shadow-[inset_0_0_0_1px_var(--border-subtle)]"
-                style={{ background: inkColorValue(color.id) }}
-              />
-            </Choice>
+              ring="shadow-[0_0_0_1px_var(--border-strong)]"
+            />
           ))}
         </Choices>
-        <span aria-hidden="true" className="h-px w-full bg-[var(--border-subtle)]" />
-        <Choices label="Stroke width" gap="gap-0">
-          {INK_SIZES.map((size) => (
-            <Choice
-              key={size.label}
-              label={size.label}
-              checked={ink.size === size.width}
-              onChoose={() => uiStore.getState().setInk({ size: size.width })}
-              className="grid size-10 place-items-center rounded-md"
-              checkedClassName="bg-rail"
-              plain
-            >
-              <span
-                aria-hidden="true"
-                className="rounded-full"
-                style={{ width: size.width + 6, height: size.width + 6, background: inkColorValue(ink.color) }}
-              />
-            </Choice>
-          ))}
-        </Choices>
+        <span aria-hidden="true" className="h-5 w-px bg-[var(--border-strong)]" />
+        {/* The width is one tap that steps through the three, where the mockup shows it as a label. */}
+        <button
+          type="button"
+          aria-label={`Stroke width: ${width.label}. Tap for ${nextWidth.label.toLowerCase()}`}
+          onClick={() => uiStore.getState().setInk({ size: nextWidth.width })}
+          className="border-0 bg-transparent p-0 font-mono text-[12px] text-muted [touch-action:manipulation]"
+        >
+          {`${width.width} px`}
+        </button>
       </div>
     );
   }
@@ -143,9 +135,11 @@ interface ChoiceProps {
   children?: ReactNode;
   /** No hairline or border of its own: the choice is drawn by what is inside it (the phone's bar). */
   plain?: boolean;
+  /** For a plain choice: its ring while not chosen. */
+  ring?: string;
 }
 
-function Choice({ label, checked, onChoose, className, checkedClassName, style, children, plain = false }: ChoiceProps) {
+function Choice({ label, checked, onChoose, className, checkedClassName, style, children, plain = false, ring }: ChoiceProps) {
   return (
     <button
       type="button"
@@ -158,9 +152,10 @@ function Choice({ label, checked, onChoose, className, checkedClassName, style, 
       style={style}
       className={[
         "cursor-pointer",
-        plain ? "border-0 p-0" : "shadow-[inset_0_0_0_1px_var(--border-subtle)]",
+        plain ? "p-0" : "shadow-[inset_0_0_0_1px_var(--border-subtle)]",
+        plain && !className.includes("border-") ? "border-0" : "",
         className,
-        checked ? (checkedClassName ?? "border-primary") : plain ? "bg-transparent" : "border-transparent",
+        checked ? (checkedClassName ?? "border-primary") : plain ? (ring ?? "bg-transparent") : "border-transparent",
       ].join(" ")}
     >
       {children}

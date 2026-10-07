@@ -5,6 +5,7 @@ import { ChatPanel } from "../chat/ChatRail";
 import { startConnect } from "../canvas/connect";
 import { ConnectMode } from "../canvas/ConnectMode";
 import { FIT_MAX_ZOOM, FIT_PADDING } from "../canvas/useViewport";
+import { CARD_WIDTH } from "../components/NodeCard";
 import { QuickPeek } from "../components/QuickPeek";
 import { ReasonTip } from "../components/ReasonTip";
 import { ToastViewport } from "../components/Toast";
@@ -14,7 +15,7 @@ import { CanvasStage } from "../routes/CanvasStage";
 import type { WorkspaceController } from "../routes/useWorkspace";
 import { appStore } from "../store";
 import { TraceScreen } from "../trace/TraceScreen";
-import { useUi } from "../ui/uiStore";
+import { uiStore, useUi } from "../ui/uiStore";
 import { ClearInkDialog } from "../whiteboard/ClearInkDialog";
 import { Dock } from "../whiteboard/Dock";
 import { InkOptions } from "../whiteboard/InkOptions";
@@ -47,9 +48,13 @@ function Screen({ name, shown, children }: { name: string; shown: boolean; child
 
 /**
  * The camera is the board's, one for every screen that opens it, so a phone can be handed one that a wider screen left,
- * showing a corner of it. The first time the Board is shown, if fewer than half the cards are centred on screen, it is brought
- * back to all of them. Inside the canvas.
+ * zoomed out past reading on a phone, or on a corner with no card in it. The first time the Board is shown with such a
+ * camera, it is brought to the goal being traced, at 100%, centred under the top bar, as design/mobile-direction.html shows
+ * the board (with no goal, to all the cards). Show on board's own camera (at least 75%) is kept. Inside the canvas.
  */
+/** Below this a card's text is too small to read on a phone; Show on board zooms to it at least. */
+const PHONE_MIN_ZOOM = 0.75;
+
 function BringBoardIntoView({ shown, ready }: { shown: boolean; ready: boolean }) {
   const flow = useReactFlow();
   const store = useStoreApi();
@@ -58,11 +63,21 @@ function BringBoardIntoView({ shown, ready }: { shown: boolean; ready: boolean }
   useEffect(() => {
     if (!shown || !ready || done.current) return;
     done.current = true;
-    const { width, height, transform } = store.getState();
+    const { width, height, transform, domNode } = store.getState();
     const camera = { x: transform[0], y: transform[1], zoom: transform[2] };
-    if (boardOutOfView(Object.values(appStore.getState().nodes), camera, { width, height })) {
+    const nodes = Object.values(appStore.getState().nodes);
+    const unreadable = camera.zoom < PHONE_MIN_ZOOM;
+    if (!unreadable && !boardOutOfView(nodes, camera, { width, height }, 1 / Math.max(1, nodes.length))) return;
+    const traced = uiStore.getState().tracePath[0];
+    const goal = nodes.find((node) => node.id === traced && node.type === "goal") ?? nodes.find((node) => node.type === "goal");
+    if (!goal) {
       void flow.fitView({ padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: 0 });
+      return;
     }
+    // The goal's top edge tucks 8px under the top bar, the way the mockup crops it.
+    const top = domNode?.getBoundingClientRect().top ?? 0;
+    const bar = document.querySelector("[data-board-title]")?.getBoundingClientRect().bottom ?? top + 88;
+    void flow.setViewport({ x: width / 2 - (goal.x + CARD_WIDTH / 2), y: bar - top - 8 - goal.y, zoom: 1 }, { duration: 0 });
   }, [shown, ready, flow, store]);
 
   return null;

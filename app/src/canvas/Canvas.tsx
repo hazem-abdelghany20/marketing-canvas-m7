@@ -31,6 +31,7 @@ import { PendingLine } from "./ConnectMode";
 import { nodeTypes, toFlowNodes, toPendingNodes } from "./nodeTypes";
 import { useArrangeTween } from "./useArrangeTween";
 import { MAX_ZOOM, MIN_ZOOM } from "./useViewport";
+import { usePhone } from "../lib/useMediaQuery";
 
 /** Spacing of the dot grid, shared with the loading placeholder so the two match. */
 export const GRID_GAP = 26;
@@ -52,6 +53,7 @@ const edgeTypes: EdgeTypes = { line: EdgeLine };
  */
 export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
   const navigate = useNavigate();
+  const phone = usePhone();
   const nodes = useStore(appStore, (s) => s.nodes);
   const edges = useStore(appStore, (s) => s.edges);
   const annotations = useStore(appStore, (s) => s.annotations);
@@ -170,6 +172,8 @@ export function Canvas({ initialViewport, onViewportChange }: CanvasProps) {
         edges={flowEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        // A phone's board is the mockup's, edge to edge: the corner is the dock's (030). The desktop keeps the credit.
+        proOptions={phone ? { hideAttribution: true } : undefined}
         onNodesChange={onNodesChange}
         onNodeDragStart={onNodeDragStart}
         onNodeDragStop={onNodeDragStop}

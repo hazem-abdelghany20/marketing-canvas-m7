@@ -59,7 +59,8 @@ async function openBoard(content: Parameters<typeof serveBoard>[0] = WITH_INK) {
 }
 
 const toolbar = () => screen.getByRole("toolbar", { name: "Canvas tools" });
-const more = () => within(toolbar()).getByRole("button", { name: "More" });
+// The board's name is the button for its actions (030): the mockup has no More button.
+const more = () => within(toolbar()).getByRole("button", { name: /more board actions/i });
 const ask = () => within(toolbar()).getByRole("button", { name: "Ask about this" });
 const menu = () => screen.getByRole("menu", { name: "Board actions" });
 const item = (label: string) => within(menu()).getByRole("menuitem", { name: new RegExp(`^${label}`) });
@@ -119,7 +120,7 @@ describe("Ask about this", () => {
 });
 
 describe("the More menu", () => {
-  it("offers Connect, Auto-arrange, Fit to screen and Save as PNG, and Clear ink while there is ink", async () => {
+  it("offers Connect, Text, Auto-arrange, Fit to screen and Save as PNG, and Clear ink while there is ink", async () => {
     await openBoard();
 
     fireEvent.click(more());
@@ -128,7 +129,7 @@ describe("the More menu", () => {
     const names = within(menu())
       .getAllByRole("menuitem")
       .map((el) => el.firstChild?.textContent);
-    expect(names).toEqual(["Connect", "Auto-arrange", "Fit to screen", "Save as PNG", "Clear ink"]);
+    expect(names).toEqual(["Connect", "Text", "Auto-arrange", "Fit to screen", "Save as PNG", "Clear ink"]);
   });
 
   it("leaves out Clear ink when there is none: a control for erasing nothing is noise", async () => {
@@ -137,7 +138,7 @@ describe("the More menu", () => {
     fireEvent.click(more());
 
     expect(within(menu()).queryByRole("menuitem", { name: /^Clear ink/ })).toBeNull();
-    expect(within(menu()).getAllByRole("menuitem")).toHaveLength(4);
+    expect(within(menu()).getAllByRole("menuitem")).toHaveLength(5);
   });
 
   it("says in the menu, in words, why an item can't be used, since a tap shows no tooltip", async () => {
@@ -213,7 +214,7 @@ describe("the More menu", () => {
 
     fireEvent.keyDown(menu(), { key: "ArrowDown" });
 
-    expect(document.activeElement).toBe(item("Auto-arrange"));
+    expect(document.activeElement).toBe(item("Text"));
     await act(async () => {});
   });
 });

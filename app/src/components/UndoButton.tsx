@@ -21,7 +21,8 @@ export function UndoButton({ ready = true, className = "" }: { ready?: boolean; 
       title="Undo"
       disabledReason={reason}
       onClick={() => undoLast()}
-      className={`!size-10 !rounded-[12px] !p-0 ${className}`}
+      // 40px, unless the caller sizes it (the board's title pill holds a 34px one).
+      className={`${className.includes("!size-") ? "" : "!size-10"} !rounded-[12px] !border-0 !p-0 ${className}`}
     >
       <PhoneIcon name="undo" />
     </Button>
