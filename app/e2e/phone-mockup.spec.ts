@@ -167,3 +167,59 @@ test.describe("a node's sheet", () => {
     await expect(sheet(page).getByRole("textbox", { name: "Title" })).toBeVisible();
   });
 });
+
+test.describe("the Board", () => {
+  const tools = (page: Page) => page.getByRole("group", { name: "Whiteboard tools" });
+  const topBar = (page: Page) => page.getByRole("toolbar", { name: "Canvas tools" });
+  async function showBoard(page: Page) {
+    await openCanvas(page);
+    await bar(page).getByRole("button", { name: "Board" }).tap();
+  }
+
+  test("has the mockup's title pill, Ask about this and a dock of six tools over the bar", async ({ page }) => {
+    await showBoard(page);
+    const pill = topBar(page).locator("[data-board-title]");
+    await expectBox(pill, { x: 12, y: 46, width: 167, height: 42 }, "title pill");
+    expect(await css(pill, "border-top-left-radius")).toBe("14px");
+    await expectBox(topBar(page).getByRole("button", { name: "Ask about this" }), { x: 187, y: 46, width: 141, height: 42 }, "Ask");
+    await expectBox(tools(page), { x: 34, y: 572, width: 272, height: 52 }, "dock");
+    expect(await css(tools(page), "border-top-left-radius")).toBe("18px");
+    await expect(tools(page).getByRole("button")).toHaveCount(6);
+    await expectBox(tools(page).getByRole("button", { name: "Select" }), { x: 39, y: 577, width: 42, height: 42 }, "Select");
+  });
+
+  test("keeps what the mockup does not show one tap away: the board's name opens its actions, Text among them", async ({
+    page,
+  }) => {
+    await showBoard(page);
+    await topBar(page).getByRole("button", { name: /more/i }).tap();
+    const menu = page.getByRole("menu", { name: "Board actions" });
+    await menu.getByRole("menuitem", { name: /^Text/ }).tap();
+    await expect(page.locator("[data-tool-hint]")).toBeVisible();
+  });
+
+  test("with the pen in hand: one row of five inks and the width, and a quiet hint under the title", async ({ page }) => {
+    await showBoard(page);
+    await tools(page).getByRole("button", { name: "Pen" }).tap();
+    const inks = page.locator("[data-ink-options]");
+    await expectBox(inks, { x: 57, y: 524, width: 226, height: 40 }, "ink bar");
+    await expect(inks.getByRole("radio")).toHaveCount(5);
+    await expectBox(inks.getByRole("radio").first(), { x: 70, y: 533, width: 22, height: 22 }, "first ink");
+    await expect(inks.getByRole("button", { name: /width/i })).toHaveText("2 px");
+    const hint = page.locator("[data-tool-hint]");
+    await expect(hint).toHaveText("One finger draws · two fingers pan and zoom");
+    await expectBox(hint, { x: 37, y: 96, width: 267, height: 28 }, "hint");
+  });
+
+  test("the width is a tap that steps through the three", async ({ page }) => {
+    await showBoard(page);
+    await tools(page).getByRole("button", { name: "Pen" }).tap();
+    const width = page.locator("[data-ink-options]").getByRole("button", { name: /width/i });
+    await width.tap();
+    await expect(width).toHaveText("3 px");
+    await width.tap();
+    await expect(width).toHaveText("6 px");
+    await width.tap();
+    await expect(width).toHaveText("2 px");
+  });
+});
