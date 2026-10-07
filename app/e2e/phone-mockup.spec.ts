@@ -229,3 +229,38 @@ test.describe("the Board", () => {
     await expect(width).toHaveText("3 px");
   });
 });
+
+test.describe("Chat", () => {
+  const chat = (page: Page) => page.getByRole("complementary", { name: "Assistant" });
+  async function showChat(page: Page) {
+    await openCanvas(page);
+    await bar(page).getByRole("button", { name: "Chat" }).tap();
+  }
+
+  test("has the mockup's header, board strip, mode chips and composer", async ({ page }) => {
+    await showChat(page);
+    const title = chat(page).getByRole("heading", { name: "Assistant" });
+    await expectBox(title, { x: 18, y: 51, width: 262 }, "title");
+    expect(await css(title, "font-size")).toBe("17px");
+    expect(await css(title, "font-weight")).toBe("600");
+    await expectBox(chat(page).getByRole("button", { name: "Search" }), { x: 288, y: 44, width: 40, height: 40 }, "Search");
+    const strip = page.getByRole("region", { name: "Board overview" });
+    await expectBox(strip, { x: 12, y: 90, width: 316, height: 140 }, "strip");
+    expect(await css(strip, "border-top-left-radius")).toBe("14px");
+    await expectBox(page.getByRole("button", { name: "Open board" }), { y: 188, height: 33 }, "Open board");
+    const modes = chat(page).getByRole("radiogroup", { name: "Reply mode" });
+    await expectBox(modes, { x: 0, y: 230, width: 340, height: 40 }, "mode row");
+    const chip = modes.getByRole("radio").first();
+    await expectBox(chip, { height: 26 }, "mode chip");
+    expect(await css(chip, "border-top-left-radius")).toBe("9999px");
+    await expectBox(chat(page).getByRole("button", { name: "Send the board" }), { x: 12, y: 586, width: 42, height: 42 }, "send board");
+    await expectBox(chat(page).getByRole("textbox", { name: "Message" }), { x: 62, y: 585, width: 216, height: 43 }, "field");
+    await expectBox(chat(page).getByRole("button", { name: "Send", exact: true }), { x: 286, y: 586, width: 42, height: 42 }, "Send");
+  });
+
+  test("Search in its header goes to Find", async ({ page }) => {
+    await showChat(page);
+    await chat(page).getByRole("button", { name: "Search" }).tap();
+    await expect(bar(page).getByRole("button", { name: "Find" })).toHaveAttribute("aria-current", "page");
+  });
+});
