@@ -1,10 +1,9 @@
-import { Plus } from "lucide-react";
-import { useEffect, useId, useRef, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent } from "react";
 import { TYPE_BG, TypeChip } from "../components/TypeChip";
 import { prefersReducedMotion } from "../lib/motion";
 import { plural } from "../lib/format";
 import type { NodeType } from "../types";
-import { Button } from "../components/Button";
+import { PhoneIcon } from "../phone/icons";
 import { COPY, traceAdd } from "../ui/copy";
 import { rowLabel, type TraceCard, type TraceRow } from "./traceModel";
 
@@ -37,10 +36,15 @@ function servingText(card: TraceCard): string | null {
   return `${card.serving} serving it`;
 }
 
-function Chip({ children, dot }: { children: string; dot?: NodeType }) {
+/** A layer's colour, as the `--t` the mockup paints a row with: its label's dot, its served-by line, its cards' bars. */
+const layerColour = (type: NodeType | null) => (type ? `var(--node-${type})` : "var(--border-strong)");
+
+function Chip({ children, dot, accent }: { children: string; dot?: NodeType; accent?: boolean }) {
   return (
-    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-subtle bg-panel px-2 py-0.5 text-[11px] text-primary">
-      {dot ? <span aria-hidden="true" className={`size-[6px] flex-none rounded-full ${TYPE_BG[dot]}`} /> : null}
+    <span
+      className={`inline-flex max-w-full items-center gap-[5px] whitespace-nowrap rounded-full border border-strong bg-panel px-2 py-0.5 text-[11px] ${accent ? "text-accent" : "text-primary"}`}
+    >
+      {dot ? <span aria-hidden="true" className={`size-[7px] flex-none rounded-full ${TYPE_BG[dot]}`} /> : null}
       <span className="truncate">{children}</span>
     </span>
   );
@@ -127,12 +131,12 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
 
   const heading = (
     <div className="flex items-center gap-2 px-[18px] pb-1.5">
-      <h2 className="m-0 font-mono text-[10.5px] font-normal uppercase tracking-[0.13em] text-muted">{label}</h2>
+      <h2 className="m-0 font-mono text-[11px] font-medium uppercase leading-none tracking-[0.06em] text-muted">{label}</h2>
       {count > 0 ? (
-        <span className="font-mono text-[10.5px] text-muted">{`${row.selected + 1} of ${count}`}</span>
+        <span className="font-mono text-[11px] font-medium leading-none text-muted">{`${row.selected + 1} of ${count}`}</span>
       ) : null}
       {count > 1 && count <= MAX_DOTS ? (
-        <span className="ml-auto flex items-center">
+        <span className="ml-auto flex items-center gap-[5px]">
           {row.cards.map((card, index) => (
             <button
               key={card.node.id}
@@ -140,12 +144,12 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
               aria-label={`${label} ${index + 1}`}
               aria-current={index === row.selected ? "true" : undefined}
               onClick={() => onChoose(index)}
-              className="grid size-6 place-items-center rounded-full border-0 bg-transparent p-0"
+              className="flex h-[7px] border-0 bg-transparent p-0"
             >
               <span
                 aria-hidden="true"
-                className={`h-[7px] rounded-full transition-[width,background-color] ${
-                  index === row.selected ? "w-4 bg-primary" : "w-[7px] bg-[var(--border-strong)]"
+                className={`h-[7px] transition-[width,background-color] ${
+                  index === row.selected ? "w-4 rounded-[4px] bg-[var(--t)]" : "w-[7px] rounded-full bg-[var(--border-strong)]"
                 }`}
               />
             </button>
@@ -155,26 +159,39 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
     </div>
   );
 
+  // The line from the row above, in this row's colour, in the gap between them.
   const connector =
     row.depth > 0 ? (
-      <p className="m-0 mb-1.5 ml-[30px] border-l-2 border-[var(--border-strong)] pl-3 font-mono text-[10px] leading-4 tracking-[0.04em] text-muted">
+      <p
+        data-served-by
+        className="absolute left-[30px] top-[3px] m-0 h-4 border-l-2 border-[var(--t)] pl-3 font-mono text-[10px] font-medium leading-4 tracking-[0.04em] text-muted"
+      >
         <span aria-hidden="true">{COPY.traceServedBy}</span>
         <span className="sr-only">{parentTitle ? `Serves ${parentTitle}` : COPY.traceServedBy}</span>
       </p>
     ) : null;
 
+  const rowStyle = { "--t": layerColour(row.type) } as CSSProperties;
+  const rowClass = row.depth === 0 ? "relative" : "relative pt-[22px]";
+
   if (count === 0) {
     return (
-      <section role="group" aria-label={`${label}, empty`} data-trace-row={row.depth} className="pt-3.5">
+      <section role="group" aria-label={`${label}, empty`} data-trace-row={row.depth} style={rowStyle} className={rowClass}>
         {connector}
         {heading}
-        <div className="mx-4 flex flex-col items-start gap-2.5 rounded-lg border border-dashed border-strong p-4 text-[13.5px] text-muted">
+        <div className="mx-4 min-h-[74px] rounded-lg border border-dashed border-subtle py-2.5 pl-[15px] pr-3 text-[13.5px] text-muted">
           {COPY.traceNothingServes}
           {row.addType ? (
-            <Button variant="secondary" onClick={onAdd} className="min-h-10 gap-1.5 px-3.5 text-[13.5px]">
-              <Plus size={16} aria-hidden="true" />
-              {traceAdd(row.addType)}
-            </Button>
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={onAdd}
+                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-[10px] border border-strong bg-transparent px-3.5 text-[13.5px] font-medium text-primary"
+              >
+                <PhoneIcon name="plus" size={16} />
+                {traceAdd(row.addType)}
+              </button>
+            </div>
           ) : null}
         </div>
       </section>
@@ -186,7 +203,8 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
       role="group"
       aria-label={`${label}, ${row.selected + 1} of ${count}`}
       data-trace-row={row.depth}
-      className={row.depth === 0 ? "" : "pt-3.5"}
+      style={rowStyle}
+      className={rowClass}
     >
       {connector}
       {heading}
@@ -210,7 +228,7 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
               key={card.node.id}
               data-card
               style={{ width: count === 1 ? "100%" : `calc(100% - ${PEEK}px)` }}
-              className="flex-none snap-start"
+              className="flex flex-none snap-start"
             >
               <button
                 ref={(el) => {
@@ -223,36 +241,42 @@ export function TraceRowView({ row, parentTitle, onChoose, onOpen, onAdd }: Trac
                 aria-label={`${title}, ${card.node.type.charAt(0).toUpperCase() + card.node.type.slice(1)}`}
                 aria-describedby={hasChips ? `${chipsId}-${card.node.id}` : undefined}
                 onClick={() => (current ? onOpen(card.node.id) : onChoose(index))}
+                // Stretched to the row's tallest card. The one on screen takes 55% of its layer's colour into its border;
+                // the ones peeking in are faded to half, as the mockup draws them.
                 className={[
-                  "relative block min-h-[74px] w-full rounded-lg border bg-elevated py-3 pl-4 pr-3.5 text-left [touch-action:manipulation] transition-[border-color]",
-                  goal ? "min-h-[104px]" : "",
-                  current ? "border-strong" : "border-subtle",
+                  "relative block w-full rounded-lg border bg-elevated text-left [touch-action:manipulation] transition-[opacity,border-color] duration-200",
+                  goal ? "min-h-[104px] pb-3 pl-[17px] pr-3.5 pt-3.5" : "min-h-[74px] py-2.5 pl-[15px] pr-3",
+                  current ? "border-[color-mix(in_srgb,var(--t)_55%,var(--border-subtle))]" : "border-subtle opacity-50",
                 ].join(" ")}
               >
                 <span
                   aria-hidden="true"
-                  className={`absolute bottom-3 left-0 top-3 w-[3px] rounded-r-sm ${TYPE_BG[card.node.type]}`}
+                  className={`absolute bottom-2.5 left-0 top-2.5 w-[3px] rounded-r-[3px] ${TYPE_BG[card.node.type]}`}
                 />
                 {row.type === null ? <TypeChip type={card.node.type} className="mb-1" /> : null}
                 <span
-                  className={`block leading-snug text-primary ${goal ? "text-[18px] font-semibold tracking-[-0.01em]" : "text-[14.5px] font-medium"}`}
+                  className={`block leading-[1.3] text-primary ${goal ? "text-[18px] font-semibold tracking-[-0.01em]" : "text-[14.5px] font-medium"}`}
                 >
                   {title}
                 </span>
                 {card.node.body ? (
-                  <span className={`mt-0.5 block text-[12.5px] text-muted ${goal ? "line-clamp-2" : "line-clamp-1"}`}>
+                  // No `block` here: it would beat line-clamp's own display and let the summary run on.
+                  <span
+                    data-card-body
+                    className={`mt-[3px] text-muted ${goal ? "line-clamp-2 text-[13px]" : "line-clamp-1 text-[12.5px]"}`}
+                  >
                     {card.node.body}
                   </span>
                 ) : null}
                 {hasChips ? (
-                  <span id={`${chipsId}-${card.node.id}`} className="mt-2 flex flex-wrap gap-1.5">
+                  <span id={`${chipsId}-${card.node.id}`} className="mt-2 flex flex-wrap gap-[5px]">
                     {serving ? <Chip>{serving}</Chip> : null}
                     {joined.map((other) => (
                       <Chip key={other.id} dot={other.type}>
                         {other.title.trim() || "Untitled"}
                       </Chip>
                     ))}
-                    {card.notes > 0 ? <Chip>{plural(card.notes, "note")}</Chip> : null}
+                    {card.notes > 0 ? <Chip accent>{plural(card.notes, "note")}</Chip> : null}
                   </span>
                 ) : null}
               </button>

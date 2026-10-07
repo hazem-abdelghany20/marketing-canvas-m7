@@ -83,7 +83,7 @@ test.describe("Trace", () => {
     await expectBox(trace(page).locator("h1"), { x: 18, y: 49, width: 262, height: 30 }, "Trace title");
     await expectBox(trace(page).getByRole("button", { name: "Undo" }), { x: 288, y: 44, width: 40, height: 40 }, "Undo");
     await expectBox(row(page, 0).locator("h2"), { x: 18, y: 92, height: 11 }, "GOAL label");
-    await expectBox(row(page, 0).locator("[aria-current=true] > span"), { x: 294, y: 94, width: 16, height: 7 }, "active dot");
+    await expectBox(row(page, 0).getByRole("button", { name: "Goal 1" }).locator("span"), { x: 294, y: 94, width: 16, height: 7 }, "active dot");
     await expectBox(onScreen(page, 0), { x: 16, y: 109, width: 264, height: 147 }, "goal card");
     await expectBox(onScreen(page, 1), { x: 16, y: 297, width: 264, height: 139 }, "strategy card");
     await expectBox(onScreen(page, 2), { x: 16, y: 478, width: 308, height: 93 }, "campaign card");
@@ -107,7 +107,7 @@ test.describe("Trace", () => {
     await openCanvas(page);
     expect(await css(row(page, 0).locator("h2"), "font-weight")).toBe("500");
     const goal = await cssVar(page, "--node-goal");
-    expect(await css(row(page, 0).locator("[aria-current=true] > span"), "background-color")).toBe(goal);
+    expect(await css(row(page, 0).getByRole("button", { name: "Goal 1" }).locator("span"), "background-color")).toBe(goal);
     // The card on screen takes 55% of its layer's colour into its border; the ones peeking in are faded to half.
     expect(await css(onScreen(page, 0), "border-top-color")).not.toBe(await cssVar(page, "--border-subtle"));
     expect(await css(row(page, 0).locator("[data-trace-card]:not([aria-current])").first(), "opacity")).toBe("0.5");

@@ -36,12 +36,12 @@ export function TraceScreen({ w }: { w: WorkspaceController }) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex flex-none items-center gap-2 pb-1 pl-[18px] pr-2 pt-[max(14px,env(safe-area-inset-top))]">
-        <h1 className="m-0 flex-1 text-xl font-semibold tracking-[-0.015em] text-primary">{COPY.traceTitle}</h1>
+      <header className="flex flex-none items-center gap-2 pb-1 pl-[18px] pr-3 pt-[max(14px,calc(env(safe-area-inset-top)+4px))]">
+        <h1 className="m-0 flex-1 text-[20px] font-semibold leading-normal tracking-[-0.015em] text-primary">{COPY.traceTitle}</h1>
         <UndoButton ready={w.ready} />
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-6 pt-1">
+      <div className="min-h-0 flex-1 overflow-y-auto pb-[18px] pt-1 [scrollbar-width:none]">
         {w.ready && rows.length === 0 ? (
           <div className="mx-4 mt-6 flex flex-col items-center gap-2 rounded-lg border border-subtle bg-panel px-7 py-6 text-center">
             <h2 className="m-0 text-base font-semibold text-primary">{COPY.traceNoGoals}</h2>
@@ -70,6 +70,7 @@ export function TraceScreen({ w }: { w: WorkspaceController }) {
             />
           ))
         )}
+        {rows.length > 0 ? <p className="mx-[18px] mb-0 mt-3.5 text-center text-xs text-muted">{COPY.traceSwipeHint}</p> : null}
       </div>
 
       {w.state === "loading" ? <BoardLoading /> : null}

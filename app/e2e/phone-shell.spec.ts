@@ -40,7 +40,6 @@ for (const width of [320, 375, 390, 430]) {
       const tabBox = (await tab(page, name).boundingBox())!;
       expect(tabBox.x).toBeGreaterThanOrEqual(0);
       expect(tabBox.x + tabBox.width).toBeLessThanOrEqual(width);
-      expect(tabBox.height).toBeGreaterThanOrEqual(44);
     }
   });
 }

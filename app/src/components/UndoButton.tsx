@@ -1,8 +1,8 @@
-import { Undo2 } from "lucide-react";
 import { useStore } from "zustand";
 import { undoLast } from "../canvas/actions";
 import { appStore } from "../store";
 import { COPY } from "../ui/copy";
+import { PhoneIcon } from "../phone/icons";
 import { Button } from "./Button";
 
 /**
@@ -21,9 +21,9 @@ export function UndoButton({ ready = true, className = "" }: { ready?: boolean; 
       title="Undo"
       disabledReason={reason}
       onClick={() => undoLast()}
-      className={`!size-10 !rounded-md !p-0 ${className}`}
+      className={`!size-10 !rounded-[12px] !p-0 ${className}`}
     >
-      <Undo2 size={18} aria-hidden="true" />
+      <PhoneIcon name="undo" />
     </Button>
   );
 }

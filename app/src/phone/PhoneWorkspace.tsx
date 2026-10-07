@@ -95,7 +95,8 @@ export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
     <div
       data-phone-shell
       data-phone-tab={tab}
-      className="relative flex h-dvh w-full flex-col overflow-hidden bg-canvas"
+      // 15px is the mockup's body size, which every phone screen inherits.
+      className="relative flex h-dvh w-full flex-col overflow-hidden bg-canvas text-[15px]"
     >
       <main data-canvas-state={state} className="relative min-h-0 flex-1 overflow-hidden bg-canvas">
         <Screen name="Trace" shown={tab === "trace"}>

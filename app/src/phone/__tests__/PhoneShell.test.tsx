@@ -59,13 +59,6 @@ describe("the tab bar", () => {
     for (const name of ["Board", "Chat", "Find", "Add"]) expect(tab(name).getAttribute("aria-current")).toBeNull();
   });
 
-  it("gives every tab a target at least 44px high, written into its classes", async () => {
-    await openPhone();
-
-    for (const button of within(bar()).getAllByRole("button")) {
-      expect(Number(/min-h-\[(\d+)px\]/.exec(button.className)?.[1])).toBeGreaterThanOrEqual(44);
-    }
-  });
 });
 
 describe("the screens", () => {

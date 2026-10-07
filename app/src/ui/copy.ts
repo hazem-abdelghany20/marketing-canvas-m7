@@ -99,6 +99,7 @@ export const COPY = {
   addSheetDraft: "Draft in chat",
   addSheetDraftHint: "Ask the assistant to write one",
   traceServedBy: "served by",
+  traceSwipeHint: "Swipe any row to change everything under it",
 
   // P5 — Find
   findTitle: "Find",
