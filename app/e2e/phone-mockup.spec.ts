@@ -264,3 +264,33 @@ test.describe("Chat", () => {
     await expect(bar(page).getByRole("button", { name: "Find" })).toHaveAttribute("aria-current", "page");
   });
 });
+
+test.describe("Find", () => {
+  const find = (page: Page) => page.getByRole("region", { name: "Find" });
+  async function showFind(page: Page) {
+    await openCanvas(page);
+    await bar(page).getByRole("button", { name: "Find" }).tap();
+  }
+
+  test("opens straight on the search box, chips and the index, at the mockup's sizes", async ({ page }) => {
+    await showFind(page);
+    const box = find(page).locator("[data-search-box]");
+    await expectBox(box, { x: 18, y: 48, width: 304, height: 44 }, "search box");
+    expect(await css(box, "border-top-left-radius")).toBe("12px");
+    const filters = find(page).getByRole("radiogroup", { name: "Type" });
+    await expectBox(filters, { x: 18, y: 102, width: 304, height: 28 }, "filters");
+    await expectBox(filters.getByRole("radio").first(), { x: 18, width: 49, height: 26 }, "All chip");
+    await expect(filters.getByRole("radio")).toHaveText([/^All 16$/, "Goals", "Campaigns", "Content", "Strategies", "Assets", "Notes"]);
+    await expectBox(find(page).locator("h2").first(), { x: 18, y: 146, height: 11 }, "GOALS");
+    await expectBox(find(page).locator("ul button").first(), { x: 18, y: 157, width: 304, height: 44 }, "first row");
+  });
+
+  test("indexes the goals, the content and what reaches no goal, as the mockup does; the rest is a chip away", async ({
+    page,
+  }) => {
+    await showFind(page);
+    await expect(find(page).locator("h2")).toHaveText(["Goals", "Content", "Not connected to a goal"]);
+    await find(page).getByRole("radio", { name: "Strategies" }).tap();
+    await expect(find(page).getByRole("button", { name: /^Vayn ICP/ })).toBeVisible();
+  });
+});
