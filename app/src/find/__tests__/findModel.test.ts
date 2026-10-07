@@ -26,19 +26,12 @@ describe("Find with nothing typed", () => {
     expect(buildFind(graph([], []), "linen", "all")).toEqual({ kind: "empty" });
   });
 
-  it("groups what reaches a goal by type, in the order of the chain, and then what does not", () => {
+  it("groups the two ends of a chain that reaches a goal, goals and content, and then what does not (030)", () => {
     const groups = index();
 
-    expect(groups.map((g) => g.id)).toEqual(["goal", "strategy", "campaign", "content", "loose"]);
-    expect(groups.map((g) => g.label)).toEqual([
-      "Goals",
-      "Strategies",
-      "Campaigns",
-      "Content",
-      "Not connected to a goal",
-    ]);
+    expect(groups.map((g) => g.id)).toEqual(["goal", "content", "loose"]);
+    expect(groups.map((g) => g.label)).toEqual(["Goals", "Content", "Not connected to a goal"]);
     expect(ids(group(groups, "goal").rows)).toEqual(["nd_goal_vayn", "nd_goal_md"]);
-    expect(ids(group(groups, "strategy").rows)).toEqual(["nd_str_icp", "nd_str_pos", "nd_str_voice"]);
     expect(ids(group(groups, "content").rows)).toEqual([
       "nd_con_linenstyle",
       "nd_con_quiet",
@@ -56,11 +49,12 @@ describe("Find with nothing typed", () => {
     ]);
   });
 
-  it("shows a node once: the last group takes it from its type's group", () => {
+  it("shows a node once at most: the last group takes it from its type's group, and the middle of a chain is a filter away", () => {
     const every = index().flatMap((g) => ids(g.rows));
+    const middle = SEED_NODES.filter((n) => n.type === "strategy" || n.type === "campaign");
 
-    expect(every).toHaveLength(SEED_NODES.length);
-    expect(new Set(every).size).toBe(SEED_NODES.length);
+    expect(new Set(every).size).toBe(every.length);
+    expect(every).toHaveLength(SEED_NODES.length - middle.length);
   });
 
   it("leaves out a group with nothing in it", () => {
@@ -80,7 +74,7 @@ describe("Find with nothing typed", () => {
 
     expect(note("nd_goal_vayn")).toBe("7 under it");
     expect(note("nd_goal_md")).toBe("3 under it");
-    expect(note("nd_str_pos")).toBe("trace →");
+    expect(note("nd_con_quiet")).toBe("trace →");
     expect(note("nd_con_email")).toBe("trace →");
     expect(note("nd_ast_hero")).toBe("relates only");
     expect(note("nd_not_price")).toBe("relates only");
@@ -137,13 +131,13 @@ describe("Find by type", () => {
   });
 
   it("offers a filter for every type, and for all", () => {
-    expect(FIND_FILTERS.map((f) => f.id)).toEqual(["all", "goal", "strategy", "campaign", "content", "asset", "note"]);
+    expect(FIND_FILTERS.map((f) => f.id)).toEqual(["all", "goal", "campaign", "content", "strategy", "asset", "note"]);
     expect(FIND_FILTERS.map((f) => f.label)).toEqual([
       "All",
       "Goals",
-      "Strategies",
       "Campaigns",
       "Content",
+      "Strategies",
       "Assets",
       "Notes",
     ]);

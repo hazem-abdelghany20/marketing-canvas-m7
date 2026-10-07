@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 
 test("lists the nodes by type, with what no goal is above last, and fits the screen", async ({ page }) => {
   const headings = await find(page).getByRole("heading", { level: 2 }).allTextContents();
-  expect(headings).toEqual(["Goals", "Strategies", "Campaigns", "Content", "Not connected to a goal"]);
+  expect(headings).toEqual(["Goals", "Content", "Not connected to a goal"]); // the middle of a chain is a filter away (030)
 
   const width = page.viewportSize()!.width;
   const box = (await find(page).getByRole("radiogroup", { name: "Type" }).boundingBox())!;

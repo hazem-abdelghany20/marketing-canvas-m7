@@ -10,20 +10,22 @@ import type { CanvasNode, NodeType } from "../types";
 export type FindFilter = "all" | NodeType;
 
 export const FIND_FILTERS: ReadonlyArray<{ id: FindFilter; label: string }> = [
+  // The mockup's four first; the rest scroll in after them.
   { id: "all", label: "All" },
   { id: "goal", label: "Goals" },
-  { id: "strategy", label: "Strategies" },
   { id: "campaign", label: "Campaigns" },
   { id: "content", label: "Content" },
+  { id: "strategy", label: "Strategies" },
   { id: "asset", label: "Assets" },
   { id: "note", label: "Notes" },
 ];
 
-/** The groups of the index, in the order of the chain. */
+/**
+ * The groups of the index, in the order of the chain: the two ends of it, as the mockup has them. Strategies and campaigns
+ * are a chip away (030); Trace is where the middle of a chain is read.
+ */
 const TYPE_GROUPS: ReadonlyArray<{ id: NodeType; label: string }> = [
   { id: "goal", label: "Goals" },
-  { id: "strategy", label: "Strategies" },
-  { id: "campaign", label: "Campaigns" },
   { id: "content", label: "Content" },
   { id: "asset", label: "Assets" },
   { id: "note", label: "Notes" },
@@ -82,7 +84,7 @@ function rowFor(graph: Graph, node: CanvasNode): FindRow {
 /**
  * What Find lists. With something typed, one list of matches (titles before bodies, as search does on a desktop), narrowed
  * by the type chosen. With only a type chosen, every node of it, connected or not. With neither, an index: what reaches a goal,
- * by type in the order of the chain, and last, in a group of its own, everything that does not (so a node is listed once).
+ * by type (goals and content), and last, in a group of its own, everything that does not (so a node is listed once).
  */
 export function buildFind(graph: Graph, query: string, filter: FindFilter): FindView {
   if (graph.nodes.length === 0) return { kind: "empty" };

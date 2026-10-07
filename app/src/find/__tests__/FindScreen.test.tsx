@@ -46,9 +46,9 @@ describe("the Find screen with nothing typed", () => {
     expect(filters.map((el) => el.textContent)).toEqual([
       `All ${SEED_NODES.length}`,
       "Goals",
-      "Strategies",
       "Campaigns",
       "Content",
+      "Strategies",
       "Assets",
       "Notes",
     ]);
@@ -56,7 +56,7 @@ describe("the Find screen with nothing typed", () => {
     const headings = find()
       .getAllByRole("heading", { level: 2 })
       .map((h) => h.textContent);
-    expect(headings).toEqual(["Goals", "Strategies", "Campaigns", "Content", "Not connected to a goal"]);
+    expect(headings).toEqual(["Goals", "Content", "Not connected to a goal"]);
   });
 
   it("says how each node connects, on its row", async () => {

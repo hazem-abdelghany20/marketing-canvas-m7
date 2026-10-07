@@ -96,7 +96,7 @@ export function Composer({ compact = false }: { compact?: boolean }) {
           placeholder={COPY.chatPlaceholderPhone}
           onChange={(event) => uiStore.getState().setChatDraft(event.target.value)}
           onKeyDown={onKeyDown}
-          className={`block min-h-[43px] min-w-0 flex-1 resize-none rounded-[21px] border bg-elevated px-3.5 py-[10px] text-base leading-[21px] text-primary placeholder:text-muted ${
+          className={`block min-h-[43px] min-w-0 flex-1 resize-none rounded-[21px] border bg-elevated px-3.5 py-[10px] text-base leading-[21px] text-primary placeholder:text-[14px] placeholder:text-muted ${
             streaming ? "border-subtle opacity-60" : "border-strong"
           }`}
         />
