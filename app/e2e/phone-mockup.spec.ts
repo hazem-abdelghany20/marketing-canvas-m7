@@ -294,3 +294,31 @@ test.describe("Find", () => {
     await expect(find(page).getByRole("button", { name: /^Vayn ICP/ })).toBeVisible();
   });
 });
+
+test.describe("the Add sheet", () => {
+  const sheet = (page: Page) => page.getByRole("dialog", { name: "Add to the board" });
+  async function openAdd(page: Page) {
+    await openCanvas(page);
+    await bar(page).getByRole("button", { name: "Add" }).tap();
+    await expect(sheet(page)).toBeVisible();
+  }
+
+  test("is the mockup's sheet: a title, Close, and three rows of two choices", async ({ page }) => {
+    await openAdd(page);
+    await expectBox(sheet(page), { x: 0, y: 471, width: 340, height: 249 }, "sheet");
+    await expectBox(sheet(page).locator("[data-sheet-handle] > span"), { x: 151, y: 479, width: 38, height: 4 }, "grab");
+    const title = sheet(page).getByRole("heading", { name: "Add to the board" });
+    await expectBox(title, { x: 20, y: 495, width: 126, height: 24 }, "title");
+    expect(await css(title, "font-weight")).toBe("700");
+    await expectBox(sheet(page).getByRole("button", { name: "Close" }), { x: 288, y: 487, width: 40, height: 40 }, "Close");
+    const choices = sheet(page).getByRole("button").filter({ hasNotText: /^$/ });
+    await expect(choices).toHaveText(["Goal", "Strategy", "Campaign", "Content", "Note", "Import a file"]);
+    await expectBox(choices.first(), { x: 20, y: 535, width: 146, height: 47 }, "Goal");
+    expect(await css(choices.first(), "border-top-left-radius")).toBe("8px");
+  });
+
+  test("drafting with the assistant is the Chat tab's: the sheet leaves it out", async ({ page }) => {
+    await openAdd(page);
+    await expect(sheet(page).getByRole("button", { name: /Draft in chat/ })).toHaveCount(0);
+  });
+});
