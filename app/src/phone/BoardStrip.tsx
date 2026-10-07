@@ -7,6 +7,7 @@ import { TYPE_BG, typeLabel } from "../components/TypeChip";
 import { plural } from "../lib/format";
 import { appStore } from "../store";
 import { uiStore, useUi } from "../ui/uiStore";
+import { PhoneIcon } from "./icons";
 import { STRIP_CHIP, STRIP_DOT, stripScene, type StripSize } from "./stripLayout";
 
 /** What the strip is drawn into until it has been measured: a phone's width, less the screen's margins. */
@@ -23,7 +24,7 @@ export function BoardStrip() {
   const edges = useStore(appStore, (s) => s.edges);
   const citedIds = useUi((s) => s.citedIds);
   const fitToBounds = useFitToBounds();
-  const frame = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLElement>(null);
   const [size, setSize] = useState<StripSize>(FALLBACK);
 
   // Drawn at the size it really is, whatever the phone: positions are scaled to it.
@@ -61,27 +62,27 @@ export function BoardStrip() {
 
   return (
     <section
+      ref={frame}
       role="region"
       aria-label="Board overview"
       data-strip-mode={scene.mode}
-      // With little height left (the keyboard is up) the conversation matters more than the picture.
-      className="mx-3 mt-3 flex-none [@media(max-height:520px)]:hidden"
+      // The mockup's strip: 140px of the board in a 14px-cornered frame, what it shows named at top left and Open board at
+      // bottom right. With little height left (the keyboard is up) the conversation matters more than the picture.
+      className="relative mx-3 h-[140px] flex-none overflow-hidden rounded-[14px] border border-subtle bg-canvas bg-[radial-gradient(var(--grid-dot)_1.2px,transparent_1.2px)] bg-[length:18px_18px] [@media(max-height:520px)]:hidden"
     >
-      <div className="mb-1 flex items-center justify-between">
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.13em] text-muted">{heading}</span>
-        <button
-          type="button"
-          onClick={openBoard}
-          className="-my-1 inline-flex h-10 items-center rounded-md border-0 bg-transparent px-2.5 text-[13px] font-medium text-accent [touch-action:manipulation]"
-        >
-          Open board
-        </button>
-      </div>
-
-      <div
-        ref={frame}
-        className="relative h-[120px] overflow-hidden rounded-lg border border-subtle bg-canvas bg-[radial-gradient(var(--grid-dot)_1.2px,transparent_1.2px)] bg-[length:18px_18px]"
+      {heading ? (
+        <span className="absolute left-2 top-2 z-[3] rounded-full border border-subtle bg-panel px-2 py-[3px] text-[11.5px] text-primary shadow-[0_6px_18px_-8px_rgba(30,20,10,.25)]">
+          {heading}
+        </span>
+      ) : null}
+      <button
+        type="button"
+        onClick={openBoard}
+        className="absolute bottom-2 right-2 z-[3] inline-flex items-center gap-1 rounded-full border border-subtle bg-panel px-2.5 py-1.5 text-[12.5px] text-primary shadow-[0_6px_18px_-8px_rgba(30,20,10,.25)] [touch-action:manipulation]"
       >
+        <PhoneIcon name="expand" size={14} />
+        Open board
+      </button>
         {scene.mode === "empty" ? (
           <p className="absolute inset-0 m-0 grid place-items-center px-4 text-center text-[13px] text-muted">
             Nothing on the board yet.
@@ -143,7 +144,6 @@ export function BoardStrip() {
             )}
           </>
         )}
-      </div>
     </section>
   );
 }

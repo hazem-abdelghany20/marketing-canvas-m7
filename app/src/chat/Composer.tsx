@@ -1,4 +1,5 @@
-import { LoaderCircle, ScanEye, SendHorizontal } from "lucide-react";
+import { LoaderCircle, SendHorizontal } from "lucide-react";
+import { PhoneIcon } from "../phone/icons";
 import { useEffect, useLayoutEffect, useRef, type KeyboardEvent } from "react";
 import { useStore } from "zustand";
 import { Button } from "../components/Button";
@@ -64,7 +65,9 @@ export function Composer({ compact = false }: { compact?: boolean }) {
 
   if (compact) {
     return (
-      <div className="flex flex-none items-end gap-2 border-t border-subtle bg-panel px-3 py-2.5">
+      // The mockup's composer: two 42px rounds either side of a 43px pill. The field's text stays 16px, as every field on a
+      // phone does, so the browser does not zoom the page when it takes focus.
+      <div className="flex flex-none items-end gap-2 border-t border-subtle bg-panel px-3 pb-2.5 pt-2">
         <Button
           variant="secondary"
           aria-label="Send the board"
@@ -73,12 +76,12 @@ export function Composer({ compact = false }: { compact?: boolean }) {
           disabledReason={board.reason}
           onDisabledClick={() => explainWhy(board.reason)}
           onClick={board.send}
-          className="!size-11 flex-none !rounded-full !p-0 text-muted"
+          className="!size-[42px] flex-none !rounded-full !border-strong !bg-transparent !p-0 !text-muted"
         >
           {board.preparing ? (
             <LoaderCircle size={18} aria-hidden="true" className="animate-spin" />
           ) : (
-            <ScanEye size={18} aria-hidden="true" />
+            <PhoneIcon name="scan" />
           )}
         </Button>
         <textarea
@@ -90,10 +93,10 @@ export function Composer({ compact = false }: { compact?: boolean }) {
           rows={1}
           maxLength={MAX_MESSAGE}
           value={draft}
-          placeholder={COPY.chatPlaceholder}
+          placeholder={COPY.chatPlaceholderPhone}
           onChange={(event) => uiStore.getState().setChatDraft(event.target.value)}
           onKeyDown={onKeyDown}
-          className={`block min-h-11 min-w-0 flex-1 resize-none rounded-[22px] border bg-elevated px-3.5 py-[10px] text-base leading-6 text-primary placeholder:text-muted ${
+          className={`block min-h-[43px] min-w-0 flex-1 resize-none rounded-[21px] border bg-elevated px-3.5 py-[10px] text-base leading-[21px] text-primary placeholder:text-muted ${
             streaming ? "border-subtle opacity-60" : "border-strong"
           }`}
         />
@@ -103,9 +106,9 @@ export function Composer({ compact = false }: { compact?: boolean }) {
           disabledReason={sendReason}
           onDisabledClick={() => explainWhy(sendReason)}
           onClick={send}
-          className="!size-11 flex-none !rounded-full !p-0"
+          className="!size-[42px] flex-none !rounded-full !border-0 !p-0 !text-white"
         >
-          <SendHorizontal size={18} aria-hidden="true" />
+          <PhoneIcon name="send" />
         </Button>
       </div>
     );

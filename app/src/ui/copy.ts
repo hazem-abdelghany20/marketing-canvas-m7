@@ -27,6 +27,8 @@ export const COPY = {
   chatWriteFirst: "Write a message first.",
   chatReplying: "Assistant is replying",
   chatPlaceholder: "Ask, or say \u201cdraft a\u2026\u201d",
+  /** The phone composer's, as the mockup words it. */
+  chatPlaceholderPhone: "Ask, or tell it what to add…",
   chatHint: "Enter to send \u00b7 Shift+Enter for a new line",
   chatHintBusy: "Replying\u2026",
   proposalNode: "Proposed node",

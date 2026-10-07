@@ -21,7 +21,8 @@ export const CHAT_MODE_OPTIONS: ReadonlyArray<{ id: ChatMode; label: string; tip
  * arrow keys move the choice. While a reply is streaming it can't be changed (a reply in flight was asked
  * one way), and says to wait.
  */
-export function ModePicker() {
+export function ModePicker({ look = "segments" }: { look?: "segments" | "chips" }) {
+  const chips = look === "chips";
   const chosen = useUi((s) => s.chatMode);
   const busy = useStore(appStore, (s) => s.chatStreaming);
   const group = useRef<HTMLDivElement>(null);
@@ -43,7 +44,18 @@ export function ModePicker() {
   }
 
   return (
-    <div ref={group} role="radiogroup" aria-label="Reply mode" onKeyDown={onKeyDown} className="mb-2 flex gap-1">
+    <div
+      ref={group}
+      role="radiogroup"
+      aria-label="Reply mode"
+      onKeyDown={onKeyDown}
+      // On a phone, the mockup's row of pill chips under the board strip.
+      className={
+        chips
+          ? "flex flex-none gap-1.5 overflow-x-auto px-3 pb-1 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          : "mb-2 flex gap-1"
+      }
+    >
       {CHAT_MODE_OPTIONS.map((mode) => {
         const on = chosen === mode.id;
         return (
@@ -57,8 +69,16 @@ export function ModePicker() {
             title={busy ? COPY.waitForReply : mode.tip}
             onClick={() => choose(mode.id)}
             className={[
-              "flex-1 rounded-sm border px-1 py-[5px] text-[11px]",
-              on ? "border-primary bg-primary font-semibold text-inverse" : "border-subtle bg-elevated text-muted",
+              chips
+                ? "inline-flex flex-none items-center whitespace-nowrap rounded-full border px-[9px] py-[3px] text-[12px] [touch-action:manipulation]"
+                : "flex-1 rounded-sm border px-1 py-[5px] text-[11px]",
+              chips
+                ? on
+                  ? "border-primary bg-primary text-inverse"
+                  : "border-strong bg-panel text-primary"
+                : on
+                  ? "border-primary bg-primary font-semibold text-inverse"
+                  : "border-subtle bg-elevated text-muted",
               busy ? "cursor-not-allowed opacity-60" : "cursor-pointer",
             ].join(" ")}
           >

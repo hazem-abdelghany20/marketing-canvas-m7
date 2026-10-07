@@ -7,6 +7,7 @@ import { BoardStrip } from "../phone/BoardStrip";
 import { Composer } from "./Composer";
 import { CHAT_OPEN_ID, focusChatOpenButton } from "./focus";
 import { MessageList } from "./MessageList";
+import { PhoneIcon } from "../phone/icons";
 import { ModePicker } from "./ModePicker";
 
 /**
@@ -110,18 +111,27 @@ export function ChatPanel({ mode }: { mode: ChatPanelMode }) {
             : "h-full w-[360px] flex-none",
       ].join(" ")}
     >
-      <header
-        className={`flex flex-none items-center justify-between border-b border-subtle px-4 ${
-          // The page draws to the screen's edge on a phone: its first line starts below the notch.
-          screen ? "pb-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]" : "py-3.5"
-        }`}
-      >
-        <h2 className="m-0 flex items-center gap-2 font-mono text-[10.5px] font-normal uppercase tracking-[0.13em] text-muted">
-          <span aria-hidden="true" className="size-[9px] rounded-full bg-node-goal" />
-          <span aria-hidden="true" className="-ml-1.5 size-[9px] rounded-full bg-node-strategy" />
-          Assistant
-        </h2>
-        {screen ? null : (
+      {screen ? (
+        // The phone's header is the mockup's: "Assistant" as a title, and Search, which goes to Find.
+        <header className="flex flex-none items-center gap-2 pb-1.5 pl-[18px] pr-3 pt-[max(14px,calc(env(safe-area-inset-top)+4px))]">
+          <h2 className="m-0 flex-1 text-[17px] font-semibold leading-normal text-primary">Assistant</h2>
+          <button
+            type="button"
+            aria-label="Search"
+            title="Find a node"
+            onClick={() => uiStore.getState().setPhoneTab("find")}
+            className="grid size-10 flex-none place-items-center rounded-[12px] border-0 bg-transparent p-0 text-primary [touch-action:manipulation]"
+          >
+            <PhoneIcon name="search" />
+          </button>
+        </header>
+      ) : (
+        <header className="flex flex-none items-center justify-between border-b border-subtle px-4 py-3.5">
+          <h2 className="m-0 flex items-center gap-2 font-mono text-[10.5px] font-normal uppercase tracking-[0.13em] text-muted">
+            <span aria-hidden="true" className="size-[9px] rounded-full bg-node-goal" />
+            <span aria-hidden="true" className="-ml-1.5 size-[9px] rounded-full bg-node-strategy" />
+            Assistant
+          </h2>
           <Button
             variant="ghost"
             aria-label={sheet ? "Close assistant" : "Collapse assistant"}
@@ -131,15 +141,11 @@ export function ChatPanel({ mode }: { mode: ChatPanelMode }) {
           >
             {sheet ? <X size={15} aria-hidden="true" /> : <PanelLeftClose size={15} aria-hidden="true" />}
           </Button>
-        )}
-      </header>
+        </header>
+      )}
       {/* On a phone the picture of the board and the reply modes sit above the conversation, and the composer is a row. */}
       {screen ? <BoardStrip /> : null}
-      {screen ? (
-        <div className="flex-none px-3 pt-2.5">
-          <ModePicker />
-        </div>
-      ) : null}
+      {screen ? <ModePicker look="chips" /> : null}
       <MessageList />
       <Composer compact={screen} />
     </aside>

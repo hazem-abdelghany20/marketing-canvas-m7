@@ -1,6 +1,8 @@
 import { Check } from "lucide-react";
-import { useId } from "react";
+import { useId, type CSSProperties } from "react";
 import { useStore } from "zustand";
+import { usePhone } from "../lib/useMediaQuery";
+import { PhoneIcon } from "../phone/icons";
 import { Markdown } from "../chat/markdown";
 import { appStore } from "../store";
 import { isProposalApplied } from "../store/chat";
@@ -29,6 +31,9 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-di
  * status region receives the finished text in one go.
  */
 export function ChatMessage({ message, busy, onRetry, onCite, onApply }: ChatMessageProps) {
+  // A phone draws the conversation as the mockup does: your words in a dark bubble on the right, the reply plain on the
+  // left, no byline (it is still there for a screen reader).
+  const phone = usePhone();
   const mine = message.role === "user";
   const streaming = message.status === "streaming";
   const waiting = streaming && message.content === "";
@@ -39,9 +44,9 @@ export function ChatMessage({ message, busy, onRetry, onCite, onApply }: ChatMes
       data-chat-message={message.role}
       data-status={message.status}
       aria-busy={mine ? undefined : streaming}
-      className="flex flex-col items-stretch"
+      className={`flex flex-col ${phone ? (mine ? "items-end" : "max-w-[88%] items-stretch") : "items-stretch"}`}
     >
-      <div className="mb-1.5 flex items-center gap-[7px]">
+      <div className={phone ? "sr-only" : "mb-1.5 flex items-center gap-[7px]"}>
         <span
           aria-hidden="true"
           className={`grid size-[17px] flex-none place-items-center rounded-full text-[9px] text-inverse ${mine ? "bg-strong" : "bg-accent"}`}
@@ -73,10 +78,16 @@ export function ChatMessage({ message, busy, onRetry, onCite, onApply }: ChatMes
           data-chat-body
           // Once finished, the status region below carries the reply; one copy for a screen reader.
           aria-hidden={!mine && message.status === "done" ? true : undefined}
-          className={[
-            "text-[13.5px] leading-[1.55] text-primary",
-            mine ? "whitespace-pre-wrap rounded-md border border-subtle bg-elevated px-[11px] py-[9px]" : "",
-          ].join(" ")}
+          className={
+            phone
+              ? mine
+                ? "max-w-[88%] whitespace-pre-wrap rounded-[16px_16px_4px_16px] bg-primary px-3 py-2 text-[13.5px] leading-[1.45] text-inverse"
+                : "text-[13.5px] leading-[1.45] text-primary"
+              : [
+                  "text-[13.5px] leading-[1.55] text-primary",
+                  mine ? "whitespace-pre-wrap rounded-md border border-subtle bg-elevated px-[11px] py-[9px]" : "",
+                ].join(" ")
+          }
         >
           {mine ? message.content : <Markdown text={message.content} />}
           {streaming ? (
@@ -130,20 +141,32 @@ export function ChatMessage({ message, busy, onRetry, onCite, onApply }: ChatMes
  * deleted since has no chip; the others are unaffected.
  */
 function Citations({ ids, onCite }: { ids: string[]; onCite: (node: CanvasNode) => void }) {
+  const phone = usePhone();
   const nodes = useStore(appStore, (s) => s.nodes);
   const cited = ids.flatMap((id) => (nodes[id] ? [nodes[id]] : []));
   if (cited.length === 0) return null;
 
   return (
-    <ul role="list" aria-label="Cited nodes" className="m-0 mt-[9px] flex list-none flex-wrap gap-1.5 p-0">
+    <ul
+      role="list"
+      aria-label="Cited nodes"
+      className={`m-0 flex list-none flex-wrap gap-1.5 p-0 ${phone ? "mt-2" : "mt-[9px]"}`}
+    >
       {cited.map((node) => (
         <li key={node.id} className="max-w-full">
           <button
             type="button"
             onClick={() => onCite(node)}
-            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-subtle bg-elevated px-2.5 py-1 text-[11.5px] text-primary"
+            className={
+              phone
+                ? "inline-flex max-w-full items-center gap-[5px] whitespace-nowrap rounded-full border border-strong bg-panel px-[9px] py-[3px] text-[12px] text-primary"
+                : "inline-flex max-w-full items-center gap-1.5 rounded-full border border-subtle bg-elevated px-2.5 py-1 text-[11.5px] text-primary"
+            }
           >
-            <span aria-hidden="true" className={`size-1.5 flex-none rounded-full ${TYPE_BG[node.type]}`} />
+            <span
+              aria-hidden="true"
+              className={`${phone ? "size-[7px]" : "size-1.5"} flex-none rounded-full ${TYPE_BG[node.type]}`}
+            />
             <span className="truncate">{node.title.trim() || "Untitled"}</span>
           </button>
         </li>
@@ -154,6 +177,7 @@ function Citations({ ids, onCite }: { ids: string[]; onCite: (node: CanvasNode) 
 
 /** A reply's suggestion, with the one action that turns it into something on the canvas. */
 function ProposalCard({ message, onApply }: { message: Message; onApply: (message: Message) => Promise<void> }) {
+  const phone = usePhone();
   const nodes = useStore(appStore, (s) => s.nodes);
   const applied = useStore(appStore, (s) => isProposalApplied(s, message.id));
   const applying = useUi((s) => s.applyingProposals.includes(message.id));
@@ -169,11 +193,33 @@ function ProposalCard({ message, onApply }: { message: Message; onApply: (messag
   const preview = isNode ? proposal.payload.body?.trim() : "";
 
   return (
-    <div data-chat-proposal className="mt-2.5 rounded-md border border-dashed border-strong bg-rail px-3 py-[11px]">
-      <div className="mb-[5px] font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted">
-        {isNode ? COPY.proposalNode : COPY.proposalConnection}
-      </div>
-      <div id={labelId} className="text-[13.5px] font-semibold leading-snug text-primary">
+    <div
+      data-chat-proposal
+      className={
+        phone
+          ? "mt-2.5 rounded-[14px] border border-dashed border-strong bg-elevated px-3 py-2.5"
+          : "mt-2.5 rounded-md border border-dashed border-strong bg-rail px-3 py-[11px]"
+      }
+    >
+      {phone && isNode && proposal.payload.type ? (
+        // The mockup's type caption: "Proposed content", in the type's colour.
+        <span
+          className="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium uppercase leading-none tracking-[0.04em] text-[var(--t)] before:size-2 before:rounded-[2px] before:bg-[var(--t)] before:content-['']"
+          style={{ "--t": `var(--node-${proposal.payload.type})` } as CSSProperties}
+        >
+          {`Proposed ${proposal.payload.type}`}
+        </span>
+      ) : (
+        <div className="mb-[5px] font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted">
+          {isNode ? COPY.proposalNode : COPY.proposalConnection}
+        </div>
+      )}
+      <div
+        id={labelId}
+        className={
+          phone ? "mb-2 mt-1 text-[13.5px] font-medium text-primary" : "text-[13.5px] font-semibold leading-snug text-primary"
+        }
+      >
         {label}
       </div>
       {preview ? (
@@ -195,7 +241,17 @@ function ProposalCard({ message, onApply }: { message: Message; onApply: (messag
           {COPY.proposalAdding}
         </Button>
       ) : (
-        <Button variant="primary" className="mt-2.5" aria-describedby={labelId} onClick={() => void onApply(message)}>
+        <Button
+          variant="primary"
+          className={
+            phone
+              ? "min-h-9 !rounded-[10px] !border-0 !px-3.5 !py-0 !text-[13.5px] !font-medium !text-white"
+              : "mt-2.5"
+          }
+          aria-describedby={labelId}
+          onClick={() => void onApply(message)}
+        >
+          {phone ? <PhoneIcon name="plus" size={16} /> : null}
           {COPY.proposalAdd}
         </Button>
       )}

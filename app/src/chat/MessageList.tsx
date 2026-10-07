@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { useGoToNode } from "../canvas/useGoToNode";
 import { ChatMessage } from "../components/ChatMessage";
-import { isNarrow, isPhone } from "../lib/useMediaQuery";
+import { isNarrow, isPhone, usePhone } from "../lib/useMediaQuery";
 import { appStore } from "../store";
 import { CHAT_EXAMPLES, COPY } from "../ui/copy";
 import { uiStore } from "../ui/uiStore";
@@ -14,6 +14,7 @@ const FOLLOW_SLACK = 80;
 
 /** The conversation, kept scrolled to the newest words unless you have scrolled up to read. */
 export function MessageList() {
+  const phone = usePhone();
   const messages = useStore(appStore, (s) => s.chatMessages);
   const streaming = useStore(appStore, (s) => s.chatStreaming);
   const boardStatus = useStore(appStore, (s) => s.boardStatus);
@@ -49,9 +50,9 @@ export function MessageList() {
       tabIndex={0}
       role="region"
       aria-label="Conversation history"
-      className="min-h-0 flex-1 overflow-y-auto p-4"
+      className={`min-h-0 flex-1 overflow-y-auto ${phone ? "px-4 pb-3 pt-2.5" : "p-4"}`}
     >
-      <ol role="list" aria-label="Conversation" className="m-0 flex list-none flex-col gap-4 p-0">
+      <ol role="list" aria-label="Conversation" className={`m-0 flex list-none flex-col p-0 ${phone ? "gap-3.5" : "gap-4"}`}>
         {messages.map((message) => (
           <ChatMessage
             key={message.id}
