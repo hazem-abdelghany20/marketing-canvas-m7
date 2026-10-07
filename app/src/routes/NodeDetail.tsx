@@ -1,8 +1,7 @@
 import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useStore } from "zustand";
-import { useGoToNode } from "../canvas/useGoToNode";
 import { isTypingTarget } from "../canvas/useWorkspaceShortcuts";
 import { Button } from "../components/Button";
 import { ErrorState } from "../components/ErrorState";
@@ -14,6 +13,7 @@ import { TitleField } from "../components/detail/TitleField";
 import { TypePicker } from "../components/detail/TypePicker";
 import { useAutosave, type SaveStatus } from "../components/detail/useAutosave";
 import { usePhone } from "../lib/useMediaQuery";
+import { NodeSummary, useNodeExits } from "../phone/NodeSummary";
 import { useSheetDrag } from "../phone/useSheetDrag";
 import { appStore } from "../store";
 import type { CanvasNode } from "../types";
@@ -23,7 +23,8 @@ import { uiStore } from "../ui/uiStore";
 /**
  * S4 — a right-hand panel over the canvas, deep-linkable at /node/:id. The
  * canvas stays mounted and visible behind it; below 900px it becomes a full-width sheet, and
- * on a phone (below 640px) a sheet from the bottom, over the tab bar, that the handle pulls down.
+ * on a phone (below 640px) a sheet from the bottom, over the tab bar, that the handle pulls down. On a phone it opens as
+ * the mockup's half sheet, a summary (P6); Edit, or pulling it up, opens the full editor. A node just made opens editing.
  */
 export default function NodeDetail() {
   const { id = "" } = useParams();
@@ -35,7 +36,10 @@ export default function NodeDetail() {
   const aside = useRef<HTMLElement>(null);
   const focusTitle = (location.state as { focusTitle?: boolean } | null)?.focusTitle === true;
   const close = () => navigate("/");
-  const drag = useSheetDrag(close);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editing = !phone || focusTitle || editingId === id;
+  const edit = () => setEditingId(id);
+  const drag = useSheetDrag(close, editing ? undefined : edit);
 
   // Opening the panel moves focus into it (a fresh node's title claims it instead), so the next Tab
   // is on its contents rather than behind every card; closing gives focus back to the node's card.
@@ -91,7 +95,7 @@ export default function NodeDetail() {
           data-sheet-scrim
           aria-hidden="true"
           onClick={close}
-          className="absolute inset-0 z-[39] bg-[color-mix(in_srgb,var(--fg-primary)_28%,transparent)]"
+          className="absolute inset-0 z-[39] bg-[rgba(20,15,10,.3)]"
         />
       ) : null}
       <aside
@@ -101,9 +105,12 @@ export default function NodeDetail() {
         data-node-detail={id}
         data-sheet={phone ? "bottom" : undefined}
         style={phone ? drag.style : undefined}
+        data-sheet-size={phone ? (editing ? "full" : "half") : undefined}
         className={
           phone
-            ? "absolute inset-x-0 bottom-0 z-40 flex max-h-[92dvh] min-h-[56dvh] animate-mc-sheet flex-col rounded-t-[22px] border-t border-subtle bg-panel shadow-[0_-12px_40px_-16px_rgba(0,0,0,.45)]"
+            ? `absolute inset-x-0 bottom-0 z-40 flex animate-mc-sheet flex-col rounded-t-[22px] bg-panel shadow-[0_-12px_30px_-14px_rgba(30,20,10,.3)] ${
+                editing ? "max-h-[92dvh] min-h-[56dvh]" : "pb-7"
+              }`
             : "absolute inset-y-0 right-0 z-40 flex w-[480px] max-w-full animate-mc-rise flex-col border-l border-subtle bg-panel shadow-[0_0_60px_-20px_rgba(0,0,0,.45)] max-[899px]:w-full max-[899px]:border-l-0"
         }
       >
@@ -111,12 +118,14 @@ export default function NodeDetail() {
           <div
             data-sheet-handle
             {...drag.handleProps}
-            className="grid h-7 w-full flex-none touch-none place-items-center"
+            className="flex w-full flex-none touch-none justify-center pb-1 pt-2"
           >
-            <span aria-hidden="true" className="h-1 w-10 rounded-full bg-[var(--border-strong)]" />
+            <span aria-hidden="true" className="h-1 w-[38px] rounded-[4px] bg-[var(--border-strong)]" />
           </div>
         ) : null}
-        {node ? (
+        {node && !editing ? (
+          <NodeSummary node={node} onClose={close} onEdit={edit} />
+        ) : node ? (
           <NodePanel key={node.id} node={node} onClose={close} />
         ) : status === "ready" ? (
           <NotFound onClose={close} />
@@ -144,7 +153,7 @@ export default function NodeDetail() {
 function NodePanel({ node, onClose }: { node: CanvasNode; onClose: () => void }) {
   const location = useLocation();
   const phone = usePhone();
-  const goTo = useGoToNode();
+  const exits = useNodeExits(node, onClose);
   const autosave = useAutosave(node.id);
   const focusTitle = (location.state as { focusTitle?: boolean } | null)?.focusTitle === true;
 
@@ -174,27 +183,10 @@ function NodePanel({ node, onClose }: { node: CanvasNode; onClose: () => void })
         {phone ? (
           // Where a phone goes from here: back to the node on the board, or to the assistant with a question about it.
           <div className="flex gap-2">
-            <Button
-              className="min-h-10 flex-1 text-[13px]"
-              onClick={() => {
-                uiStore.getState().setPhoneTab("board");
-                goTo(node, { minZoom: 0.75 });
-                onClose();
-              }}
-            >
+            <Button className="min-h-10 flex-1 text-[13px]" onClick={exits.showOnBoard}>
               Show on board
             </Button>
-            <Button
-              className="min-h-10 flex-1 text-[13px]"
-              onClick={() => {
-                const title = node.title.trim();
-                uiStore.getState().setPhoneTab("chat");
-                uiStore
-                  .getState()
-                  .prefillChat(title ? `Tell me about \u201c${title}\u201d.` : "Tell me about this node.");
-                onClose();
-              }}
-            >
+            <Button className="min-h-10 flex-1 text-[13px]" onClick={exits.askAboutIt}>
               Ask about it
             </Button>
           </div>

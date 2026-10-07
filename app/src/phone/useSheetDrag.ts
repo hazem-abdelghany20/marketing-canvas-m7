@@ -2,13 +2,15 @@ import { useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
 /** A sheet let go this far down closes; short of it, it comes back. */
 export const SHEET_CLOSE_DISTANCE = 90;
+/** A half sheet pulled this far up opens all the way. */
+export const SHEET_EXPAND_DISTANCE = 60;
 
 /**
  * Pulling a bottom sheet down by its handle. The sheet follows the finger (and no further up than it started), and on release
- * it either goes, past {@link SHEET_CLOSE_DISTANCE}, or returns. Spread `handleProps` on the handle, which should be
+ * it either goes, past {@link SHEET_CLOSE_DISTANCE}, or returns; a half sheet pulled up past {@link SHEET_EXPAND_DISTANCE} opens. Spread `handleProps` on the handle, which should be
  * `touch-none` so the browser does not take the drag for a scroll, and `style` on the sheet.
  */
-export function useSheetDrag(onClose: () => void) {
+export function useSheetDrag(onClose: () => void, onExpand?: () => void) {
   const [offset, setOffset] = useState(0);
   const press = useRef<{ id: number; y: number } | null>(null);
 
@@ -18,6 +20,7 @@ export function useSheetDrag(onClose: () => void) {
     press.current = null;
     setOffset(0);
     if (release && event.clientY - held.y > SHEET_CLOSE_DISTANCE) onClose();
+    else if (release && onExpand && held.y - event.clientY > SHEET_EXPAND_DISTANCE) onExpand();
   };
 
   const handleProps = {

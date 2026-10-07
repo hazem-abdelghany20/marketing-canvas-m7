@@ -167,6 +167,7 @@ test("connect mode started from another tab brings the Board forward", async ({ 
     .getByRole("button", { name: /^Vayn ICP/ })
     .tap(); // the card on screen opens its detail
   await expect(page.getByRole("complementary", { name: "Node detail" })).toBeVisible();
+  await page.getByRole("button", { name: "Edit" }).tap(); // it opens as a summary (030); connecting is the editor's
 
   await page.getByRole("button", { name: "+ Connect" }).tap();
 

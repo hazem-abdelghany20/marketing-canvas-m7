@@ -220,6 +220,7 @@ test.describe("a node's detail as a sheet", () => {
   });
 
   test("keeps its fields at 16px, so the browser does not zoom the page to one", async ({ page }) => {
+    await detail(page).getByRole("button", { name: "Edit" }).tap(); // it opens as a summary (030)
     for (const name of ["Title", "Description", "New annotation"]) {
       const size = await detail(page)
         .getByRole("textbox", { name })

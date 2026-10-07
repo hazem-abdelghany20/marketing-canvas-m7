@@ -23,6 +23,12 @@ async function openNode(id = "nd_str_icp") {
   const rendered = renderAt(`/node/${id}`);
   const panel = await screen.findByRole("complementary", { name: "Node detail" });
   await waitFor(() => expect(appStore.getState().boardStatus).toBe("ready"));
+  // A phone opens a node as a summary (030); these specs are about the editor it opens into.
+  await waitFor(() =>
+    expect(within(panel).queryByRole("button", { name: "Edit" }) ?? within(panel).queryByRole("textbox", { name: "Title" })).toBeTruthy(),
+  );
+  const edit = within(panel).queryByRole("button", { name: "Edit" });
+  if (edit) fireEvent.click(edit);
   await waitFor(() => expect(within(panel).getByRole("textbox", { name: "Title" })).toBeTruthy());
   return { ...rendered, panel };
 }
