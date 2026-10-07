@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { structuralProblems } from "./structure";
 import { demoSession, openCanvas } from "./support";
 
@@ -11,7 +11,6 @@ const TABS = ["Trace", "Board", "Chat", "Find"] as const;
 
 const bar = (page: Page) => page.getByRole("navigation", { name: "Main" });
 const tab = (page: Page, name: string) => bar(page).getByRole("button", { name });
-const size = async (el: Locator) => (await el.boundingBox())!;
 
 test.beforeEach(async ({ page }) => {
   await demoSession(page);
@@ -94,61 +93,8 @@ test("each of the four screens, and the sheets over them, has no structural prob
   expect(await structuralProblems(page), "a node's sheet").toEqual([]);
 });
 
-test("every control that is tapped to do something is a target a thumb can hit", async ({ page }) => {
-  await openCanvas(page);
-  const tooSmall: string[] = [];
-  const check = async (what: string, els: Locator, min: number) => {
-    for (const el of await els.all()) {
-      const box = await size(el);
-      if (box.width < min - 0.5 || box.height < min - 0.5)
-        tooSmall.push(
-          `${what}: ${(await el.getAttribute("aria-label")) ?? (await el.textContent())?.trim()} ${Math.round(box.width)}x${Math.round(box.height)}`,
-        );
-    }
-  };
-
-  await check("tab bar", bar(page).getByRole("button"), 44);
-
-  await tab(page, "Trace").tap();
-  await check("Trace card", page.getByRole("region", { name: "Trace" }).locator("[data-trace-card]"), 40);
-  await check("Trace undo", page.getByRole("region", { name: "Trace" }).getByRole("button", { name: "Undo" }), 40);
-
-  await tab(page, "Board").tap();
-  await check("top bar", page.getByRole("toolbar", { name: "Canvas tools" }).getByRole("button"), 40);
-  await check("dock", page.getByRole("group", { name: "Whiteboard tools" }).getByRole("button"), 40);
-
-  await tab(page, "Chat").tap();
-  const chat = page.getByRole("complementary", { name: "Assistant" });
-  await check("chat composer", chat.getByRole("button", { name: /^(Send|Send the board)$/ }), 40);
-  await check("reply modes", chat.getByRole("radio"), 28); // a row of four across the width, as tall as a button
-  await check("Open board", page.getByRole("button", { name: "Open board" }), 40);
-
-  await tab(page, "Find").tap();
-  await check("Find row", page.getByRole("region", { name: "Find" }).locator("ul button"), 44 - 1);
-  await check("Find filter", page.getByRole("region", { name: "Find" }).getByRole("radio"), 40);
-
-  expect(tooSmall).toEqual([]);
-});
-
-test("the node's sheet gives every button a target a thumb can hit", async ({ page }) => {
-  await openCanvas(page, "/node/nd_con_linenstyle");
-  const sheet = page.getByRole("complementary", { name: "Node detail" });
-  await expect(sheet).toBeVisible();
-  await page.waitForTimeout(400);
-  const tooSmall: string[] = [];
-
-  for (const el of await sheet.getByRole("button").all()) {
-    if (!(await el.isVisible())) continue;
-    const box = await size(el);
-    if (box.height < 39.5 || box.width < 39.5) {
-      tooSmall.push(
-        `${(await el.getAttribute("aria-label")) ?? (await el.textContent())?.trim()} ${Math.round(box.width)}x${Math.round(box.height)}`,
-      );
-    }
-  }
-
-  expect(tooSmall).toEqual([]);
-});
+// Ticket 030: controls are the size design/mobile-direction.html draws them (the user's call), so 029's 40/44px
+// touch-target specs and its "no fading a peeking card" spec are replaced by e2e/phone-mockup.spec.ts.
 
 test("every text field on a phone is at least 16px, so the browser never zooms the page to one", async ({ page }) => {
   await openCanvas(page);
@@ -189,19 +135,6 @@ test("every text field on a phone is at least 16px, so the browser never zooms t
   await fields("comment");
 
   expect(tooSmall).toEqual([]);
-});
-
-test("a card peeking in at the edge of its row is not dimmed with opacity, which would take its text below 4.5:1", async ({
-  page,
-}) => {
-  await openCanvas(page);
-
-  const opacities = await page.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>("[data-trace-card]")].map((el) => getComputedStyle(el).opacity),
-  );
-
-  expect(opacities.length).toBeGreaterThan(4);
-  expect(new Set(opacities)).toEqual(new Set(["1"]));
 });
 
 test.describe("with reduced motion asked for", () => {
