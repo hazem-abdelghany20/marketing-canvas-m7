@@ -45,6 +45,12 @@ Below 640px the workspace is four screens and a bar, drawn in `design/mobile-dir
 
 Order: 023 first, then 024–028 in any order that suits (028's Trace button needs 024). 029 last.
 
+## Mockup fidelity — 030 (on `030-mockup-fidelity`, off `mobile-optimization-ui`)
+
+- **030 The phone layout, pixel for pixel:** every phone screen held to `design/mobile-direction.html` at its 340x720
+  screen, a red/green pair per screen; the mockup's own control sizes replace 029's touch targets, a node opens as a
+  summary, and what the mockup does not show is kept one tap away.
+
 ---
 
 ## Prompt for tickets 011–015

@@ -217,8 +217,8 @@ shown; these add what the phone does differently, and say where a tooltip has to
 | State | Behavior |
 |---|---|
 | **Loading** | A node's sheet deep-linked before the board arrives: the skeleton of S4 in the sheet. The Add sheet opens only once the board is there. |
-| **Empty** | S4's empty states inside the sheet (no body, no files, no connections, no notes). The Add sheet always has its options. |
+| **Empty** | A node's summary leaves out Serves, Served by or Relates to when there is none, and the body when there is none; the editor shows S4's empty states. The Add sheet always has its options. |
 | **Error** | *A node can't be made:* "Couldn't add the node. Check your connection and try again." with Retry, nothing left half made. *Made but not connected:* "Added the node, but couldn't connect it. Check your connection and try again." with Retry. Everything else in the sheet is S4's. |
 | **Success** | A node made from the sheet opens with its title ready to be typed; a node made from an empty row appears in its row and opens to be named. One Undo takes a node and its connection away together. |
-| **Disabled** | Draft in chat is off while a reply is coming, and says "Wait for the current reply to finish." in its own second line. S4's rules otherwise. |
+| **Disabled** | S4's rules in the editor. The summary and the Add sheet have nothing that can be off. |
 | **Permissions** | n/a — single actor. |

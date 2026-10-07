@@ -609,9 +609,14 @@ a sheet, a toolbar of icons) is the tablet's, between 640px and 900px, and is no
 └──────────────────────────────┘
 ```
 
-- **Tab bar** — Trace, Board, Chat, Find, Add, along the bottom edge. Every tab is at least 44px high. It clears
-  the home indicator itself (the page asks for the whole screen with `viewport-fit=cover`). Chat is raised, where
-  the thumb rests. **Add** is not a screen: it opens a sheet over the one shown (P6).
+- **Tab bar** — Trace, Board, Chat, Find, Add, along the bottom edge: 58px and the home indicator (82px on a phone that
+  has one), 11px labels under the phone's own 18px icons, the shown tab semibold with an accent icon. It clears the home
+  indicator itself (the page asks for the whole screen with `viewport-fit=cover`). Chat is a 54px disc raised 26px, where the
+  thumb rests. **Add** is not a screen: it opens a sheet over the one shown (P6).
+- **The look is `design/mobile-direction.html`'s, to the pixel** (030), at its 340×720 screen with a phone's safe areas:
+  sizes, type, colour and the controls' own sizes (the user chose the mockup's over 029's 40/44px targets). The phone inherits
+  the mockup's 15px body. What the mockup does not show is kept one tap away, not removed. Text fields stay 16px, so focusing
+  one never zooms the page; their placeholders are the mockup's 14px.
 - **Screens** — one at a time. The others are hidden from sight, from Tab and from assistive technology.
 - **The canvas is never unmounted.** The Board is kept laid out, but `inert` and see-through, so React Flow keeps
   its size and the camera, the selection and a file still being read survive a trip to another tab.
@@ -681,8 +686,10 @@ and swiping a row redraws every row under it.
   its type). A node never appears twice in one chain; rows stop at eight.
 - **A row** scrolls sideways and snaps to a card, with the next peeking in at the edge. The dots, the "1 of 2" and the
   arrow keys are the other ways to move along it.
-- **A card** shows its title and the start of its body, how many serve it (a goal: how many sit under it, at any
-  depth), the nodes it is joined to by `relates-to`, and how many notes it carries.
+- **A card** shows its title and the start of its body (a goal: two lines; the rest: one), how many serve it (a goal: how
+  many sit under it, at any depth), the nodes it is joined to by `relates-to`, and how many notes it carries. A row's cards
+  are as tall as its tallest. Each row takes its layer's colour: the dot of the card on screen, the served-by line above it,
+  and 55% of the on-screen card's border. A card peeking in is faded to half, as the mockup draws it.
 - **Under a goal, strategy or campaign that nothing serves** the next row is empty: "Nothing serves this yet." and
   a button to add what is expected there (P6). Nothing is expected to serve content, an asset or a note.
 
@@ -727,35 +734,37 @@ The canvas, with the whiteboard's tools along the bottom of it and everything th
 ```
 ┌──────────────────────────────┐
 │ ┌─────────────────┐ ┌────────┐│
-│ │ Board name  ↶ ⋯ │ │ Ask…   ││   top bar: name, Undo, More; Ask about this
+│ │ Board name    ↶ │ │ Ask…   ││   top bar: the name (a button for the board's actions), Undo; Ask about this
 │ └─────────────────┘ └────────┘│
 │                              │
 │           canvas             │
 │                              │
-│      ┌ colours · widths ┐    │   ink options, above the dock, while a pen is in hand
-│   ┌── ↖ ✎ ▮ ⌫ ▢ T ◌ ──┐     │   the dock: seven tools in a row
+│    ┌ ● ● ● ● ● │ 3 px ┐      │   ink options, above the dock, while a pen is in hand
+│    ┌── ↖ ✎ ▮ ⌫ ▢ ◌ ──┐      │   the dock: six tools in a row
 ├──────────────────────────────┤
 │           tab bar            │
 └──────────────────────────────┘
 ```
 
-- **Dock** — the seven tools of O7 in one row above the tab bar, each at least 40px. The tools' states, keys and
-  reasons are O7's; Send, Save and Clear ink are not in it.
-- **Ink options** — the colours and widths in a bar above the dock while the Pen or the Highlighter is in hand.
-- **Top bar** — the board's name, Undo, a **More** menu and **Ask about this**, which sends the board to the assistant
-  (O7's rules: "Draw or add a note first.", "Wait for the current reply to finish."). More offers Connect, Auto-arrange,
-  Fit to screen, Save as PNG, and Clear ink while there is ink.
+- **Dock** — six of O7's tools in one row above the tab bar, 42px each, as the mockup has them. The tools' states, keys and
+  reasons are O7's; Text, Send, Save and Clear ink are not in it.
+- **Ink options** — one row above the dock while the Pen or the Highlighter is in hand: the mockup's five inks (Plum is the
+  desktop's) and the width, a tap that steps 3 → 6 → 2 px.
+- **Top bar** — a pill with the board's name and Undo, and **Ask about this**, which sends the board to the assistant (O7's
+  rules: "Draw or add a note first.", "Wait for the current reply to finish."). The name is the button for the board's
+  actions: Connect, Text, Auto-arrange, Fit to screen, Save as PNG, and Clear ink while there is ink.
 - **Two fingers are the camera.** With a tool that draws or places in hand, one finger is the tool's; a second throws the
   first finger's stroke away and the pair pan and zoom the board until every finger lifts. A finger left down after the other
   leaves does nothing. A third is ignored.
 - **A control that can't be used says why when it is tapped** (a toast, or the item's own second line), because a
   touch screen has no tooltip to read.
-- **The camera is the board's, not the phone's.** The first time the Board is shown, if fewer than half the cards are
-  centred on screen (a wider screen left it), it is brought back to all of them.
+- **The camera is the board's, not the phone's.** The first time the Board is shown, if a wider screen left it zoomed out past
+  reading (under 75%) or on no card, it is brought to the goal being traced, at 100%, under the top bar. The phone hides the
+  canvas's corner credit.
 
 ### Content
 O7, O8, O9: the same strokes, marks and pins. The hint for a tool is written for a finger ("One finger draws · two
-fingers pan and zoom") with a Done button where a desktop has Esc.
+fingers pan and zoom"), a quiet pill under the top bar; Select in the dock puts the tool away.
 
 ### Behavior
 
@@ -771,7 +780,7 @@ Ask about this               → draw the board, show Chat, stream the reply
 See `state-matrix.md`, row P3.
 
 ### Acceptance criteria
-- Given the Board tab, when it renders, then the seven tools sit in one bar above the tab bar, each at least 40px across.
+- Given the Board tab, when it renders, then six tools sit in one bar above the tab bar, and Text is in the board's actions.
 - Given a tool that draws is in hand, when a second finger touches down, then the stroke is thrown away and nothing is saved,
   and the two fingers pan and zoom the board until every finger lifts.
 - Given a disabled control, when it is tapped, then it says why.
@@ -787,15 +796,15 @@ The assistant as a screen of its own, with a strip of the board above the conver
 ### Layout
 
 ```
- ● ● ASSISTANT
- 2 CITED                    Open board
+ Assistant                          ⌕
  ┌──────────────────────────────────┐
- │  [Vayn Ramadan push]──[Vayn pos…]│   the strip
- │      [Email: Ramadan…]           │
+ │ (2 cited)                        │   the strip
+ │  [Vayn Ramadan push]──[Vayn pos…]│
+ │              (⤢ Open board)      │
  └──────────────────────────────────┘
- [Auto][Generator][Librarian][Reasoner]
+ (Auto)(Generator)(Librarian)(Reasoner)
    …the conversation…
- (◉) [ Ask, or say “draft a…”   ] (➤)
+ (◉) [ Ask, or tell it what to add… ] (↑)
 ```
 
 - **The strip** is an outline of the whole board while nothing is cited. When a reply cites nodes it is those nodes and
@@ -806,6 +815,9 @@ The assistant as a screen of its own, with a strip of the board above the conver
   does not zoom the page when it takes focus, and grows to about four lines. **Enter adds a line**; Send sends, because
   Shift+Enter is out of reach of a phone's keyboard.
 - **A citation chip** in a reply shows the Board with that node selected and in view.
+- **As the mockup draws it:** "Assistant" with a Search that goes to Find; the strip 140px in a 14px frame, its count and Open
+  board floating inside; the modes as pill chips; your words in a dark bubble on the right, the reply plain on the left with no
+  byline (it is still read out), a proposal as a dashed card with its type in colour.
 - Everything O6 does stays: Retry, proposals, example prompts, the four modes, the single announcement of a finished reply.
 
 ### Behavior
@@ -837,21 +849,22 @@ Search, and an index of the board by type. It is the way into Trace for any node
 ### Layout
 
 ```
- Find
  ┌──────────────────────────────────┐
  │ ⌕  Find a node to trace          │
  └──────────────────────────────────┘
- (All 16) Goals Strategies Campaigns …      one row, scrolls sideways
+ (All 16) (•Goals) (•Campaigns) (•Content) …  one row, scrolls sideways
  GOALS
    Vayn: 500 orders/month by Q4        7 under it
- STRATEGIES · CAMPAIGNS · CONTENT
+ CONTENT
    Reel: 3 ways to style linen            trace →
  NOT CONNECTED TO A GOAL
    IG reach down 30% since the algo…      no links
 ```
 
-- **Nothing typed:** the nodes that reach a goal, grouped by type in the order of the chain, then, in a group of its own, what
-  no chain of `serves` edges reaches a goal from — each node once, saying why (`no links`, `relates only`, `no goal above it`).
+- **Nothing typed:** the two ends of the chains that reach a goal, goals and content, then, in a group of its own, what no chain
+  of `serves` edges reaches a goal from — each node once at most, saying why (`no links`, `relates only`, `no goal above it`).
+  Strategies and campaigns are a chip away, and Trace is where the middle of a chain is read (030). The page is one scroll, as
+  the mockup has it, with the title kept for assistive technology only.
 - **A type chosen:** every node of it, connected or not. **Something typed:** the matches, titles before bodies, as search does
   on a desktop, narrowed by the type chosen. Enter takes the first match.
 - **Choosing a node** that reaches a goal shows Trace with its whole chain lined up (a goal: Trace on that goal); one that does
@@ -871,7 +884,7 @@ Tap a row                   → trace it, or open it
 See `state-matrix.md`, row P5.
 
 ### Acceptance criteria
-- Given nothing typed, when Find renders, then nodes are grouped by type and what no goal is above is last.
+- Given nothing typed, when Find renders, then it lists Goals, Content and, last, what no goal is above.
 - Given a node that reaches a goal, when it is chosen, then Trace opens with its chain lined up; given one that does not, then its detail opens.
 - Given text that matches nothing, then Find says so and offers to make a note with that title.
 - Given the field, then it is 16px.
@@ -889,23 +902,23 @@ The two bottom sheets: what the Add tab opens, and a node's detail.
  │ Add to the board          ✕  │
  │ ┌ Goal ──────┐ ┌ Strategy ──┐│
  │ ┌ Campaign ──┐ ┌ Content ───┐│
- │ ┌ Note ──────┐               │
- │ ┌ Import a file ─────────────┐│
- │ ┌ Draft in chat ─────────────┐│
+ │ ┌ Note ──────┐ ┌ Import… ───┐│
  └──────────────────────────────┘
 ```
 
-- **The Add sheet** offers a node of each type (the type is chosen now; the desktop's menu makes a note and asks later), each
-  saying what it is for; a file to bring in; and a draft to ask the assistant for (off while a reply is coming). A type makes the
+- **The Add sheet** offers a node of each type (the type is chosen now; the desktop's menu makes a note and asks later), a word
+  each with what it is for in its title, and a file to bring in: three rows of two. Drafting with the assistant is the Chat tab's. A type makes the
   node in the middle of the board and opens it with its title ready to be typed. Escape, a tap on the scrim, Close and a pull down
   on the handle all close it and make nothing; focus goes back to the Add tab.
 - **Adding what serves a card.** An empty row in Trace offers to add what it expects ("Add a strategy" …). It makes a node of that
   type and connects it so that it **serves** the card above, as one step to undo, and opens it to be named. If only the connection
   fails the node stays and the toast offers the connection again.
-- **A node's detail** (S4) is a bottom sheet: rounded at the top, a handle, a scrim, never taller than 92% of the screen. The handle
-  pulls it down; Escape, the scrim, Close and the browser's Back close it. **Show on board** shows the Board with the node selected
-  and in view; **Ask about it** shows Chat with a question about the node waiting in the composer, not sent. Every button in it is
-  at least 40px, and its fields 16px.
+- **A node's detail** opens as the mockup's half sheet, a summary to read: the type in colour, the title and body, what it
+  serves, what serves it and what it relates to (each a row that opens that node), **Show on board** and **Ask about it**.
+  **Edit**, or pulling the handle up, opens the full editor (S4) as a sheet never taller than 92% of the screen, its fields 16px;
+  a node just made opens there. The handle pulls either down; Escape, the scrim, Close and the browser's Back close it. **Show on
+  board** shows the Board with the node selected and in view; **Ask about it** shows Chat with a question about the node waiting
+  in the composer, not sent.
 
 ### Behavior
 
@@ -921,7 +934,8 @@ Show on board / Ask about it→ go to the Board, or to Chat with a question wait
 See `state-matrix.md`, row P6.
 
 ### Acceptance criteria
-- Given the Add tab, when it is used, then a sheet offers Goal, Strategy, Campaign, Content and Note, Import a file, and Draft in chat.
+- Given the Add tab, when it is used, then a sheet offers Goal, Strategy, Campaign, Content, Note and Import a file.
+- Given the card on screen in Trace, when it is tapped, then its summary opens as a half sheet; given Edit, then the editor.
 - Given an empty row in Trace, when its button is used, then a node of that type is made, connected so that it serves the card above,
   and one Undo takes both away.
 - Given a node's detail on a phone, then it is a sheet from the bottom, and dragging its handle down, Escape, the scrim, Close and Back all close it.
@@ -1011,5 +1025,5 @@ Tokens    — --bg-elevated · --ok · --warn · --danger
 - No raw hex outside `tokens.css`. No inline colors.
 - Motion respects `prefers-reduced-motion`: auto-arrange and pans become instant, and on a phone a sheet
   does not rise and a row goes to its card at once.
-- On a phone every control is a target at least 40px across (the tab bar's 44px), every text field is at least
-  16px, and a control that can't be used says why when it is tapped.
+- On a phone every control is the size `design/mobile-direction.html` draws it (030; this replaced 029's 40/44px
+  targets), every text field is at least 16px, and a control that can't be used says why when it is tapped.

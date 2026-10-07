@@ -127,15 +127,4 @@ test("opens a node's detail over the bar, and the screen underneath stays as it 
   await expect(tab(page, "Trace")).toHaveAttribute("aria-current", "page");
 });
 
-test("asking for the assistant from the Add sheet shows Chat with the composer focused", async ({ page }) => {
-  await openCanvas(page);
-
-  await tab(page, "Add").tap();
-  await page
-    .getByRole("dialog", { name: "Add to the board" })
-    .getByRole("button", { name: /^Draft in chat/ })
-    .tap();
-
-  await expect(tab(page, "Chat")).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("textbox", { name: "Message" })).toBeFocused();
-});
+// Asking the assistant from the Add sheet went with "Draft in chat" (030): drafting is the Chat tab's, one tap away.
