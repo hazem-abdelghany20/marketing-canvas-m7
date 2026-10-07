@@ -104,14 +104,7 @@ test.describe("the Add tab", () => {
     await expect(tab(page, "Add")).toBeFocused();
   });
 
-  test("Draft in chat shows the assistant with the composer ready", async ({ page }) => {
-    await sheet(page)
-      .getByRole("button", { name: /^Draft in chat/ })
-      .tap();
-
-    await expect(tab(page, "Chat")).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("textbox", { name: "Message" })).toBeFocused();
-  });
+  // Drafting with the assistant is the Chat tab's on a phone (030): the mockup's sheet has no room for it.
 });
 
 test.describe("what serves a card", () => {

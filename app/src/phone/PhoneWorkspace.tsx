@@ -100,7 +100,6 @@ export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
     openAddMenu,
     closeAddMenu,
     addOfType,
-    fromChat,
     pickFile,
     onPickFiles,
   } = w;
@@ -166,7 +165,7 @@ export function PhoneWorkspace({ w }: { w: WorkspaceController }) {
       <TabBar onAdd={openAddMenu} addOpen={addMenuOpen} />
       {/* The Add sheet rises over the bar, as a node's detail does. */}
       {addMenuOpen && ready ? (
-        <AddSheet onClose={closeAddMenu} onType={addOfType} onFile={pickFile} onFromChat={fromChat} />
+        <AddSheet onClose={closeAddMenu} onType={addOfType} onFile={pickFile} />
       ) : null}
       {/* A node's detail is the last thing in the shell and above the bar, so it covers it. */}
       <Outlet />

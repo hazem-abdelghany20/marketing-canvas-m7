@@ -98,8 +98,6 @@ export const COPY = {
   addSheetTitle: "Add to the board",
   addSheetImport: "Import a file",
   addSheetImportHint: "Images, PDF, text, Office \u00b7 25MB",
-  addSheetDraft: "Draft in chat",
-  addSheetDraftHint: "Ask the assistant to write one",
   traceServedBy: "served by",
   traceSwipeHint: "Swipe any row to change everything under it",
 

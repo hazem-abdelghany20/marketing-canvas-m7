@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { controlledSse } from "../../api/__tests__/helpers";
 import { apiError, json, network, renderAt, resetApp, serveBoard, user } from "../../routes/__tests__/harness";
 import { appStore } from "../../store";
 import { SEED_EDGES, SEED_NODES } from "../../test/seed";
@@ -56,11 +55,11 @@ const openSheet = async () => {
 };
 
 describe("the Add sheet", () => {
-  it("offers a node of each type to make, a file to bring in, and a draft to ask the assistant for", async () => {
+  it("offers a node of each type to make and a file to bring in; drafting is the Chat tab's (030)", async () => {
     await openSheet();
 
     const buttons = within(sheet()).getAllByRole("button");
-    const names = ["Close", "Goal", "Strategy", "Campaign", "Content", "Note", "Import a file", "Draft in chat"];
+    const names = ["Close", "Goal", "Strategy", "Campaign", "Content", "Note", "Import a file"];
     expect(buttons).toHaveLength(names.length);
     names.forEach((name, i) => {
       const button = buttons[i]!;
@@ -68,9 +67,9 @@ describe("the Add sheet", () => {
         true,
       );
     });
-    // Each type says what it is for, so the first choice is an informed one.
-    expect(pick(/^Goal/).textContent).toContain("Outcome with a number and a horizon");
-    expect(pick(/^Strategy/).textContent).toContain("Positioning, ICP, messaging");
+    // Each type says what it is for, in its title; the mockup's choices are a word each.
+    expect(pick(/^Goal/).title).toBe("Outcome with a number and a horizon");
+    expect(pick(/^Strategy/).title).toBe("Positioning, ICP, messaging");
   });
 
   it("is a modal dialog, and the Add tab says it is open while it is", async () => {
@@ -170,7 +169,7 @@ describe("closing it without making anything", () => {
   });
 });
 
-describe("Import a file and Draft in chat", () => {
+describe("Import a file", () => {
   it("opens the file picker from Import a file, and closes", async () => {
     const click = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
     await openSheet();
@@ -181,36 +180,4 @@ describe("Import a file and Draft in chat", () => {
     expect(screen.queryByRole("dialog", { name: "Add to the board" })).toBeNull();
   });
 
-  it("shows Chat with the composer ready from Draft in chat, and writes nothing in it", async () => {
-    await openSheet();
-
-    fireEvent.click(pick(/^Draft in chat/));
-
-    expect(uiStore.getState().phoneTab).toBe("chat");
-    const composer = (await screen.findByRole("textbox", { name: "Message" })) as HTMLTextAreaElement;
-    await waitFor(() => expect(document.activeElement).toBe(composer));
-    expect(composer.value).toBe("");
-  });
-
-  it("turns Draft in chat off, saying why in its own words, while a reply is still coming", async () => {
-    const stream = controlledSse();
-    network.on("POST /chat", () => stream.response);
-    await openApp();
-    act(() => {
-      uiStore.getState().setChatDraft("hello");
-    });
-    fireEvent.click(within(screen.getByRole("navigation", { name: "Main" })).getByRole("button", { name: "Chat" }));
-    fireEvent.click(screen.getByRole("button", { name: "Send" }));
-    await waitFor(() => expect(appStore.getState().chatStreaming).toBe(true));
-
-    fireEvent.click(addTab());
-    const draft = await within(await screen.findByRole("dialog", { name: "Add to the board" })).findByRole("button", {
-      name: /^Draft in chat/,
-    });
-
-    expect(draft.getAttribute("aria-disabled")).toBe("true");
-    expect(draft.textContent).toContain(COPY.waitForReply);
-    stream.push("done", { citedNodeIds: [], proposal: null });
-    stream.close();
-  });
 });

@@ -1,11 +1,8 @@
-import { FileUp, MessageSquare, X, type LucideIcon } from "lucide-react";
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
-import { useStore } from "zustand";
-import { Button } from "../components/Button";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { TYPE_BG, TYPE_MEANS, typeLabel } from "../components/TypeChip";
-import { appStore } from "../store";
 import type { NodeType } from "../types";
 import { COPY } from "../ui/copy";
+import { PhoneIcon } from "./icons";
 import { useSheetDrag } from "./useSheetDrag";
 
 /** The types the sheet makes. An asset is not here: assets come from a file, which is its own choice below. */
@@ -16,16 +13,15 @@ interface AddSheetProps {
   /** A type was chosen: make a node of it. */
   onType: (type: NodeType) => void;
   onFile: () => void;
-  onFromChat: () => void;
 }
 
 /**
- * P6 — what the Add tab opens: a bottom sheet over the screen shown, to put something on the board. A node of a type (chosen
- * now, where the desktop's menu makes a note and asks later), a file, or a draft from the assistant. Escape, a tap on the
- * scrim, Close and a pull down on the handle all close it and make nothing.
+ * P6 — what the Add tab opens: a bottom sheet over the screen shown, to put something on the board, as
+ * design/mobile-direction.html draws it: a node of a type (chosen now, where the desktop's menu makes a note and asks
+ * later), or a file. A draft from the assistant is the Chat tab's, one tap away (030). Escape, a tap on the scrim, Close and
+ * a pull down on the handle all close it and make nothing.
  */
-export function AddSheet({ onClose, onType, onFile, onFromChat }: AddSheetProps) {
-  const streaming = useStore(appStore, (s) => s.chatStreaming);
+export function AddSheet({ onClose, onType, onFile }: AddSheetProps) {
   const drag = useSheetDrag(onClose);
   const dialog = useRef<HTMLDivElement>(null);
   const first = useRef<HTMLButtonElement>(null);
@@ -54,13 +50,16 @@ export function AddSheet({ onClose, onType, onFile, onFromChat }: AddSheetProps)
     }
   }
 
+  const CHOICE =
+    "flex items-center gap-2.5 rounded-md border border-subtle bg-elevated p-3 text-left text-[14px] text-primary [touch-action:manipulation]";
+
   return (
     <>
       <div
         data-sheet-scrim
         aria-hidden="true"
         onClick={onClose}
-        className="absolute inset-0 z-[44] bg-[color-mix(in_srgb,var(--fg-primary)_28%,transparent)]"
+        className="absolute inset-0 z-[44] bg-[rgba(20,15,10,.3)]"
       />
       <div
         ref={dialog}
@@ -69,22 +68,22 @@ export function AddSheet({ onClose, onType, onFile, onFromChat }: AddSheetProps)
         aria-label={COPY.addSheetTitle}
         onKeyDown={onKeyDown}
         style={drag.style}
-        className="absolute inset-x-0 bottom-0 z-[45] animate-mc-sheet rounded-t-[22px] border-t border-subtle bg-panel pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-16px_rgba(0,0,0,.45)]"
+        className="absolute inset-x-0 bottom-0 z-[45] animate-mc-sheet rounded-t-[22px] bg-panel pb-7 shadow-[0_-12px_30px_-14px_rgba(30,20,10,.3)]"
       >
-        <div data-sheet-handle {...drag.handleProps} className="grid h-7 w-full touch-none place-items-center">
-          <span aria-hidden="true" className="h-1 w-10 rounded-full bg-[var(--border-strong)]" />
+        <div data-sheet-handle {...drag.handleProps} className="flex w-full touch-none justify-center pb-1 pt-2">
+          <span aria-hidden="true" className="h-1 w-[38px] rounded-[4px] bg-[var(--border-strong)]" />
         </div>
-        <div className="flex items-center justify-between pl-5 pr-2">
-          <h2 className="m-0 text-[17px] font-semibold text-primary">{COPY.addSheetTitle}</h2>
-          <Button
-            variant="ghost"
+        <div className="flex items-center pl-5 pr-3">
+          <h2 className="m-0 text-[16px] font-bold text-primary">{COPY.addSheetTitle}</h2>
+          <button
+            type="button"
             aria-label="Close"
             title="Close — Esc"
             onClick={onClose}
-            className="!size-10 !rounded-md !p-0 text-muted"
+            className="ml-auto grid size-10 place-items-center rounded-[12px] border-0 bg-transparent p-0 text-primary [touch-action:manipulation]"
           >
-            <X size={18} aria-hidden="true" />
-          </Button>
+            <PhoneIcon name="x" />
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-2 px-5 pt-2">
@@ -93,60 +92,20 @@ export function AddSheet({ onClose, onType, onFile, onFromChat }: AddSheetProps)
               key={type}
               ref={index === 0 ? first : undefined}
               type="button"
+              title={TYPE_MEANS[type]}
               onClick={() => onType(type)}
-              className="flex min-h-[64px] items-center gap-3 rounded-lg border border-subtle bg-elevated p-3 text-left [touch-action:manipulation]"
+              className={CHOICE}
             >
-              <span aria-hidden="true" className={`size-3 flex-none rounded-[3px] ${TYPE_BG[type]}`} />
-              <span className="min-w-0">
-                <span className="block text-[14.5px] font-medium text-primary">{typeLabel(type)}</span>
-                <span className="block text-[11.5px] leading-snug text-muted">{TYPE_MEANS[type]}</span>
-              </span>
+              <span aria-hidden="true" className={`size-2.5 flex-none rounded-[3px] ${TYPE_BG[type]}`} />
+              {typeLabel(type)}
             </button>
           ))}
-        </div>
-
-        <div className="grid gap-2 px-5 pt-2">
-          <Row icon={FileUp} label={COPY.addSheetImport} hint={COPY.addSheetImportHint} onSelect={onFile} />
-          <Row
-            icon={MessageSquare}
-            label={COPY.addSheetDraft}
-            hint={streaming ? COPY.waitForReply : COPY.addSheetDraftHint}
-            disabled={streaming}
-            onSelect={onFromChat}
-          />
+          <button type="button" title={COPY.addSheetImportHint} onClick={onFile} className={CHOICE}>
+            <PhoneIcon name="file" />
+            {COPY.addSheetImport}
+          </button>
         </div>
       </div>
     </>
-  );
-}
-
-function Row({
-  icon: Icon,
-  label,
-  hint,
-  disabled = false,
-  onSelect,
-}: {
-  icon: LucideIcon;
-  label: string;
-  hint: ReactNode;
-  disabled?: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-disabled={disabled || undefined}
-      onClick={disabled ? undefined : onSelect}
-      className={`flex min-h-[56px] items-center gap-3 rounded-lg border border-subtle bg-elevated px-3 py-2 text-left [touch-action:manipulation] ${
-        disabled ? "cursor-not-allowed" : ""
-      }`}
-    >
-      <Icon size={18} aria-hidden="true" className={`flex-none ${disabled ? "text-muted" : "text-accent"}`} />
-      <span className="min-w-0">
-        <span className={`block text-[14.5px] font-medium ${disabled ? "text-muted" : "text-primary"}`}>{label}</span>
-        <span className="block text-[11.5px] leading-snug text-muted">{hint}</span>
-      </span>
-    </button>
   );
 }
